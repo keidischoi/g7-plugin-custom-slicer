@@ -71,6 +71,8 @@ sl.dispose()
   ok(appS.includes("wrap.current.setAttribute('data-slc-theme', dark ? 'dark' : 'light')") && cssS.includes('.slc[data-slc-theme=dark] {') && !cssS.includes('[data-theme=dark] .slc') && plS.includes('view.renderer.setClearColor(c.bg)')
     && polS.includes("Array.from(r.children).find((el) => el.tagName === 'STYLE' && el.getAttribute('data-slc-rule') === id)") && !polS.includes(":scope > style"), '0.1.6 테마 한 곳에서 (data-slc-theme) · 바꾸면 3D 바탕 · 격자도 바로 · 어두운 칸이 남던 것 (그림자 뿌리 :scope)')
   ok(polS.includes('.empty-hint .eh-icon{display:none !important}') && appS.includes('const [hasCloud, setHasCloud]'), '0.1.6 판 가운데 📦 그림 뺌 · ☁️ 웹저장소가 늦게 와도 단추')
+  ok(appS.includes("b.className = 'slc-ehcloud'") && appS.includes("hint.querySelector('.eh-btn')") && appS.includes("pick.insertAdjacentElement('afterend', b)") && appS.indexOf('openRef.current = cloudOpen') > appS.indexOf('const cloudOpen = async') && polS.includes('.empty-hint .slc-ehcloud{'),
+    '0.1.7 판 가운데 「Choose file」 아래 「☁️ 내 저장소에서」 (웹저장소가 켜져 있을 때)')
 }
 // 넘겨받은 ZIP (자른 조각 모두 등) — 저장 · deflate 둘 다, 모델만 (README · __MACOSX 빼고)
 {
