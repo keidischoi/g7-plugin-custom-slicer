@@ -95,6 +95,13 @@ sl.dispose()
   ok(ld.includes('takeCarry: function ()') && qk.includes('window.__slcCarry = {') && app.includes('window.G7Slicer.takeCarry()'), '「↗ 자세히」로 파일 · 프린터를 들고 감 (한 번만 꺼냄)')
   ok(app.includes("'data-cls-save': '슬라이스 결과 (.gcode.3mf)'") && app.includes('ProfileDialog') && app.includes('polish(stage.current)'), '웹저장소 저장 표시 · 🎛️ 슬라이서 프로필 · 뷰어 다듬기')
   ok(ld.includes("window.dispatchEvent(new Event('g7slicer:ready'))"), '0.1.1 불러오기가 끝나면 g7slicer:ready (먼저 그려진 출력 검사기가 탭을 보임)')
+  {
+    const bm = readFileSync(new URL('../web/build.mjs', import.meta.url), 'utf8'), pl = readFileSync(new URL('../web/src/polish.js', import.meta.url), 'utf8')
+    const { readdirSync } = await import('node:fs'), dist = new URL('../dist/web/', import.meta.url)
+    const built = readdirSync(dist).filter((f) => f.endsWith('.js')).map((f) => readFileSync(new URL(f, dist), 'utf8')).join('\n')
+    ok(bm.includes("sceneBackground: ['#161a1e', '#eef4fa']") && built.includes('"#eef4fa"') && !built.includes('sceneBackground:"#161a1e"') && css.includes('--vp-dark-base:#f8fafc'), '0.1.2 밝은 판 — 장면 색은 묶을 때 바꿈 · 도구 띠 · 도구줄도 밝게')
+    ok(pl.includes('*::-webkit-scrollbar{display:none') && css.includes('.slc ::-webkit-scrollbar'), '0.1.2 스크롤바 안 보임 (휠로는 그대로)')
+  }
 
 }
 
