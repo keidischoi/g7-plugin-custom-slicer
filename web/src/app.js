@@ -1,4 +1,4 @@
-/*! custom-slicer 0.1.2 — 🔪 슬라이서 화면 · AGPL-3.0-or-later · 소스: https://github.com/keidischoi/g7-plugin-custom-slicer
+/*! custom-slicer 0.1.3 — 🔪 슬라이서 화면 · AGPL-3.0-or-later · 소스: https://github.com/keidischoi/g7-plugin-custom-slicer
  *  엔진 · 화면: three-slicer (OrcaSlicer 를 WebAssembly 로 옮긴 것, AGPL) — <Viewport/>(판 배치 · 이동/회전/크기 · 칠하기 · 슬라이스 · G-code 미리 보기)
  *  + <SettingsPanel/>(OrcaSlicer 설정). 이 파일은 그 바깥 틀: 프린터 라운지의 내 프린터 · 📤 보내기 · .gcode.3mf · 다른 화면에서 넘겨받은 파일
  *  모델은 서버로 올라가지 않음 — 이 브라우저에서만 읽고 슬라이스 */
@@ -13,7 +13,7 @@ import { estimateSeconds, maxZ, toolsOf, matchPreset, hexDist } from './util.js'
 import { SPF, canRead, readProfile, applyProfile } from './profiles.js'
 import { polish } from './polish.js'
 
-const V = '0.1.2', API = '/api/plugins/custom-slicer', LOUNGE = '/api/plugins/custom-my_printer', SRC = 'https://github.com/keidischoi/g7-plugin-custom-slicer'
+const V = '0.1.3', API = '/api/plugins/custom-slicer', LOUNGE = '/api/plugins/custom-my_printer', SRC = 'https://github.com/keidischoi/g7-plugin-custom-slicer'
 const SEND_ADMIN_ONLY = true   // 「📤 내 프린터로 보내기」는 시험하는 동안 관리자에게만 (실제 프린터에서 확인되면 false 로)
 const LS_SET = 'slc-settings'
 const h = React.createElement
@@ -53,6 +53,16 @@ export function applyPrinter(s, name) {
   delete n.printer_settings_id; delete n.print_settings_id; delete n.filament_settings_id
   Object.assign(n, p, { printer_settings_id: name })
   const bt = printerDefaultBedType(name); if (bt) n.curr_bed_type = bt
+  return n
+}
+
+/** 0.1.3 프로젝트 3MF(Bambu Studio 최신)의 사용자 G-code 에 이 엔진이 모르는 변수가 있으면 슬라이스가 「CUSTOM_GCODE_ERROR: <칸>: …」 로 멈춤 →
+ *  그 칸만 이 슬라이서가 아는 프린터 기본값으로 (없으면 지워서 엔진 기본) — 나머지 프로젝트 설정은 그대로 */
+export const GCODE_ERR = /CUSTOM_GCODE_ERROR:\s*([a-z0-9_]+)\s*:/i
+export function fixGcode(s, key) {
+  const base = printerSettings(String(s.printer_settings_id || '')) || {}, n = { ...s }
+  if (base[key] != null && String(base[key]) !== String(s[key])) n[key] = base[key]
+  else delete n[key]
   return n
 }
 
@@ -183,12 +193,18 @@ function ProfileDialog({ settings, lounge, pid, onClose, onApply }) {
   const lp = lounge.list.find((x) => +x.id === +pid)
   const base = String(settings.printer_settings_id || '').replace(/\s*\d+(\.\d+)?\s*nozzle\s*$/i, '')
   const [q, setQ] = useState(''), [who, setWho] = useState(lp ? lp.model || lp.name : base.replace(/^Bambu Lab /, ''))
-  const [items, setItems] = useState(null), [busy, setBusy] = useState(0), [err, setErr] = useState('')
+  const [items, setItems] = useState(null), [busy, setBusy] = useState(0), [err, setErr] = useState(''), [wide, setWide] = useState(false)
   const timer = useRef(0)
   useEffect(() => {
     let on = true; setItems(null)
     const p = new URLSearchParams({ per: '24', sort: 'popular' }); if (who) p.set('printer', who); if (q) p.set('q', q)
-    fetch(SPF + '/profiles?' + p, { headers: headers(), credentials: 'same-origin' }).then((r) => r.json()).then((j) => { if (on) setItems((j && j.data && j.data.items) || []) }, () => { if (on) setItems([]) })
+    const get = (qs) => fetch(SPF + '/profiles?' + qs, { headers: headers(), credentials: 'same-origin' }).then((r) => r.json()).then((j) => (j && j.data && j.data.items) || [], () => [])
+    get(p).then((l) => {
+      if (!on) return
+      if (l.length || !who) { setWide(false); setItems(l); return }
+      const p2 = new URLSearchParams(p); p2.delete('printer')   // 이 프린터 것이 없으면 모든 프린터
+      get(p2).then((l2) => { if (on) { setWide(true); setItems(l2) } })
+    })
     return () => { on = false }
   }, [who, q])
   const use = async (it) => {
@@ -208,6 +224,7 @@ function ProfileDialog({ settings, lounge, pid, onClose, onApply }) {
         h('input', { type: 'search', placeholder: '찾기 (예: PLA · 실크 · 0.2mm)', onInput: (e) => { clearTimeout(timer.current); const v = e.target.value.trim(); timer.current = setTimeout(() => setQ(v), 300) } }),
         who ? h('button', { type: 'button', className: 'slc-chip on', title: '이 프린터 것만 — 누르면 모든 프린터', onClick: () => setWho('') }, '🖨️ ' + who + ' ✕') : null),
       err ? h('p', { className: 'slc-dmsg bad' }, '⚠️ ' + err) : null,
+      wide && items && items.length ? h('p', { className: 'slc-hint' }, '「' + who + '」 프로필이 아직 없어 모든 프린터의 인기 프로필을 보여요 — 프린터가 다르면 오른쪽 프린터 칸 값은 그대로 두고 품질 · 필라멘트만 참고하세요.') : null,
       items === null ? h('p', { className: 'slc-hint' }, '불러오는 중…')
         : !items.length ? h('p', { className: 'slc-hint' }, '맞는 프로필이 없어요. ', h('a', { href: '/slicer-profiles', target: '_blank', rel: 'noopener' }, '슬라이서 프로필 둘러보기 ›'))
           : h('div', { className: 'slc-plist' }, items.map((it) => {
@@ -230,6 +247,7 @@ function App({ files, popup, compact, printer, from }) {
   const [me, setMe] = useState({}), [lounge, setLounge] = useState({ logged: false, list: [] }), [pid, setPid] = useState(0)
   const [res, setRes] = useState(null), [err, setErr] = useState(''), [note, setNote] = useState(''), [send, setSend] = useState(false), [sent, setSent] = useState('')
   const [ready, setReady] = useState(null)   // 넘겨받은 파일 (zip 은 풀어서) — 준비되면 뷰어를 그림 (뷰어는 files 를 처음 한 번만 받음)
+  const [sliceReq, setSliceReq] = useState(0), fixes = useRef([])   // 0.1.3 G-code 칸을 고친 뒤 다시 슬라이스
   const [spf, setSpf] = useState(false), [prof, setProf] = useState(false), [applied, setApplied] = useState('')
   const [size, setSize] = useState(() => (popup && popup.current ? popup.current() : ''))
   const stage = useRef(null), names = useRef([]), cur = useRef(settings)
@@ -263,7 +281,30 @@ function App({ files, popup, compact, printer, from }) {
   // 🎛️ 슬라이서 프로필 플러그인이 켜져 있나 (목록 하나만 물어봄)
   useEffect(() => { fetch(SPF + '/profiles?per=6&lite=1', { headers: headers(), credentials: 'same-origin' }).then((r) => setSpf(r.ok), () => setSpf(false)) }, [])
   // 뷰어 · 설정 칸(그림자 DOM) 안 입력칸 · 숫자칸 · 카드를 출력 검사기 말씨로 다듬음
-  useEffect(() => polish(stage.current), [ready])
+  useEffect(() => polish(stage.current, { flow: !popup }), [ready])
+  // 0.1.3 화면을 올리면 3D 뷰어가 사이트 헤더 바로 밑에 붙어 멈춤 (헤더 높이를 재서 --slc-top)
+  const wrap = useRef(null)
+  useEffect(() => {
+    if (popup) return
+    let last = -1, t = 0
+    const top = () => {
+      let b = 0
+      try {
+        document.querySelectorAll('header, nav, [class*="sticky"], [class*="fixed"], [id*="header"]').forEach((el, i) => {
+          if (i > 80 || (wrap.current && wrap.current.contains(el))) return
+          const cs = getComputedStyle(el); if (cs.position !== 'fixed' && cs.position !== 'sticky') return
+          if (cs.visibility === 'hidden' || cs.display === 'none' || +cs.opacity === 0) return
+          const r = el.getBoundingClientRect(); if (r.height < 20 || r.height > innerHeight * 0.4 || r.top > 4 || r.bottom <= 0 || r.width < innerWidth * 0.5) return
+          if (r.bottom > b) b = r.bottom
+        })
+      } catch (e) {}
+      return Math.round(b) + 10
+    }
+    const apply = () => { t = 0; const v = top(); if (v !== last && wrap.current) { last = v; wrap.current.style.setProperty('--slc-top', v + 'px') } }
+    const soon = () => { if (!t) t = setTimeout(apply, 120) }
+    apply(); addEventListener('scroll', soon, { passive: true }); addEventListener('resize', soon)
+    return () => { removeEventListener('scroll', soon); removeEventListener('resize', soon); clearTimeout(t) }
+  }, [])
 
   const pickLounge = (p) => {
     setPid(+p.id); setNote('')
@@ -272,7 +313,7 @@ function App({ files, popup, compact, printer, from }) {
     else setNote('「' + (p.name || '') + '」 와 같은 프린터 설정을 못 찾았어요 — 오른쪽 프린터 칸에서 제조사 · 모델을 골라 주세요.')
   }
   const onSliced = useCallback(async ({ plate, stats, gcode }) => {
-    setErr('')
+    setErr(''); fixes.current = []
     try {
       const st = stats || {}, s = cur.current
       const printer = String(s.printer_settings_id || '')
@@ -290,8 +331,46 @@ function App({ files, popup, compact, printer, from }) {
     } catch (e) { setErr('결과를 정리하지 못했어요: ' + ((e && e.message) || e)) }
   }, [])
   const onEvent = useCallback((name, v) => {
+    if (name === 'error' && v) {
+      const msg = String((v && (v.message || v.error)) || v), m = GCODE_ERR.exec(msg)
+      if (m && fixes.current.length < 6 && !fixes.current.includes(m[1])) {
+        const key = m[1]; fixes.current.push(key)
+        setSettings((x) => fixGcode(x, key))
+        setNote('🔧 프로젝트 파일의 「' + key + '」(사용자 G-code)에 이 슬라이서가 모르는 값이 있어 이 프린터의 기본 G-code 로 바꾸고 다시 슬라이스해요. 다른 설정은 그대로예요.')
+        setTimeout(() => setSliceReq((x) => x + 1), 500)
+      }
+      return
+    }
     if (name === 'objects' && Array.isArray(v)) { names.current = v.map((o) => o.name).filter(Boolean); if (!v.length) setRes(null) }
   }, [])
+  /** ☁️ 웹저장소 연결(custom-cloud_storage)이 켜져 있나 */
+  const cloud = () => (window.G7Cloud && typeof window.G7Cloud.pick === 'function' ? window.G7Cloud : null)
+  /** 뷰어에 파일을 더함 — 뷰어는 처음 한 번만 files 를 받아서, 그다음은 뷰어의 「Open」과 같은 숨은 파일 칸으로 (판에 있는 것에 더해짐) */
+  const addFiles = (list) => {
+    try {
+      let inp = null
+      const walk = (n) => { if (!n || inp) return; if (n.shadowRoot) { inp = Array.from(n.shadowRoot.querySelectorAll('input[type=file]')).find((x) => /stl/i.test(x.accept || '')) || null; walk(n.shadowRoot) } if (n.querySelectorAll) n.querySelectorAll('*').forEach((c) => { if (c.shadowRoot && !inp) walk(c) }) }
+      walk(stage.current)
+      if (!inp) throw new Error('뷰어를 찾지 못했어요')
+      const dt = new DataTransfer(); list.forEach((x) => dt.items.add(x))
+      inp.files = dt.files
+      inp.dispatchEvent(new Event('change', { bubbles: true }))
+      if (!names.current.length) names.current = list.map((x) => x.name)
+    } catch (e) { setErr('파일을 판에 올리지 못했어요: ' + ((e && e.message) || e)) }
+  }
+  const cloudOpen = async () => {
+    const C = cloud(); if (!C) return
+    try {
+      const got = await C.pick({ accept: '.stl,.3mf,.obj,.amf,.ply,.zip', multiple: true })
+      const list = await expandFiles((Array.isArray(got) ? got : [got]).filter(Boolean).map((x) => (x instanceof File ? x : new File([x.blob || x], x.name || 'model.stl'))))
+      if (list.length) { addFiles(list); setNote('☁️ 내 저장소에서 ' + list.length + '개를 판에 올렸어요.') }
+    } catch (e) { if (e && !/취소|cancel/i.test(String(e.message || e))) setErr('☁️ ' + ((e && e.message) || e)) }
+  }
+  const cloudSave = (kind) => {
+    const C = cloud(), R = res; if (!C || !R) return
+    const blob = kind === '3mf' && R.gcode3mf ? R.gcode3mf : new Blob([R.gcode], { type: 'text/plain' }), name = R.base + (kind === '3mf' && R.gcode3mf ? '.gcode.3mf' : '.gcode')
+    Promise.resolve(C.save(blob, name, blob.type || 'application/octet-stream', { choose: true })).then(() => setNote('☁️ 「' + name + '」 을(를) 내 저장소에 저장했어요.'), (e) => { if (e && !/취소|cancel/i.test(String(e.message || e))) setErr('☁️ ' + ((e && e.message) || e)) })
+  }
   const download = (kind) => {
     const R = res; if (!R) return
     const blob = kind === '3mf' && R.gcode3mf ? R.gcode3mf : new Blob([R.gcode], { type: 'text/plain' })
@@ -310,24 +389,27 @@ function App({ files, popup, compact, printer, from }) {
       lounge.list.length
         ? h('div', { className: 'slc-chips' }, lounge.list.map((p) => h('button', { key: p.id, type: 'button', className: 'slc-chip' + (+p.id === pid ? ' on' : ''), title: '이 프린터의 설정으로 바꿔요', onClick: () => pickLounge(p) }, '🖨️ ' + p.name, p.can_send ? h('em', null, ' 📤') : null)))
         : h('span', { className: 'slc-hint' }, lounge.logged ? ['프린터 라운지에 내 프린터를 등록하면 바로 고르고 보낼 수 있어요. ', h('a', { key: 'a', href: '/my-printer' }, '프린터 라운지 ›')] : '로그인하면 프린터 라운지의 내 프린터로 바로 보낼 수 있어요.'),
+      cloud() ? h('button', { type: 'button', className: 'slc-btn', title: '내 웹저장소(구글 드라이브 · 원드라이브 · 드롭박스)의 STL · 3MF · OBJ 를 판에 올려요', onClick: cloudOpen }, '☁️ 내 저장소에서') : null,
       spf ? h('button', { type: 'button', className: 'slc-btn', title: '회원들이 올린 프린터 × 필라멘트 설정을 골라 바로 적용해요 (🎛️ 슬라이서 프로필)', onClick: () => setProf(true) }, '🎛️ 슬라이서 프로필') : null,
       applied ? h('span', { className: 'slc-from', title: applied }, '🎛️ ' + applied) : null),
     h('div', { className: 'slc-bar-r' },
       R ? h('span', { className: 'slc-sum' }, '⏱ ' + dur(R.seconds) + (R.guessed ? ' (어림)' : '') + ' · 🧵 ' + n1(R.weight) + ' g · 층 ' + R.layers.toLocaleString()) : h('span', { className: 'slc-hint' }, '모델을 올리고 오른쪽 아래 「Slice」를 누르세요'),
       R && canSee && lounge.list.length ? h('button', { type: 'button', className: 'slc-btn pri', disabled: !canSend, title: canSend ? '' : '지금 보낼 수 있는 프린터가 없어요 (연결 프로그램 · 관리자 설정 「출력 파일 보내기」)', onClick: () => setSend(true) }, '📤 프린터로 보내기', SEND_ADMIN_ONLY ? h('small', { className: 'slc-adm' }, ' 🔒') : null) : null,
-      R && R.gcode3mf ? h('button', { type: 'button', className: 'slc-btn', onClick: () => download('3mf'), 'data-cls-save': '슬라이스 결과 (.gcode.3mf)', 'data-cls-save-label': '내 저장소에 저장', 'data-cls-save-class': 'slc-btn' }, '⬇️ .gcode.3mf') : null,
-      R ? h('button', { type: 'button', className: 'slc-btn', onClick: () => download('gcode'), 'data-cls-save': 'G-code (.gcode)', 'data-cls-save-label': '내 저장소에 저장', 'data-cls-save-class': 'slc-btn' }, '⬇️ .gcode') : null,
+      R && R.gcode3mf ? h('button', { type: 'button', className: 'slc-btn', onClick: () => download('3mf') }, '⬇️ .gcode.3mf') : null,
+      R ? h('button', { type: 'button', className: 'slc-btn', onClick: () => download('gcode') }, '⬇️ .gcode') : null,
+      R && cloud() ? h('button', { type: 'button', className: 'slc-btn', title: '슬라이스 결과를 내 웹저장소(구글 드라이브 · 원드라이브 · 드롭박스)에 저장', onClick: () => cloudSave(R.gcode3mf ? '3mf' : 'gcode') }, '☁️ 저장') : null,
       popup && popup.size ? h('div', { className: 'slc-sizes', role: 'group', 'aria-label': '창 크기' }, [['m', '◱', '보통 — 가운데 창'], ['l', '◳', '크게 — 화면 가장자리까지'], ['full', '⛶', '전체 화면']].map(([k, ic, t]) => h('button', { key: k, type: 'button', className: 'slc-size' + (size === k ? ' on' : ''), title: t, 'aria-label': t, 'aria-pressed': size === k, onClick: () => setSize(popup.size(k)) }, ic))) : null,
       popup ? h('button', { type: 'button', className: 'slc-x', 'aria-label': '닫기', onClick: popup.close }, '✕') : null))
 
   const viewer = ready ? h(Viewport, {
-    settings, setSettings, files: ready.length ? ready : undefined, onSliced, onEvent,
+    settings, setSettings, files: ready.length ? ready : undefined, onSliced, onEvent, sliceRequest: sliceReq,
+    onExport: (file, filename) => { try { const C = cloud(); if (C && typeof C.offer === 'function') C.offer(file, filename) } catch (e) {} return false },
     processPanel: h(SettingsPanel, { settings, setSettings, embedded: true }),
     features: { versionBadge: false, shortcuts: !compact, logs: false },
   }) : h('p', { className: 'slc-wait' }, '📦 파일을 준비하는 중…')
 
   const page = !popup && !compact
-  return h('div', { className: 'slc' + (popup ? ' slc--pop' : '') + (compact ? ' slc--compact' : '') + (page ? ' slc--page' : '') },
+  return h('div', { ref: wrap, className: 'slc' + (popup ? ' slc--pop' : '') + (compact ? ' slc--compact' : '') + (page ? ' slc--page' : '') },
     page ? h('header', { className: 'slc-hero' }, h('div', { className: 'slc-hero-bg', 'aria-hidden': 'true' }, h('i'), h('i'), h('i')),
       h('span', { className: 'slc-hero-ic' }, '🔪'),
       h('div', null, h('h1', null, '슬라이서'), h('p', null, 'STL · 3MF · OBJ 를 판에 올려 옮기고 · 돌리고 · 칠하고, OrcaSlicer 설정으로 슬라이스해 층마다 미리 보고 내 프린터로 바로 보내요.')),
@@ -337,8 +419,9 @@ function App({ files, popup, compact, printer, from }) {
     note ? h('p', { className: 'slc-note' }, note, h('button', { type: 'button', onClick: () => setNote('') }, '✕')) : null,
     sent ? h('p', { className: 'slc-sent' }, '✅ ' + sent + ' ', h('a', { href: '/my-printer' }, '프린터 라운지에서 상태 보기 ›'), h('button', { type: 'button', onClick: () => setSent('') }, '✕')) : null,
     h('div', { className: 'slc-stage', ref: stage }, viewer),
-    h('footer', { className: 'slc-foot' }, '설정 칸은 OrcaSlicer 와 같은 이름(영어)이에요. 이 슬라이서는 ', h('b', null, 'AGPL-3.0'), ' 오픈소스예요 — ', h('a', { href: SRC, target: '_blank', rel: 'noopener' }, '소스 보기'),
-      ' · 엔진 ', h('a', { href: 'https://github.com/kimgh06/Three_Slicer', target: '_blank', rel: 'noopener' }, 'three-slicer'), ' (OrcaSlicer 를 브라우저로 옮긴 것). 결과는 Bambu Studio · OrcaSlicer 와 조금 다를 수 있으니 처음 쓰는 프린터는 첫 층을 지켜봐 주세요.'),
+    h('footer', { className: 'slc-foot' },
+      h('p', null, '설정 칸은 OrcaSlicer 와 같은 이름(영어)이에요. 결과는 Bambu Studio · OrcaSlicer 와 조금 다를 수 있으니 처음 쓰는 프린터는 첫 층을 지켜봐 주세요.'),
+      h('p', null, '이 슬라이서는 ', h('b', null, 'AGPL-3.0'), ' 오픈소스예요 — ', h('a', { href: SRC, target: '_blank', rel: 'noopener' }, '소스 보기'), ' · 엔진 ', h('a', { href: 'https://github.com/kimgh06/Three_Slicer', target: '_blank', rel: 'noopener' }, 'three-slicer'), ' (OrcaSlicer 를 브라우저로 옮긴 것)')),
     prof ? h(ProfileDialog, { settings, lounge, pid, onClose: () => setProf(false), onApply: (title, parts) => { setSettings((s) => applyProfile(s, parts)); setApplied(title); setProf(false); setNote('🎛️ 「' + title + '」 설정을 적용했어요 — 오른쪽 칸에서 확인하고 「Slice」를 누르세요.') } }) : null,
     send && R ? h(SendDialog, { R, lounge, pid0: pid, popup, onClose: () => setSend(false), onSent: (p) => setSent('「' + p.name + '」 로 보냈어요 — 연결 프로그램이 30초쯤 안에 받아 출력을 시작해요.') }) : null)
 }
