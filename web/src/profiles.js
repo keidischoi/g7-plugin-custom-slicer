@@ -4,6 +4,8 @@
 //  못 읽는 꼴: PrusaSlicer .ini · Cura .curaprofile (다른 슬라이서의 설정 이름이라 옮기면 틀림)
 import { applyPreset, presetOptionKeys, readPresetFile, normalizeProjectSettings, printerSettings, processPresets, filamentPresets } from 'three-slicer/settings'
 import { unzipAll } from './handoff.js'
+import { writePresetFile, settingScalar } from 'three-slicer/settings'
+import { zipStore } from './gcode3mf.js'
 
 export const SPF = '/api/plugins/custom-slicer_profiles'
 export const READABLE = ['json', 'bbscfg', 'bbsflmt', 'orca_printer', 'orca_filament', 'orca_bundle', 'zip', '3mf']
@@ -51,4 +53,32 @@ export function applyProfile(s, parts) {
     if (p.name) n[ID_KEY[p.kind]] = p.name
   }
   return n
+}
+
+/* ───────── 0.1.6 ⬆️ 지금 설정을 슬라이서 프로필로 올리기 ───────── */
+
+const at0 = (v) => (Array.isArray(v) ? v[0] : v)
+/** 지금 설정 → OrcaSlicer 프리셋 묶음(.zip: 프린터 · 품질 · 필라멘트 .json) — Orca 「설정 가져오기」 · 이 슬라이서 「🎛️ 프로필」로 다시 열 수 있음 */
+export function profileZip(s, title) {
+  const enc = new TextEncoder(), safe = (x) => String(x || '').replace(/[\\/:*?"<>|]+/g, '_').slice(0, 80)
+  const files = []
+  for (const [type, idKey] of [['machine', 'printer_settings_id'], ['process', 'print_settings_id'], ['filament', 'filament_settings_id']]) {
+    try {
+      // 프린터는 원래 이름 그대로 (적용하면 같은 프린터가 골라지게) · 품질 · 필라멘트는 제목을 붙여 회원 프리셋으로
+      const orig = String(at0(s[idKey]) || '') || type, name = type === 'machine' ? orig : (title ? title + ' · ' : '') + orig
+      const f = writePresetFile(s, { type, name })
+      files.push([type + ' - ' + safe(name) + '.json', enc.encode(JSON.stringify(f, null, 2))])
+    } catch (e) { /* 그 종류의 키가 없음 */ }
+  }
+  if (!files.length) throw new Error('올릴 설정을 만들지 못했어요.')
+  return new File([zipStore(files)], safe(title || 'profile') + '.zip', { type: 'application/zip' })
+}
+/** 올리기 칸 처음 값 — 지금 설정 · 라운지 프린터에서 */
+export function profileGuess(s, lp) {
+  const printer = lp ? ((lp.brand || '') + ' ' + (lp.model || '')).trim() || lp.name : String(s.printer_settings_id || '').replace(/\s*\d+(\.\d+)?\s*nozzle\s*$/i, '')
+  const fil = String(at0(s.filament_settings_id) || '').replace(/\s*@.*$/, '')
+  const mat = String(at0(s.filament_type) || settingScalar(s, 'filament_type') || '')
+  const layer = Number(at0(s.layer_height) || settingScalar(s, 'layer_height')) || null
+  const nozzle = Number(at0(s.nozzle_diameter) || settingScalar(s, 'nozzle_diameter')) || null
+  return { title: [printer, fil || mat, layer ? layer + 'mm' : ''].filter(Boolean).join(' · ').slice(0, 120), printer_name: printer, filament_name: fil, material: mat, nozzle, layer_height: layer }
 }

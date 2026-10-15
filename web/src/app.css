@@ -1,4 +1,4 @@
-/* custom-slicer 0.1.5 — 🔪 슬라이서 바깥 틀 · AGPL-3.0-or-later
+/* custom-slicer 0.1.6 — 🔪 슬라이서 바깥 틀 · AGPL-3.0-or-later
  *  모양은 출력 검사기(.pck)와 같은 말씨 — 하늘색→남색 그라데이션 · 둥근 카드 · 알약 칩. 뷰어 · 설정 칸은 자기 Shadow DOM 안에서 그리므로
  *  CSS 변수(--vp-*)로만 색을 맞춤 (그림자 경계를 넘는 건 변수뿐) */
 .slc { --ink:#0f172a; --mute:#64748b; --line:#e2e8f0; --card:#fff; --bg2:#f8fafc; --soft:#ecfeff; --a:#0ea5e9; --a2:#6366f1; --bad:#dc2626; --ok:#16a34a;
@@ -14,7 +14,7 @@
   --vp-light-text:#0f172a; --vp-light-text-muted:#475569; --vp-light-text-faint:#94a3b8;
   display:flex; flex-direction:column; gap:10px; width:100%; max-width:1600px; margin:0 auto; height:calc(100vh - 120px); min-height:600px; padding:12px 16px 0; box-sizing:border-box;
   color:var(--ink); font-size:14px; line-height:1.55; }
-html.dark .slc, .dark .slc, [data-theme=dark] .slc { --ink:#e2e8f0; --mute:#94a3b8; --line:#334155; --card:#1e293b; --bg2:#0f172a; --soft:#083344; --sh:0 1px 2px rgba(0,0,0,.4),0 4px 14px rgba(0,0,0,.3); }
+.slc[data-slc-theme=dark] { --ink:#e2e8f0; --mute:#94a3b8; --line:#334155; --card:#1e293b; --bg2:#0f172a; --soft:#083344; --sh:0 1px 2px rgba(0,0,0,.4),0 4px 14px rgba(0,0,0,.3); }
 .slc *, .slc *::before, .slc *::after { box-sizing:border-box; }
 .slc a { color:var(--a); text-decoration:none; }
 .slc--page { height:auto; }
@@ -173,20 +173,30 @@ html.dark .slc, .dark .slc, [data-theme=dark] .slc { --ink:#e2e8f0; --mute:#94a3
   width:calc(100% - 420px); min-width:min(560px,100%); margin:-74px 0 12px 60px; padding:10px 14px; border-radius:18px;
   background:rgba(255,255,255,.96); border:1px solid #bae6fd; box-shadow:0 10px 30px rgba(14,116,144,.22); backdrop-filter:blur(6px); animation:slc-up .25s ease-out; }
 @keyframes slc-up { from { transform:translateY(12px); opacity:0; } }
-.dark .slc-dock, html.dark .slc-dock { background:rgba(30,41,59,.96); border-color:#0e7490; }
+.slc[data-slc-theme=dark] .slc-dock { background:rgba(30,41,59,.96); border-color:#0e7490; }
 .slc-dsum { font-weight:700; font-size:13.5px; } .slc-dsum b { color:#0369a1; margin-right:4px; }
 .slc-dbtns { display:flex; flex-wrap:wrap; gap:6px; }
 @media (max-width:900px) { .slc-dock { width:auto; min-width:0; margin:8px 0 12px; } }
 
 /* 0.1.4 사이트가 어두운 테마면 슬라이서도 어둡게 — 뷰어 · 설정 칸 색 변수 (3D 판 색은 build.mjs 의 SCENE) */
-html.dark .slc, .dark .slc, [data-theme=dark] .slc, html.dark .slc-pop-box, .dark .slc-pop-box {
+.slc[data-slc-theme=dark] {
   --vp-accent:#38bdf8; --vp-accent-rgb:56, 189, 248; --vp-accent-hover:#7dd3fc; --vp-accent-ink:#7dd3fc; --vp-accent-soft:#0b3a55; --vp-accent-soft-border:#0e7490; --vp-accent-deep:#0c4a6e; --vp-on-accent:#06202f;
   --vp-dark-base:#0f172a; --vp-dark-base-rgb:15, 23, 42; --vp-dark-surface:#111c33; --vp-dark-surface-rgb:17, 28, 51; --vp-dark-control:#1e293b; --vp-dark-control-hover:#273449;
   --vp-dark-border:#334155; --vp-dark-border-strong:#475569; --vp-dark-text:#e2e8f0; --vp-dark-text-muted:#cbd5e1; --vp-dark-text-faint:#94a3b8; --vp-dark-text-disabled:#64748b;
   --vp-accent-on-dark:#7dd3fc; --vp-danger-on-dark:#fca5a5; --vp-danger-deep:#4a2229; --vp-warn-on-dark:#fcd34d; --vp-warn-deep:#3a2a10; --vp-warn-deep-rgb:58, 42, 16; --vp-warn-deep-border:#7a5a1e;
   --vp-light-bg:#0b1220; --vp-light-surface:#1e293b; --vp-light-subtle:#172033; --vp-light-control:#334155; --vp-light-control-hover:#3b4a63; --vp-light-border:#334155; --vp-light-divider:#2b3a52;
   --vp-light-text:#e2e8f0; --vp-light-text-muted:#94a3b8; --vp-light-text-faint:#64748b; --vp-info-soft:#1e1b4b; --vp-warn-soft:#3a2a10; --vp-danger-soft:#4a2229; --vp-info-ink:#a5b4fc; --vp-warn-ink:#fcd34d; --vp-danger-ink:#fca5a5; }
-html.dark .slc-stage, .dark .slc-stage, html.dark .slc-pop--full, .dark .slc-pop--full { background:#0f172a; }
-html.dark .slc-dock, .dark .slc-dock { background:rgba(15,23,42,.94); border-color:#0e7490; box-shadow:0 10px 30px rgba(0,0,0,.45); }
-html.dark .slc-dsum b, .dark .slc-dsum b { color:#7dd3fc; }
-html.dark .slc-dlg, .dark .slc-dlg, html.dark .slc-qbox, .dark .slc-qbox { background:#0f172a; color:#e2e8f0; }
+.slc[data-slc-theme=dark] .slc-stage, html.dark .slc-pop--full { background:#0f172a; }
+.slc[data-slc-theme=dark] .slc-dock { background:rgba(15,23,42,.94); border-color:#0e7490; box-shadow:0 10px 30px rgba(0,0,0,.45); }
+.slc[data-slc-theme=dark] .slc-dsum b { color:#7dd3fc; }
+.slc[data-slc-theme=dark] .slc-dlg, html.dark .slc-qbox { background:#0f172a; color:#e2e8f0; }
+
+/* 0.1.6 ⬆️ 슬라이서 프로필 올리기 */
+.slc-ugrid { display:grid; grid-template-columns:1fr 1fr; gap:10px 12px; margin:6px 0 4px; }
+.slc-uf { display:flex; flex-direction:column; gap:4px; font-weight:700; font-size:12.5px; color:#334155; } .slc-uf.wide, .slc-uf:first-child { grid-column:1 / -1; }
+.slc-uf input, .slc-uf textarea { box-sizing:border-box; width:100%; height:34px; padding:6px 10px; border:1px solid #d8e1ea; border-radius:10px; font:inherit; font-weight:500; font-size:13px; outline:none; background:#fff; color:#0f172a; }
+.slc-uf textarea { height:auto; min-height:70px; resize:vertical; } .slc-uf input:focus, .slc-uf textarea:focus { border-color:#0ea5e9; box-shadow:0 0 0 3px rgba(14,165,233,.18); }
+.slc-share { display:flex; flex-direction:column; gap:4px; margin:10px 0 2px; padding:12px 14px; border-radius:14px; border:1px dashed #a5d8f3; background:linear-gradient(135deg,rgba(14,165,233,.08),rgba(99,102,241,.08)); }
+.slc-share b { color:#0369a1; } .slc-share small { color:#64748b; } .slc-share span { margin-top:4px; }
+.slc[data-slc-theme=dark] .slc-uf { color:#cbd5e1; } .slc[data-slc-theme=dark] .slc-uf input, .slc[data-slc-theme=dark] .slc-uf textarea { background:#0f172a; color:#e2e8f0; border-color:#334155; }
+@media (max-width:560px) { .slc-ugrid { grid-template-columns:1fr; } }
