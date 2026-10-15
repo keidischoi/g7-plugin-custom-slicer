@@ -13,7 +13,7 @@ const on = (sfx) => FIELD.split(',').map((x) => x + sfx).join(',')
 export const POLISH_CSS = `
 /* custom-slicer — 출력 검사기 말씨: 둥근 칸 · 하늘색 초점 · 숫자는 오른쪽 정렬 · 줄 간격 넉넉히 */
 ${FIELD}{box-sizing:border-box;height:30px;padding:4px 10px;border:1px solid #d8e1ea;border-radius:9px;background-color:#fff;color:#0f172a;font:inherit;font-size:12.5px;line-height:1.2;
-  font-variant-numeric:tabular-nums;outline:none;transition:border-color .15s,box-shadow .15s,background-color .15s;box-shadow:0 1px 1px rgba(15,23,42,.03)}
+  font-variant-numeric:tabular-nums;outline:none;transition:border-color .15s,box-shadow .15s;box-shadow:0 1px 1px rgba(15,23,42,.03)}
 ${on(':hover')}{border-color:#93d7f5}
 ${on(':focus')}{border-color:#0ea5e9;box-shadow:0 0 0 3px rgba(14,165,233,.18)}
 ${on(':disabled')}{background-color:#f1f5f9;color:#94a3b8;cursor:not-allowed}
@@ -69,6 +69,8 @@ input[type=range]{accent-color:#0ea5e9}
 /* 0.1.4 프린터 칸 Load · Save 같은 작은 단추 (브라우저 기본 회색이던 것) */
 .sc-mini{border:1px solid #d8e1ea;background:#fff;color:#0f172a;border-radius:8px;padding:3px 10px;font:inherit;font-size:11.5px;font-weight:700;cursor:pointer;transition:all .15s}
 .sc-mini:hover:not(:disabled){border-color:#0ea5e9;color:#0369a1;background:#f0f9ff}
+/* 0.1.6 판 가운데 📦 그림은 뺌 (글자 · 「Choose file」 단추는 그대로) */
+.empty-hint .eh-icon{display:none !important}
 /* 0.1.2 스크롤바는 안 보이게 — 휠 · 손가락으로는 그대로 움직임 */
 *{scrollbar-width:none;-ms-overflow-style:none}
 *::-webkit-scrollbar{display:none;width:0;height:0}
@@ -105,7 +107,7 @@ export function polish(host, opts = {}) {
   const put = (root) => {
     if (seen.has(root)) return
     seen.add(root)
-    if (!root.querySelector(':scope > style[data-slc-polish]')) { const st = document.createElement('style'); st.setAttribute('data-slc-polish', '1'); st.textContent = POLISH_CSS + (opts.flow ? FLOW_CSS : ''); root.appendChild(st) }
+    if (!Array.from(root.children).some((el) => el.tagName === 'STYLE' && el.hasAttribute('data-slc-polish'))) { const st = document.createElement('style'); st.setAttribute('data-slc-polish', '1'); st.textContent = POLISH_CSS + (opts.flow ? FLOW_CSS : ''); root.appendChild(st) }
     walk(root)
     try { new MutationObserver(() => walk(root)).observe(root, { childList: true, subtree: true }) } catch (e) {}
   }
@@ -121,7 +123,8 @@ export function setRule(host, id, css) {
   const walk = (n) => {
     if (!n) return
     if (n.shadowRoot) {
-      const r = n.shadowRoot, old = r.querySelector(':scope > style[data-slc-rule="' + id + '"]')
+      // 0.1.6 그림자 뿌리에서는 :scope 가 아무것도 가리키지 않아 예전 스타일을 못 찾았음(어두운 칸이 밝은 테마에서도 남던 까닭) → 바로 아래 자식에서 찾음
+      const r = n.shadowRoot, old = Array.from(r.children).find((el) => el.tagName === 'STYLE' && el.getAttribute('data-slc-rule') === id)
       if (css && !old) { const st = document.createElement('style'); st.setAttribute('data-slc-rule', id); st.textContent = css; r.appendChild(st) } else if (!css && old) old.remove()
       walk(r)
     }

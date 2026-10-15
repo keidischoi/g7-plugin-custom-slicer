@@ -133,3 +133,21 @@ export function viewOf() { let v = null; for (const x of STATE.views) v = x; ret
 
 // 진단용 — 콘솔에서 지금 뷰어 상태를 볼 때 (globalThis.__slcView())
 globalThis.__slcView = viewOf
+
+/** 0.1.6 사이트 테마가 바뀌면 3D 판 바탕 · 격자 · 판 테두리 색을 바로 바꿈 (뷰어는 열 때 한 번만 정해서) — build.mjs 의 SCENE 과 같은 값 */
+const SCENE_LIVE = { light: { bg: '#eef4fa', minor: '#d6e0ea', major: '#aebfd0', border: '#7f93a8' }, dark: { bg: '#0f172a', minor: '#1e293b', major: '#334155', border: '#64748b' } }
+export function sceneTheme(dark) {
+  const c = SCENE_LIVE[dark ? 'dark' : 'light']
+  for (const view of STATE.views) {
+    try {
+      if (view.scene && view.scene.background && view.scene.background.set) view.scene.background.set(c.bg)
+      if (view.renderer && view.renderer.setClearColor) view.renderer.setClearColor(c.bg)   // 뷰어는 바탕을 지우기 색으로 칠함
+      for (const b of view.plateBeds || []) {
+        if (b.gridThin && b.gridThin.material) b.gridThin.material.color.set(c.minor)
+        if (b.gridBold && b.gridBold.material) b.gridBold.material.color.set(c.major)
+        if (b.border && b.border.material && b.border.material.linewidth !== 2) b.border.material.color.set(c.border)
+      }
+      view.invalidate && view.invalidate()
+    } catch (e) {}
+  }
+}

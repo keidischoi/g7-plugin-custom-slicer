@@ -53,6 +53,23 @@ ok(!r2.error && Array.isArray(r2.stats.filament_mm_by_tool) && r2.stats.filament
 ok(!(r2.stats.time_estimate > 0), '두 색이면 엔진이 예상 시간을 비움 → 화면이 G-code 로 어림 (estimateSeconds)')
 sl.dispose()
 
+// 0.1.6 ⬆️ 지금 설정 → 프로필 .zip(프린터 · 품질 · 필라멘트) → 이 슬라이서의 프로필 읽기로 다시 → 같은 값
+{
+  const { profileZip, readProfile, applyProfile, profileGuess } = await import('../web/src/profiles.js')
+  const src = { ...s, printer_settings_id: name, print_settings_id: ST.printersByVendor.BBL[name][3], filament_settings_id: ['Bambu PLA Basic @BBL A1'], layer_height: 0.16, sparse_infill_density: '23%' }
+  const zip = profileZip(src, 'A1 · PLA 시험')
+  const back = applyProfile({}, await readProfile(await zip.arrayBuffer(), 'zip'))
+  const g = profileGuess(src, { brand: 'Bambu Lab', model: 'A1', name: '내 A1' })
+  ok(zip.name === 'A1 · PLA 시험.zip' && zip.size > 1000 && Number(back.layer_height) === 0.16 && String(back.sparse_infill_density).replace('%', '') === '23' && back.printable_height !== undefined && back.printer_settings_id === name,
+    '0.1.6 프로필 올리기 파일: 프린터 · 품질 · 필라멘트 .json 묶음 → 다시 읽으면 같은 층 높이 · 채우기 · 프린터 (' + Math.round(zip.size / 1024) + 'KB)')
+  ok(g.printer_name === 'Bambu Lab A1' && g.layer_height === 0.16 && /A1 · .*0.16mm/.test(g.title), '0.1.6 올리기 칸 처음 값 (제목 · 프린터 · 층 높이)')
+  const appS = readFileSync(new URL('../web/src/app.js', import.meta.url), 'utf8'), polS = readFileSync(new URL('../web/src/polish.js', import.meta.url), 'utf8'), plS = readFileSync(new URL('../web/src/plate.js', import.meta.url), 'utf8'), cssS = readFileSync(new URL('../web/src/app.css', import.meta.url), 'utf8')
+  ok(appS.includes('window.__spfPrefill = { ...g, slicer: \'orca\', file,') && appS.includes("navTo('/slicer-profiles/new')") && !appS.includes('UploadDialog') && !appS.includes('uploadProfile') && appS.includes("'⬆️ 프로필 쓰러 가기'"),
+    '0.1.6 바로 올리지 않고 「프로필 올리기」 작성 폼으로 파일 · 칸 · 판 사진을 넘김 (프로필 창 · 보낸 뒤 물어봄)')
+  ok(appS.includes("wrap.current.setAttribute('data-slc-theme', dark ? 'dark' : 'light')") && cssS.includes('.slc[data-slc-theme=dark] {') && !cssS.includes('[data-theme=dark] .slc') && plS.includes('view.renderer.setClearColor(c.bg)')
+    && polS.includes("Array.from(r.children).find((el) => el.tagName === 'STYLE' && el.getAttribute('data-slc-rule') === id)") && !polS.includes(":scope > style"), '0.1.6 테마 한 곳에서 (data-slc-theme) · 바꾸면 3D 바탕 · 격자도 바로 · 어두운 칸이 남던 것 (그림자 뿌리 :scope)')
+  ok(polS.includes('.empty-hint .eh-icon{display:none !important}') && appS.includes('const [hasCloud, setHasCloud]'), '0.1.6 판 가운데 📦 그림 뺌 · ☁️ 웹저장소가 늦게 와도 단추')
+}
 // 넘겨받은 ZIP (자른 조각 모두 등) — 저장 · deflate 둘 다, 모델만 (README · __MACOSX 빼고)
 {
   const ents = [['a.stl', 'solid a\nendsolid a\n', 0], ['b/조각2.STL', 'solid b\n'.repeat(200), 8], ['readme.txt', 'x', 0], ['__MACOSX/._a.stl', 'm', 0], ['c.3mf', 'PK-fake', 8]]
