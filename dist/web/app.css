@@ -1,4 +1,4 @@
-/* custom-slicer 0.1.1 — 🔪 슬라이서 바깥 틀 · AGPL-3.0-or-later
+/* custom-slicer 0.1.2 — 🔪 슬라이서 바깥 틀 · AGPL-3.0-or-later
  *  모양은 출력 검사기(.pck)와 같은 말씨 — 하늘색→남색 그라데이션 · 둥근 카드 · 알약 칩. 뷰어 · 설정 칸은 자기 Shadow DOM 안에서 그리므로
  *  CSS 변수(--vp-*)로만 색을 맞춤 (그림자 경계를 넘는 건 변수뿐) */
 .slc { --ink:#0f172a; --mute:#64748b; --line:#e2e8f0; --card:#fff; --bg2:#f8fafc; --soft:#ecfeff; --a:#0ea5e9; --a2:#6366f1; --bad:#dc2626; --ok:#16a34a;
@@ -6,7 +6,10 @@
   /* 뷰어 · 설정 칸 색 (three-slicer UI_TOKENS) — 출력 검사기 하늘색으로 */
   --vp-accent:#0ea5e9; --vp-accent-rgb:14, 165, 233; --vp-accent-hover:#38bdf8; --vp-accent-deep:#0c4a6e; --vp-accent-ink:#0369a1; --vp-accent-on-dark:#7dd3fc;
   --vp-accent-soft:#e0f2fe; --vp-accent-soft-border:#7dd3fc; --vp-on-accent:#ffffff; --vp-info:#6366f1; --vp-info-ink:#4f46e5; --vp-info-soft:#eef2ff;
-  --vp-dark-base:#0b1220; --vp-dark-surface:#111a2e; --vp-dark-control:#16213a; --vp-dark-control-hover:#1e2b48; --vp-dark-border:#24324f; --vp-dark-border-strong:#33456b;
+  /* 0.1.2 위 도구 띠 · 왼쪽 도구줄 · 판 위 안내도 밝게 (뷰어는 「dark」 이름의 칸에 그림 — 이름과 달리 밝은 색을 넣음) */
+  --vp-dark-base:#f8fafc; --vp-dark-base-rgb:248, 250, 252; --vp-dark-surface:#ffffff; --vp-dark-surface-rgb:255, 255, 255; --vp-dark-control:#f1f5f9; --vp-dark-control-hover:#e0f2fe;
+  --vp-dark-border:#e2e8f0; --vp-dark-border-strong:#cbd5e1; --vp-dark-text:#1e293b; --vp-dark-text-muted:#475569; --vp-dark-text-faint:#64748b; --vp-dark-text-disabled:#a8b4c2;
+  --vp-accent-on-dark:#0369a1; --vp-danger-on-dark:#dc2626; --vp-danger-deep:#fef2f2; --vp-warn-on-dark:#b45309; --vp-warn-deep:#fffbeb; --vp-warn-deep-rgb:255, 251, 235; --vp-warn-deep-border:#fcd34d; --vp-accent-deep:#bae6fd;
   --vp-light-bg:#f1f5f9; --vp-light-surface:#ffffff; --vp-light-subtle:#f8fafc; --vp-light-control:#e2e8f0; --vp-light-control-hover:#cbd5e1; --vp-light-border:#e2e8f0; --vp-light-divider:#e2e8f0;
   --vp-light-text:#0f172a; --vp-light-text-muted:#475569; --vp-light-text-faint:#94a3b8;
   display:flex; flex-direction:column; gap:10px; width:100%; max-width:1600px; margin:0 auto; height:calc(100vh - 120px); min-height:600px; padding:12px 16px 0; box-sizing:border-box;
@@ -55,7 +58,7 @@ html.dark .slc, .dark .slc, [data-theme=dark] .slc { --ink:#e2e8f0; --mute:#94a3
 .slc-err, .slc-note, .slc-sent { display:flex; align-items:center; gap:8px; margin:0; padding:9px 14px; border-radius:14px; font-weight:700; font-size:13.5px; }
 .slc-err { background:#fef2f2; color:var(--bad); } .slc-note { background:var(--soft); color:var(--ink); } .slc-sent { background:#ecfdf5; color:#047857; flex-wrap:wrap; }
 .slc-err button, .slc-note button, .slc-sent button { margin-left:auto; border:0; background:none; color:inherit; font:inherit; cursor:pointer; opacity:.7; }
-.slc-stage { position:relative; flex:1 1 auto; min-height:0; border-radius:20px; overflow:hidden; border:1px solid var(--line); box-shadow:var(--sh); background:#0b1220; }
+.slc-stage { position:relative; flex:1 1 auto; min-height:0; border-radius:20px; overflow:hidden; border:1px solid var(--line); box-shadow:var(--sh); background:#eef4fa; }
 .slc-wait { margin:0; padding:48px; text-align:center; font-weight:700; color:#94a3b8; }
 .slc-foot { color:var(--mute); font-size:12px; text-align:center; padding:0 0 10px; }
 
@@ -134,7 +137,7 @@ html.dark .slc, .dark .slc, [data-theme=dark] .slc { --ink:#e2e8f0; --mute:#94a3
 .slc-pop--m { align-items:center; justify-content:center; padding:24px; }
 .slc-pop--m .slc-pop-box { flex:none; width:min(1280px,100%); height:min(860px,100%); }
 .slc-pop--l { padding:14px; }
-.slc-pop--full { padding:0; background:#0b1220; } .slc-pop--full .slc-pop-box { border-radius:0; }
+.slc-pop--full { padding:0; background:#eef4fa; } .slc-pop--full .slc-pop-box { border-radius:0; }
 .slc-sizes { display:inline-flex; gap:2px; padding:3px; border-radius:12px; background:var(--bg2); border:1px solid var(--line); }
 .slc-size { width:30px; height:28px; border:0; border-radius:9px; background:transparent; color:var(--mute); font-size:15px; line-height:1; cursor:pointer; transition:all .15s; }
 .slc-size:hover { color:var(--a); background:var(--card); } .slc-size.on { background:var(--grad); color:#fff; box-shadow:0 2px 8px rgba(14,165,233,.3); }
@@ -155,3 +158,7 @@ html.dark .slc, .dark .slc, [data-theme=dark] .slc { --ink:#e2e8f0; --mute:#94a3
 .slc-dlg a.slc-btn { text-decoration:none; }
 @media (max-width:640px) { .slc { padding:8px 8px 0; } .slc-hero { padding:16px; border-radius:18px; } .slc-hero h1 { font-size:21px; } .slc-badge { display:none; }
   .slc--page .slc-stage { height:calc(100vh - 170px); } .slc-pop { padding:0; } .slc-pop-box { border-radius:0; } .slc-sum { white-space:normal; } }
+
+/* 0.1.2 스크롤바는 안 보이게 (휠 · 손가락으로는 그대로) */
+.slc, .slc *, .slc-qbox, .slc-dlg, .slc-plist { scrollbar-width:none; -ms-overflow-style:none; }
+.slc ::-webkit-scrollbar, .slc-qbox::-webkit-scrollbar, .slc-dlg::-webkit-scrollbar, .slc-plist::-webkit-scrollbar { display:none; width:0; height:0; }

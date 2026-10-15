@@ -66,6 +66,11 @@ input[type=range]{accent-color:#0ea5e9}
 .reset-btn{border:1px solid #e2e8f0;background:#fff;border-radius:8px;padding:2px 7px;cursor:pointer;color:#64748b;transition:all .15s}
 .reset-btn:hover{border-color:#f59e0b;color:#b45309;background:#fffbeb}
 .row.disabled{opacity:.45}
+/* 0.1.2 스크롤바는 안 보이게 — 휠 · 손가락으로는 그대로 움직임 */
+*{scrollbar-width:none;-ms-overflow-style:none}
+*::-webkit-scrollbar{display:none;width:0;height:0}
+/* 판 위 안내 · 도구 띠 (밝은 판에 맞춤) */
+.status,.status-bar{color:#475569}
 /* 슬라이스 단추 */
 .slice-btn{border-radius:12px;font-weight:800;letter-spacing:-.01em;background:linear-gradient(135deg,#0ea5e9,#6366f1);border:0;color:#fff;box-shadow:0 4px 14px rgba(14,165,233,.35);transition:transform .15s,box-shadow .15s}
 .slice-btn:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 18px rgba(14,165,233,.45)}
