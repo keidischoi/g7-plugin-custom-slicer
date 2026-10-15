@@ -71,9 +71,11 @@ input[type=range]{accent-color:#0ea5e9}
 .sc-mini:hover:not(:disabled){border-color:#0ea5e9;color:#0369a1;background:#f0f9ff}
 /* 0.1.6 판 가운데 📦 그림은 뺌 (글자 · 「Choose file」 단추는 그대로) */
 .empty-hint .eh-icon{display:none !important}
-/* 0.1.7 「Choose file」 아래 「☁️ 내 저장소에서」 — 같은 크기 · 테두리만 있는 단추 */
-.empty-hint .slc-ehcloud{display:flex;align-items:center;justify-content:center;gap:6px;margin:8px auto 0;padding:7px 18px;min-width:140px;border:1.5px solid var(--_accent);border-radius:8px;background:color-mix(in srgb,var(--_light-surface) 85%,transparent);color:var(--_accent-ink);font:700 13px system-ui,sans-serif;cursor:pointer;pointer-events:auto;transition:background .15s,transform .15s}
-.empty-hint .slc-ehcloud:hover{background:var(--_accent-soft);transform:translateY(-1px)}
+/* 0.1.9 「Choose file」 아래 내 저장소 아이콘 — 동그란 아이콘 단추 (글자 없이 · 마우스를 올리면 설명) */
+.empty-hint .slc-ehcloud{position:relative;display:grid;place-items:center;width:40px;height:40px;margin:10px auto 0;padding:0;border:1px solid var(--_light-border);border-radius:50%;background:var(--_light-surface);box-shadow:0 1px 2px rgba(15,23,42,.12),0 3px 10px rgba(15,23,42,.10);cursor:pointer;pointer-events:auto;transition:transform .15s,box-shadow .15s,border-color .15s}
+.empty-hint .slc-ehcloud svg{width:22px;height:22px}
+.empty-hint .slc-ehcloud:hover{transform:translateY(-1px);border-color:var(--_accent);box-shadow:0 4px 14px rgba(14,165,233,.28)}
+.empty-hint .slc-ehcloud:hover::after{content:"내 저장소에서 가져오기";position:absolute;top:calc(100% + 6px);left:50%;transform:translateX(-50%);padding:4px 8px;border-radius:7px;background:#0f172a;color:#fff;font:600 11.5px system-ui,sans-serif;white-space:nowrap;pointer-events:none}
 /* 0.1.2 스크롤바는 안 보이게 — 휠 · 손가락으로는 그대로 움직임 */
 *{scrollbar-width:none;-ms-overflow-style:none}
 *::-webkit-scrollbar{display:none;width:0;height:0}

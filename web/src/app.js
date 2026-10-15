@@ -1,4 +1,4 @@
-/*! custom-slicer 0.1.8 — 🔪 슬라이서 화면 · AGPL-3.0-or-later · 소스: https://github.com/keidischoi/g7-plugin-custom-slicer
+/*! custom-slicer 0.1.9 — 🔪 슬라이서 화면 · AGPL-3.0-or-later · 소스: https://github.com/keidischoi/g7-plugin-custom-slicer
  *  엔진 · 화면: three-slicer (OrcaSlicer 를 WebAssembly 로 옮긴 것, AGPL) — <Viewport/>(판 배치 · 이동/회전/크기 · 칠하기 · 슬라이스 · G-code 미리 보기)
  *  + <SettingsPanel/>(OrcaSlicer 설정). 이 파일은 그 바깥 틀: 프린터 라운지의 내 프린터 · 📤 보내기 · .gcode.3mf · 다른 화면에서 넘겨받은 파일
  *  모델은 서버로 올라가지 않음 — 이 브라우저에서만 읽고 슬라이스 */
@@ -16,7 +16,7 @@ import { savePlate, loadPlate, clearPlate } from './store.js'
 import { plateInfo, sceneTheme } from './plate.js'
 import { mountToolbar, stopSpin } from './toolbar.js'
 
-const V = '0.1.8', API = '/api/plugins/custom-slicer', LOUNGE = '/api/plugins/custom-my_printer', SRC = 'https://github.com/keidischoi/g7-plugin-custom-slicer'
+const V = '0.1.9', API = '/api/plugins/custom-slicer', LOUNGE = '/api/plugins/custom-my_printer', SRC = 'https://github.com/keidischoi/g7-plugin-custom-slicer'
 const SEND_ADMIN_ONLY = true   // 「📤 내 프린터로 보내기」는 시험하는 동안 관리자에게만 (실제 프린터에서 확인되면 false 로)
 const LS_SET = 'slc-settings'
 const h = React.createElement
@@ -353,8 +353,12 @@ function App({ files, popup, compact, printer, from }) {
       walk(stage.current)
       if (!hint || hint.querySelector('.slc-ehcloud')) return
       const b = document.createElement('button'); b.type = 'button'; b.className = 'slc-ehcloud'
-      b.title = '내 웹저장소(구글 드라이브 · 원드라이브 · 드롭박스 · WebDAV)의 STL · 3MF · OBJ · ZIP 을 판에 올려요'
-      b.innerHTML = '<span aria-hidden="true">☁️</span> 내 저장소에서'
+      b.title = '내 저장소에서 가져오기 — 웹저장소(구글 드라이브 · 원드라이브 · 드롭박스 · WebDAV)의 STL · 3MF · OBJ · ZIP 을 판에 올려요'
+      b.setAttribute('aria-label', '내 저장소에서 가져오기')
+      // 0.1.9 아이콘만 — 사이트의 다른 「내 저장소에서」와 같은 그림 (구글이 연결돼 있으면 구글 드라이브, 아니면 구름)
+      const C = window.G7Cloud || {}, icons = C.icons || {}
+      let ready = {}; try { ready = (C.cfg && C.cfg().ready) || {} } catch (e) {}
+      b.innerHTML = (ready.google && icons.google) || icons.cloud || (ready.onedrive && icons.onedrive) || '<span aria-hidden="true">☁️</span>'
       for (const ev of ['pointerdown', 'mousedown']) b.addEventListener(ev, (e) => e.stopPropagation())
       b.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); openRef.current && openRef.current() })
       const pick = hint.querySelector('.eh-btn')
