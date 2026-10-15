@@ -10,27 +10,29 @@ import { fileURLToPath } from 'node:url'
 const root = join(dirname(fileURLToPath(import.meta.url)), '..'), out = join(root, 'dist/web'), vw = join(root, 'node_modules/three-slicer-viewer/dist')
 rmSync(out, { recursive: true, force: true }); mkdirSync(out, { recursive: true })
 
-/** 3D 판 색 — 뷰어는 장면 색(THEME)을 코드에 고정해 둬서 CSS 로 못 바꿈 → 묶을 때 출력 검사기처럼 밝은 하늘색으로 바꿈 */
+/** 3D 판 색 — 뷰어는 장면 색(THEME)을 코드에 고정해 둬서 CSS 로 못 바꿈 → 묶을 때 바꿈
+ *  0.1.4 사이트 테마를 따름: 뷰어를 처음 불러올 때 <html class="dark"> 이면 어두운 남색, 아니면 밝은 하늘색 (테마를 바꾸면 다음에 열 때부터)
+ *  [원래 값, 밝게, 어둡게] */
 export const SCENE = {
-  accent: ['#00ae42', '#0ea5e9'],            // 고른 물체 · 고른 판 · 크기 손잡이
-  accentHover: ['#1f5c34', '#0b3a55'],       // 마우스가 올라간 물체의 빛
-  sceneBackground: ['#161a1e', '#eef4fa'],
-  lightGround: ['#2a2f36', '#9aa9ba'],
-  gridMinor: ['#232a31', '#d6e0ea'],
-  gridMajor: ['#39434d', '#aebfd0'],
-  plateBorder: ['#4a5560', '#7f93a8'],
-  plateLabel: ['#5a6570', '#64748b'],
-  travel: ['#5a6270', '#94a3b8'],
+  accent: ['#00ae42', '#0ea5e9', '#38bdf8'],            // 고른 물체 · 고른 판 · 크기 손잡이
+  accentHover: ['#1f5c34', '#0b3a55', '#0c4a6e'],       // 마우스가 올라간 물체의 빛
+  sceneBackground: ['#161a1e', '#eef4fa', '#0f172a'],
+  lightGround: ['#2a2f36', '#9aa9ba', '#2a2f36'],
+  gridMinor: ['#232a31', '#d6e0ea', '#1e293b'],
+  gridMajor: ['#39434d', '#aebfd0', '#334155'],
+  plateBorder: ['#4a5560', '#7f93a8', '#64748b'],
+  plateLabel: ['#5a6570', '#64748b', '#64748b'],
+  travel: ['#5a6270', '#94a3b8', '#5a6270'],
 }
 const scenePlugin = {
   name: 'slc-scene',
   setup(b) {
     b.onLoad({ filter: /three-slicer-viewer[\\/]dist[\\/]theme-[^\\/]+\.js$/ }, (args) => {
-      let s = readFileSync(args.path, 'utf8')
-      for (const [k, [from, to]] of Object.entries(SCENE)) {
+      let s = 'const __slcDark = typeof document !== "undefined" && document.documentElement.classList.contains("dark");\n' + readFileSync(args.path, 'utf8')
+      for (const [k, [from, light, dark]] of Object.entries(SCENE)) {
         const re = new RegExp('(' + k + ':\\s*)"' + from + '"')
         if (!re.test(s)) throw new Error('뷰어 장면 색을 못 찾음: ' + k + ' — three-slicer 판이 바뀌었으면 SCENE 을 맞춰 주세요')
-        s = s.replace(re, '$1"' + to + '"')
+        s = s.replace(re, '$1(__slcDark ? "' + dark + '" : "' + light + '")')
       }
       return { contents: s, loader: 'js' }
     })

@@ -66,6 +66,9 @@ input[type=range]{accent-color:#0ea5e9}
 .reset-btn{border:1px solid #e2e8f0;background:#fff;border-radius:8px;padding:2px 7px;cursor:pointer;color:#64748b;transition:all .15s}
 .reset-btn:hover{border-color:#f59e0b;color:#b45309;background:#fffbeb}
 .row.disabled{opacity:.45}
+/* 0.1.4 프린터 칸 Load · Save 같은 작은 단추 (브라우저 기본 회색이던 것) */
+.sc-mini{border:1px solid #d8e1ea;background:#fff;color:#0f172a;border-radius:8px;padding:3px 10px;font:inherit;font-size:11.5px;font-weight:700;cursor:pointer;transition:all .15s}
+.sc-mini:hover:not(:disabled){border-color:#0ea5e9;color:#0369a1;background:#f0f9ff}
 /* 0.1.2 스크롤바는 안 보이게 — 휠 · 손가락으로는 그대로 움직임 */
 *{scrollbar-width:none;-ms-overflow-style:none}
 *::-webkit-scrollbar{display:none;width:0;height:0}
@@ -112,3 +115,45 @@ export function polish(host, opts = {}) {
   try { mo = new MutationObserver(() => walk(host)); mo.observe(host, { childList: true, subtree: true }) } catch (e) {}
   return () => { try { mo && mo.disconnect() } catch (e) {} }
 }
+
+/** 그림자 뿌리에 이름 붙은 스타일 하나를 넣거나(css) 뺌(빈 값) — 화면 상태에 따라 켜고 끄는 규칙 */
+export function setRule(host, id, css) {
+  const walk = (n) => {
+    if (!n) return
+    if (n.shadowRoot) {
+      const r = n.shadowRoot, old = r.querySelector(':scope > style[data-slc-rule="' + id + '"]')
+      if (css && !old) { const st = document.createElement('style'); st.setAttribute('data-slc-rule', id); st.textContent = css; r.appendChild(st) } else if (!css && old) old.remove()
+      walk(r)
+    }
+    if (n.querySelectorAll) n.querySelectorAll('*').forEach((c) => { if (c.shadowRoot) walk(c) })
+  }
+  walk(host)
+}
+
+/** 0.1.4 어두운 테마 — POLISH_CSS 의 밝은 색(흰 칸 · 연한 테두리)을 어두운 색으로 (사이트 테마를 바꾸면 바로 따라감 — app.js 가 켜고 끔) */
+export const DARK_CSS = `
+${FIELD}{background-color:#0f172a;color:#e2e8f0;border-color:#334155;box-shadow:none}
+${on(':hover')}{border-color:#0e7490}
+${on(':disabled')}{background-color:#172033;color:#64748b}
+.side-card select,.settings-panel select,.row select,.sp-builder select{background-image:${CHEV.replace('%2364748b', '%2394a3b8')}}
+.side-card{border-color:#334155;box-shadow:0 1px 2px rgba(0,0,0,.3),0 4px 14px rgba(0,0,0,.25)}
+.sc-head-btns button{background:#1e293b;border-color:#334155;color:#e2e8f0}
+.sc-head-btns button:hover:not(:disabled){background:#0b3a55;border-color:#38bdf8;color:#7dd3fc}
+.filament-row input[type=color]{border-color:#334155}
+.sp-search{background-color:#0f172a;color:#e2e8f0;border-color:#334155}
+.sp-pages button{background:#1e293b;border-color:#334155;color:#cbd5e1}
+.sp-pages button:hover{border-color:#0e7490;color:#7dd3fc}
+.sp-pages button.on{background:#0b3a55;color:#7dd3fc;border-color:#38bdf8}
+.settings-panel .sp-body h2,.settings-panel .sp-body h3{color:#e2e8f0;border-bottom-color:#0b3a55}
+.row,.settings-panel .row{border-bottom-color:#243147}
+.settings-panel .row:hover{background:linear-gradient(90deg,rgba(56,189,248,.08),transparent)}
+.settings-panel .row .lbl{color:#e2e8f0}
+.row .key{color:#64748b}
+.reset-btn{background:#1e293b;border-color:#334155;color:#94a3b8}
+.reset-btn:hover{background:#3a2a10;border-color:#f59e0b;color:#fcd34d}
+.status,.status-bar{color:#94a3b8}
+.sc-mini{background:#1e293b;border-color:#334155;color:#e2e8f0}
+.sc-mini:hover:not(:disabled){background:#0b3a55;border-color:#38bdf8;color:#7dd3fc}
+.slice-btn:disabled{background:#334155;color:#94a3b8}
+.side-bottom{background:#1e293b;box-shadow:0 -6px 16px rgba(0,0,0,.35)}
+`

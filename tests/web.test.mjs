@@ -99,7 +99,7 @@ sl.dispose()
     const bm = readFileSync(new URL('../web/build.mjs', import.meta.url), 'utf8'), pl = readFileSync(new URL('../web/src/polish.js', import.meta.url), 'utf8')
     const { readdirSync } = await import('node:fs'), dist = new URL('../dist/web/', import.meta.url)
     const built = readdirSync(dist).filter((f) => f.endsWith('.js')).map((f) => readFileSync(new URL(f, dist), 'utf8')).join('\n')
-    ok(bm.includes("sceneBackground: ['#161a1e', '#eef4fa']") && built.includes('"#eef4fa"') && !built.includes('sceneBackground:"#161a1e"') && css.includes('--vp-dark-base:#f8fafc'), '0.1.2 밝은 판 — 장면 색은 묶을 때 바꿈 · 도구 띠 · 도구줄도 밝게')
+    ok(bm.includes("sceneBackground: ['#161a1e', '#eef4fa', '#0f172a']") && built.includes('"#eef4fa"') && !built.includes('sceneBackground:"#161a1e"') && css.includes('--vp-dark-base:#f8fafc'), '0.1.2 밝은 판 — 장면 색은 묶을 때 바꿈 · 도구 띠 · 도구줄도 밝게')
     ok(pl.includes('*::-webkit-scrollbar{display:none') && css.includes('.slc ::-webkit-scrollbar'), '0.1.2 스크롤바 안 보임 (휠로는 그대로)')
     ok(pl.includes('export const FLOW_CSS') && pl.includes('.viewport-col,.left-rail{position:sticky !important;top:calc(var(--slc-top,12px) + 44px)') && pl.includes('.sidebar-scroll{overflow:visible !important')
       && pl.includes('.side-bottom{position:sticky;bottom:0') && app.includes('polish(stage.current, { flow: !popup })') && app.includes("wrap.current.style.setProperty('--slc-top'") && css.includes('overflow:clip'),
@@ -108,6 +108,13 @@ sl.dispose()
     ok(app.includes("C.pick({ accept: '.stl,.3mf,.obj,.amf,.ply,.zip', multiple: true })") && app.includes("x.accept || ''") && app.includes('C.save(blob, name') && app.includes('C.offer(file, filename)') && !app.includes("'data-cls-save'"), '0.1.3 ☁️ 웹저장소: 열기(뷰어의 파일 칸으로 더함) · 결과 저장 · 뷰어 안 저장에 「에도 저장」')
     ok(app.includes("p2.delete('printer')") && app.includes('setWide(true)'), '0.1.3 🎛️ 프로필: 이 프린터 것이 없으면 모든 프린터 목록')
     ok(app.includes("h('footer', { className: 'slc-foot' },\n      h('p', null, '설정 칸은 OrcaSlicer") && css.includes('.slc-foot p + p'), '0.1.3 아래 안내 두 줄')
+    ok(app.includes("className: 'slc-dock'") && app.includes("'📤 프린터로 보내기'") && css.includes('.slc-dock { position:sticky; bottom:12px;'), '0.1.4 슬라이스 결과 띠 (화면 아래에 붙음 · 📤 프린터로 보내기 · 받기 · ☁️)')
+    const sto = readFileSync(new URL('../web/src/store.js', import.meta.url), 'utf8')
+    ok(sto.includes("const DB = 'slc-plate'") && sto.includes('MAX_AGE = 7 * 864e5') && app.includes("const slot = compact ? 'tab' : popup ? 'big' : 'page'") && app.includes('await loadPlate(slot)') && app.includes("addEventListener('drop', onDrop, true)") && app.includes('clearPlate(slot)'),
+      '0.1.4 판 임시 저장 — 새로고침해도 모델이 남음 (자리마다 · 끌어 놓기 · Open · ☁️ 도 · 판을 비우면 지움)')
+    ok(pl.includes('export function setRule(host, id, css)') && app.includes('select[data-testid="printer-model"]') && app.includes('lounge.list.length ?'), '0.1.4 프린터 칸 「Model」 줄 뺌 (위 내 프린터 칩이 고름 · 라운지 프린터가 없으면 그대로)')
+    ok(app.includes('const fixedBar = (el) =>') && app.includes('document.elementFromPoint(x, y)') && app.includes('else if (y > b + 12) break'), '0.1.4 헤더가 두 줄이어도 맨 아랫줄 밑에 3D 뷰어가 붙음 (위에서부터 재기)')
+    ok(bm.includes('document.documentElement.classList.contains("dark")') && built.includes('"#0f172a":"#eef4fa"') && pl.includes('export const DARK_CSS') && app.includes("setRule(stage.current, 'dark'") && css.includes('html.dark .slc, .dark .slc') && pl.includes('.sc-mini{'), '0.1.4 사이트 테마를 따름 — 3D 판(열 때) · 카드 · 입력칸 · 도구 띠(바로)')
   }
 
 }
