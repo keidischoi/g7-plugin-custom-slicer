@@ -76,23 +76,25 @@ export function matchPreset(byVendor, p, tech = {}) {
   const brand = norm(p.brand).replace(/^(bambu|bbl)(lab)?$/, 'bambulab').replace(/^prusaresearch$/, 'prusa').replace(/^qidi(tech)?$/, 'qidi')
   const clean = (x) => String(x || '').replace(/\(.*?\)/g, ' ').replace(/\b(combo|ams\s*lite|ams\s*2?|with\b.*|w\/.*|hybrid|bundle|kit)\b/gi, ' ')
   const alias = (x) => String(x || '').replace(/\bx1\s*c\b/i, 'X1 Carbon').replace(/\bx1\s*e\b/i, 'X1E')
-  const models = Array.from(new Set([p.model, clean(p.model), alias(clean(p.model)), p.name, clean(p.name), alias(clean(p.name))].map(norm).filter((x) => x.length >= 2)))
-  const strip = (m) => (brand && m.startsWith(brand) ? m.slice(brand.length) : m)
+  // 0.1.12 낱말 단위로 비교 — 예전엔 글자 끝만 봐서 「K1」 이 「TwoTrees SK1」 에 맞았음 · 「Creality K1 (0.4 nozzle)」 처럼 괄호 노즐 이름도
+  const sp = (x) => String(x || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
+  const dropBrand = (w) => { if (!brand) return w; const ws = w.split(' '); let acc = ''; for (let i = 0; i < ws.length; i++) { acc += ws[i]; if (acc === brand) return ws.slice(i + 1).join(' '); if (!brand.startsWith(acc)) break } return w }
+  const models = Array.from(new Set([p.model, clean(p.model), alias(clean(p.model)), p.name, clean(p.name), alias(clean(p.name))].map(sp).filter((x) => norm(x).length >= 2)))
   let best = null, bs = 0
   for (const v of Object.keys(byVendor)) {
     if (tech[v] === 'SLA' || v === 'Custom') continue
     const vb = norm(v) === 'bbl' ? 'bambulab' : norm(v)
     for (const name of Object.keys(byVendor[v])) {
-      const base = norm(name.replace(/\s*\d+(\.\d+)?\s*nozzle\s*$/i, ''))
+      const words = sp(name.replace(/\s*\(?\s*\d+(\.\d+)?\s*(mm\s*)?(\+\s*\d+(\.\d+)?\s*)?(hf\s*|high-speed\s*)?nozzle\s*\)?\s*$/i, '')), base = norm(words)
       let sc = 0
       for (const m0 of models) {
-        const m = strip(m0); if (!m) continue
-        const t = base === brand + m || base === m0 ? 100 : base.endsWith(m) && base.length - m.length <= 12 ? 70 : 0
+        const m = dropBrand(m0); if (!m) continue
+        const t = base === brand + norm(m) || base === norm(m0) ? 100 : (words === m || words.endsWith(' ' + m)) && base.length - norm(m).length <= 12 ? 70 : 0
         if (t > sc) sc = t
       }
       if (!sc) continue
       if (brand && (vb.startsWith(brand.slice(0, 4)) || base.startsWith(brand))) sc += 10   // 상표가 같은 제조사 먼저
-      if (/ 0\.4 nozzle$/i.test(name)) sc += 5
+      if (/\b0\.4\s*(mm\s*)?nozzle\)?$/i.test(name)) sc += 5
       if (sc > bs) { bs = sc; best = [v, name] }
     }
   }
