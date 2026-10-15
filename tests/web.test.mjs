@@ -73,6 +73,7 @@ sl.dispose()
   ok(polS.includes('.empty-hint .eh-icon{display:none !important}') && appS.includes('const [hasCloud, setHasCloud]'), '0.1.6 판 가운데 📦 그림 뺌 · ☁️ 웹저장소가 늦게 와도 단추')
   ok(appS.includes("b.className = 'slc-ehcloud'") && appS.includes("hint.querySelector('.eh-btn')") && appS.includes("pick.insertAdjacentElement('afterend', b)") && appS.indexOf('openRef.current = cloudOpen') > appS.indexOf('const cloudOpen = async') && polS.includes('.empty-hint .slc-ehcloud{'),
     '0.1.7 판 가운데 「Choose file」 아래 「☁️ 내 저장소에서」 (웹저장소가 켜져 있을 때)')
+  ok(appS.includes("b.innerHTML = (ready.google && icons.google) || icons.cloud") && polS.includes('.empty-hint .slc-ehcloud svg{width:22px;height:22px}') && polS.includes('content:"내 저장소에서 가져오기"'), '0.1.9 그 단추는 아이콘만 (사이트의 내 저장소 그림 · 마우스를 올리면 설명)')
   ok(appS.includes("const name = typeof ev === 'string' ? ev : ev && ev.type, v = typeof ev === 'string' ? v2 : ev && ev.value") && appS.includes("if (name === 'objects' && Array.isArray(v)) setObjCount(v.length)"),
     '0.1.8 뷰어 알림은 {type, value} — 모델 수 · 오류 자동 고침 · 판 비우기가 실제로 들음')
   ok(appS.includes("if (!objCount) { setErr('판에 모델이 없어요") && appS.includes('disabled: !canUpload') && appS.includes('canUpload: objCount > 0'), '0.1.8 판에 모델이 없으면 프로필 쓰기를 막음')
