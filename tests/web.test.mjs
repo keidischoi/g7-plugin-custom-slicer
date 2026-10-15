@@ -131,7 +131,7 @@ sl.dispose()
       '0.1.4 판 임시 저장 — 새로고침해도 모델이 남음 (자리마다 · 끌어 놓기 · Open · ☁️ 도 · 판을 비우면 지움)')
     ok(pl.includes('export function setRule(host, id, css)') && app.includes('select[data-testid="printer-model"]') && app.includes('lounge.list.length ?'), '0.1.4 프린터 칸 「Model」 줄 뺌 (위 내 프린터 칩이 고름 · 라운지 프린터가 없으면 그대로)')
     ok(app.includes('const fixedBar = (el) =>') && app.includes('document.elementFromPoint(x, y)') && app.includes('else if (y > b + 12) break'), '0.1.4 헤더가 두 줄이어도 맨 아랫줄 밑에 3D 뷰어가 붙음 (위에서부터 재기)')
-    ok(bm.includes('document.documentElement.classList.contains("dark")') && built.includes('"#0f172a":"#eef4fa"') && pl.includes('export const DARK_CSS') && app.includes("setRule(stage.current, 'dark'") && css.includes('html.dark .slc, .dark .slc') && pl.includes('.sc-mini{'), '0.1.4 사이트 테마를 따름 — 3D 판(열 때) · 카드 · 입력칸 · 도구 띠(바로)')
+    ok(bm.includes('document.documentElement.classList.contains("dark")') && built.includes('"#0f172a":"#eef4fa"') && pl.includes('export const DARK_CSS') && app.includes("setRule(stage.current, 'dark'") && css.includes('.slc[data-slc-theme=dark] {') && pl.includes('.sc-mini{'), '0.1.4 사이트 테마를 따름 — 3D 판(열 때) · 카드 · 입력칸 · 도구 띠(바로)')
     const plt = readFileSync(new URL('../web/src/plate.js', import.meta.url), 'utf8'), tool = readFileSync(new URL('../web/src/toolbar.js', import.meta.url), 'utf8')
     ok(bm.includes('globalThis.__slcPlateHook ? globalThis.__slcPlateHook(e, t,') && bm.includes('f.slaEdge, f.slcPlate]') && built.includes('__slcPlateHook') && plt.includes('export function plateCanvas(st, W, D)') && plt.includes("textured: { name: 'Textured PEI'") && app.includes('plateInfo(String(settings.printer_settings_id'),
       '0.1.5 🧱 바닥판 — 출력 검사기와 같은 판 그림 (제조사 · 판 종류 · 격자 · 눈금 · 글자) · 뷰어가 판을 지울 때 같이')
