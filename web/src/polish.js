@@ -71,6 +71,9 @@ input[type=range]{accent-color:#0ea5e9}
 .sc-mini:hover:not(:disabled){border-color:#0ea5e9;color:#0369a1;background:#f0f9ff}
 /* 0.1.6 판 가운데 📦 그림은 뺌 (글자 · 「Choose file」 단추는 그대로) */
 .empty-hint .eh-icon{display:none !important}
+/* 0.1.7 「Choose file」 아래 「☁️ 내 저장소에서」 — 같은 크기 · 테두리만 있는 단추 */
+.empty-hint .slc-ehcloud{display:flex;align-items:center;justify-content:center;gap:6px;margin:8px auto 0;padding:7px 18px;min-width:140px;border:1.5px solid var(--_accent);border-radius:8px;background:color-mix(in srgb,var(--_light-surface) 85%,transparent);color:var(--_accent-ink);font:700 13px system-ui,sans-serif;cursor:pointer;pointer-events:auto;transition:background .15s,transform .15s}
+.empty-hint .slc-ehcloud:hover{background:var(--_accent-soft);transform:translateY(-1px)}
 /* 0.1.2 스크롤바는 안 보이게 — 휠 · 손가락으로는 그대로 움직임 */
 *{scrollbar-width:none;-ms-overflow-style:none}
 *::-webkit-scrollbar{display:none;width:0;height:0}

@@ -1,4 +1,4 @@
-/*! custom-slicer 0.1.6 — 🔪 슬라이서 화면 · AGPL-3.0-or-later · 소스: https://github.com/keidischoi/g7-plugin-custom-slicer
+/*! custom-slicer 0.1.7 — 🔪 슬라이서 화면 · AGPL-3.0-or-later · 소스: https://github.com/keidischoi/g7-plugin-custom-slicer
  *  엔진 · 화면: three-slicer (OrcaSlicer 를 WebAssembly 로 옮긴 것, AGPL) — <Viewport/>(판 배치 · 이동/회전/크기 · 칠하기 · 슬라이스 · G-code 미리 보기)
  *  + <SettingsPanel/>(OrcaSlicer 설정). 이 파일은 그 바깥 틀: 프린터 라운지의 내 프린터 · 📤 보내기 · .gcode.3mf · 다른 화면에서 넘겨받은 파일
  *  모델은 서버로 올라가지 않음 — 이 브라우저에서만 읽고 슬라이스 */
@@ -16,7 +16,7 @@ import { savePlate, loadPlate, clearPlate } from './store.js'
 import { plateInfo, sceneTheme } from './plate.js'
 import { mountToolbar, stopSpin } from './toolbar.js'
 
-const V = '0.1.6', API = '/api/plugins/custom-slicer', LOUNGE = '/api/plugins/custom-my_printer', SRC = 'https://github.com/keidischoi/g7-plugin-custom-slicer'
+const V = '0.1.7', API = '/api/plugins/custom-slicer', LOUNGE = '/api/plugins/custom-my_printer', SRC = 'https://github.com/keidischoi/g7-plugin-custom-slicer'
 const SEND_ADMIN_ONLY = true   // 「📤 내 프린터로 보내기」는 시험하는 동안 관리자에게만 (실제 프린터에서 확인되면 false 로)
 const LS_SET = 'slc-settings'
 const h = React.createElement
@@ -324,6 +324,26 @@ function App({ files, popup, compact, printer, from }) {
   useEffect(() => { fetch(SPF + '/profiles?per=6&lite=1', { headers: headers(), credentials: 'same-origin' }).then((r) => setSpf(r.ok), () => setSpf(false)) }, [])
   // 뷰어 · 설정 칸(그림자 DOM) 안 입력칸 · 숫자칸 · 카드를 출력 검사기 말씨로 다듬음
   useEffect(() => polish(stage.current, { flow: !popup }), [ready])
+  // 0.1.7 판 가운데 「Choose file」 바로 아래 「☁️ 내 저장소에서」 (웹저장소 연결이 켜져 있을 때) — 뷰어가 빈 판 안내를 다시 그려도 다시 붙음
+  const openRef = useRef(null)   // 아래 cloudOpen 을 가리킴 (그 함수가 뒤에 있어서)
+  useEffect(() => {
+    if (!ready || !hasCloud) return
+    const put = () => {
+      let hint = null
+      const walk = (n) => { if (!n || hint) return; if (n.shadowRoot) { hint = n.shadowRoot.querySelector('.empty-hint'); walk(n.shadowRoot) } if (n.querySelectorAll) n.querySelectorAll('*').forEach((c) => { if (c.shadowRoot && !hint) walk(c) }) }
+      walk(stage.current)
+      if (!hint || hint.querySelector('.slc-ehcloud')) return
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'slc-ehcloud'
+      b.title = '내 웹저장소(구글 드라이브 · 원드라이브 · 드롭박스 · WebDAV)의 STL · 3MF · OBJ · ZIP 을 판에 올려요'
+      b.innerHTML = '<span aria-hidden="true">☁️</span> 내 저장소에서'
+      for (const ev of ['pointerdown', 'mousedown']) b.addEventListener(ev, (e) => e.stopPropagation())
+      b.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); openRef.current && openRef.current() })
+      const pick = hint.querySelector('.eh-btn')
+      if (pick) pick.insertAdjacentElement('afterend', b); else hint.appendChild(b)
+    }
+    put(); const t = setInterval(put, 1000)
+    return () => clearInterval(t)
+  }, [ready, hasCloud])
   // 0.1.5 🧰 보기 도구 (출력 검사기와 같은 세로 도구) — 뷰어가 다시 그려도 다시 붙음
   useEffect(() => {
     if (!ready) return
@@ -444,6 +464,7 @@ function App({ files, popup, compact, printer, from }) {
       if (list.length) { addFiles(list); setNote('☁️ 내 저장소에서 ' + list.length + '개를 판에 올렸어요.') }
     } catch (e) { if (e && !/취소|cancel/i.test(String(e.message || e))) setErr('☁️ ' + ((e && e.message) || e)) }
   }
+  openRef.current = cloudOpen
   const cloudSave = (kind) => {
     const C = cloud(), R = res; if (!C || !R) return
     const blob = kind === '3mf' && R.gcode3mf ? R.gcode3mf : new Blob([R.gcode], { type: 'text/plain' }), name = R.base + (kind === '3mf' && R.gcode3mf ? '.gcode.3mf' : '.gcode')

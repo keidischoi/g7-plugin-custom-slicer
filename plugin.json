@@ -5,7 +5,7 @@
         "ko": "슬라이서",
         "en": "Slicer"
     },
-    "version": "0.1.6",
+    "version": "0.1.7",
     "license": "AGPL-3.0-or-later",
     "description": {
         "ko": "회원 브라우저에서 돌아가는 전체 슬라이서 — 판 배치 · 이동/회전/크기 · 칠하기(다색 · 서포트) · OrcaSlicer 설정 · 층별 G-code 미리 보기 · .gcode/.gcode.3mf · 프린터 라운지로 보내기. 모델은 서버로 올라가지 않음. 출력 검사기의 「🔪 슬라이스」 탭과 다른 화면의 「🔪 슬라이스 · 보내기」 단추도 이 플러그인이 맡음 (웹 슬라이서를 대신함). 엔진: three-slicer (OrcaSlicer 를 브라우저로 옮긴 것, AGPL).",
