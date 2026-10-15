@@ -1,0 +1,22 @@
+{
+    "version": "0.1.0",
+    "layout_name": "slicer",
+    "extends": "_user_base",
+    "meta": {
+        "title": "$t:custom-slicer.user.title"
+    },
+    "slots": {
+        "content": [
+            {
+                "comment": "슬라이서 앱이 붙는 자리 — dist/js/plugin.iife.js (전역) 가 data-slc-app 을 찾아 dist/web/app.js 를 불러 그림",
+                "type": "basic",
+                "name": "Div",
+                "id": "slc_app",
+                "props": {
+                    "data-slc-app": "1",
+                    "className": "w-full"
+                }
+            }
+        ]
+    }
+}

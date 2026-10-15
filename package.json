@@ -1,0 +1,17 @@
+{
+  "name": "custom-slicer",
+  "private": true,
+  "version": "0.1.0",
+  "license": "AGPL-3.0-or-later",
+  "type": "module",
+  "scripts": {
+    "build": "node web/build.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.10",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "three": "0.160.1",
+    "three-slicer": "0.3.4"
+  }
+}
