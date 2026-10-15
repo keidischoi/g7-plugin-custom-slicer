@@ -4,7 +4,8 @@ import { createHash } from 'node:crypto'
 import { crc32 as zcrc } from 'node:zlib'
 import { buildGcode3mf, bambuHeader, md5hex, crc32 } from '../web/src/gcode3mf.js'
 import { unzipModels } from '../web/src/handoff.js'
-import { maxZ, toolsOf, matchPreset, estimateSeconds } from '../web/src/util.js'
+import { maxZ, toolsOf, matchPreset, estimateSeconds, sizeOf } from '../web/src/util.js'
+import { bump } from '../web/src/stepper.js'
 import { deflateRawSync } from 'node:zlib'
 import { readFileSync } from 'node:fs'
 
@@ -110,7 +111,7 @@ sl.dispose()
   const ld = readSrc(new URL('../resources/js/slicer.js', import.meta.url)), app = readSrc(new URL('../web/src/app.js', import.meta.url))
   ok(ld === readSrc(new URL('../dist/js/plugin.iife.js', import.meta.url)) && ld.includes("[data-wsl-send]:not([data-wsl-sent])") && ld.includes("src.setAttribute('data-wsl-sent', '1')") && ld.includes("a.setAttribute('data-cls-taken', '1')") && !ld.includes('window.open('),
     '받기 단추 옆 「🔪 슬라이스 · 보내기」 — 웹 슬라이서 단추 자리를 먼저 차지 (하나만) · 내려받기 대신 넘김')
-  ok(ld.includes('window.G7Slicer = {') && ld.includes('mount: function (el, opts)') && ld.includes('popup: popup') && app.includes('window.__slcApp = { version: V, mount, unmount, tick }'), 'window.G7Slicer.mount · popup (출력 검사기 탭이 씀)')
+  ok(ld.includes('window.G7Slicer = {') && ld.includes('mount: function (el, opts)') && ld.includes('popup: popup') && app.includes('window.__slcApp = { version: V, mount, unmount, tick'), 'window.G7Slicer.mount · popup (출력 검사기 탭이 씀)')
   ok(app.includes('const SEND_ADMIN_ONLY = true') && app.includes("'/printers/' + p.id + '/send-file'") && app.includes("fd.append('bed_clear', '1')") && app.includes('checked: bed'), '보내기: 프린터 라운지 send-file · 베드 확인 · 관리자 시험')
   ok(app.includes('h(Viewport, {') && app.includes('h(SettingsPanel, { settings, setSettings, embedded: true })') && app.includes('onSliced') && app.includes('shortcuts: !compact'), '화면: 뷰어 + 설정 칸 · 결과 받기 · 탭 안에서는 단축키 끔')
   ok(app.includes('github.com/keidischoi/g7-plugin-custom-slicer') && app.includes('AGPL-3.0'), '화면에 소스 링크 · AGPL')
@@ -146,6 +147,14 @@ sl.dispose()
       '0.1.5 🧱 바닥판 — 출력 검사기와 같은 판 그림 (제조사 · 판 종류 · 격자 · 눈금 · 글자) · 뷰어가 판을 지울 때 같이')
     ok(tool.includes("B('iso', 'cube', '비스듬히')") && tool.includes("B('platepick', 'sliders'") && tool.includes("B('shot', 'camera'") && tool.includes('v.objectsGroup') && app.includes('mountToolbar(stage.current, ctx)'), '0.1.5 🧰 보기 도구 (방향 · 맞추기 · 돌리기 · 판 보이기 · 판 바꾸기 · 사진 · 전체 화면)')
     ok(tool.includes('.tb-logo>*{display:none !important}') && tool.includes('content:"3dsSlicer"') && app.includes('© three-slicer · OrcaSlicer 기여자 · 보증 없음'), '0.1.5 상단 이름표 3dsSlicer · 저작권 · 보증 없음 고지 (AGPL)')
+    const MP = (p) => (matchPreset(ST.printersByVendor, p, ST.printerTechByVendor) || [])[1]
+    ok(MP({ brand: 'Bambu', model: 'A1 Combo' }) === 'Bambu Lab A1 0.4 nozzle' && MP({ brand: 'BambuLab', model: 'P1S (AMS)' }) === 'Bambu Lab P1S 0.4 nozzle' && MP({ brand: 'Bambu Lab', model: 'X1C' }) === 'Bambu Lab X1 Carbon 0.4 nozzle' && MP({ brand: 'Bambu Lab', model: 'A1 mini' }) === 'Bambu Lab A1 mini 0.4 nozzle' && MP({ brand: 'Prusa Research', model: 'MK4' }) === 'Prusa MK4 0.4 nozzle' && !MP({ brand: 'Elegoo', model: 'Neptune 9' }),
+      '0.1.10 프린터 이름이 조금 달라도 맞춤 (Bambu · Combo · (AMS) · X1C · 상표 줄임) · 없는 프린터는 null')
+    ok(String(sizeOf({ size: '256×256×256 mm' })) === '256,256,256' && String(sizeOf({ build: [300, 310, 400] })) === '300,310,400' && sizeOf({}) === null && app.includes('export function fitPrinter(s, p)') && app.includes('}, [printerKey])') && app.includes('function setPrinter(el, printer)') && readSrc(new URL('../resources/js/slicer.js', import.meta.url)).includes('setPrinter: function (el, p)'),
+      '0.1.10 프린터를 바꾸면 오른쪽 설정이 바로 따라감 (G7Slicer.setPrinter) · 없는 프린터는 판 크기만')
+    { const el = { value: '0.42', getAttribute: () => null, dispatchEvent () {} }, ip = globalThis.HTMLInputElement; globalThis.HTMLInputElement = class { set value (v) { this.__v = v } }; Object.defineProperty(globalThis.HTMLInputElement.prototype, 'value', { set (v) { el.value = v }, configurable: true }); globalThis.Event = globalThis.Event || class { constructor (t) { this.type = t } }
+      bump(el, 1); const a1 = el.value; el.value = '10%'; bump(el, -1); const a2 = el.value; el.value = '0'; bump(el, -1); const a3 = el.value; el.value = '35'; bump(el, 1, true); const a4 = el.value; el.value = 'abc'; bump(el, 1); const a5 = el.value; globalThis.HTMLInputElement = ip
+      ok(a1 === '0.43' && a2 === '9%' && a3 === '0' && a4 === '45' && a5 === 'abc' && readSrc(new URL('../web/src/polish.js', import.meta.url)).includes('steppers(root)'), '0.1.10 숫자 칸 ▲▼ (소수 자리 · % · 0 아래 안 감 · Shift 10배 · 글은 그대로)') }
     ok(app.includes('export const PARAM_ERR') && app.includes("g[1] !== 'settings'") && app.includes('key = badKey(msg)'), '0.1.5 설정값 오류(Invalid value provided for parameter …)도 그 칸만 고치고 다시 슬라이스')
   }
 

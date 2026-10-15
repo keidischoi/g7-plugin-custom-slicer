@@ -72,19 +72,40 @@ export function toolsOf(stats, s) {
  */
 export function matchPreset(byVendor, p, tech = {}) {
   if (!byVendor || !p) return null
-  const want = norm((p.brand || '') + ' ' + (p.model || '')), model = norm(p.model)
+  // 0.1.10 「Bambu」 · 「A1 Combo」 · 「P1S (AMS)」 처럼 이름이 조금 달라도 — 덧붙은 말(콤보 · AMS · 괄호)을 빼고, 상표 줄임말을 맞춰 다시 봄
+  const brand = norm(p.brand).replace(/^(bambu|bbl)(lab)?$/, 'bambulab').replace(/^prusaresearch$/, 'prusa').replace(/^qidi(tech)?$/, 'qidi')
+  const clean = (x) => String(x || '').replace(/\(.*?\)/g, ' ').replace(/\b(combo|ams\s*lite|ams\s*2?|with\b.*|w\/.*|hybrid|bundle|kit)\b/gi, ' ')
+  const alias = (x) => String(x || '').replace(/\bx1\s*c\b/i, 'X1 Carbon').replace(/\bx1\s*e\b/i, 'X1E')
+  const models = Array.from(new Set([p.model, clean(p.model), alias(clean(p.model)), p.name, clean(p.name), alias(clean(p.name))].map(norm).filter((x) => x.length >= 2)))
+  const strip = (m) => (brand && m.startsWith(brand) ? m.slice(brand.length) : m)
   let best = null, bs = 0
   for (const v of Object.keys(byVendor)) {
-    if (tech[v] === 'SLA') continue
+    if (tech[v] === 'SLA' || v === 'Custom') continue
+    const vb = norm(v) === 'bbl' ? 'bambulab' : norm(v)
     for (const name of Object.keys(byVendor[v])) {
       const base = norm(name.replace(/\s*\d+(\.\d+)?\s*nozzle\s*$/i, ''))
-      let sc = base === want ? 100 : model && base.endsWith(model) && base.length - model.length <= 12 ? 70 : 0
+      let sc = 0
+      for (const m0 of models) {
+        const m = strip(m0); if (!m) continue
+        const t = base === brand + m || base === m0 ? 100 : base.endsWith(m) && base.length - m.length <= 12 ? 70 : 0
+        if (t > sc) sc = t
+      }
       if (!sc) continue
+      if (brand && (vb.startsWith(brand.slice(0, 4)) || base.startsWith(brand))) sc += 10   // 상표가 같은 제조사 먼저
       if (/ 0\.4 nozzle$/i.test(name)) sc += 5
       if (sc > bs) { bs = sc; best = [v, name] }
     }
   }
   return best
+}
+
+/** 0.1.10 라운지 프린터의 판 크기 「256×256×256 mm」 → [x, y, z] (없으면 null) */
+export function sizeOf(p) {
+  if (!p) return null
+  if (Array.isArray(p.build) && +p.build[0]) return [+p.build[0], +p.build[1] || +p.build[0], +p.build[2] || 0]
+  if (+p.build_x) return [+p.build_x, +p.build_y || +p.build_x, +p.build_z || 0]
+  const m = String(p.size || '').match(/(\d+(?:\.\d+)?)\s*[×x*]\s*(\d+(?:\.\d+)?)(?:\s*[×x*]\s*(\d+(?:\.\d+)?))?/)
+  return m ? [+m[1], +m[2], +m[3] || 0] : null
 }
 
 export { scalar }

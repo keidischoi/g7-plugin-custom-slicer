@@ -1,4 +1,4 @@
-/*! custom-slicer 0.1.9 — 🔪 슬라이서 화면 · AGPL-3.0-or-later · 소스: https://github.com/keidischoi/g7-plugin-custom-slicer
+/*! custom-slicer 0.1.10 — 🔪 슬라이서 화면 · AGPL-3.0-or-later · 소스: https://github.com/keidischoi/g7-plugin-custom-slicer
  *  엔진 · 화면: three-slicer (OrcaSlicer 를 WebAssembly 로 옮긴 것, AGPL) — <Viewport/>(판 배치 · 이동/회전/크기 · 칠하기 · 슬라이스 · G-code 미리 보기)
  *  + <SettingsPanel/>(OrcaSlicer 설정). 이 파일은 그 바깥 틀: 프린터 라운지의 내 프린터 · 📤 보내기 · .gcode.3mf · 다른 화면에서 넘겨받은 파일
  *  모델은 서버로 올라가지 않음 — 이 브라우저에서만 읽고 슬라이스 */
@@ -9,14 +9,14 @@ import SettingsPanel from 'three-slicer/components'
 import { printersByVendor, printerSettings, printerKeys, printerDefaultBedType, printerTechByVendor } from 'three-slicer/settings'
 import { bambuHeader, buildGcode3mf } from './gcode3mf.js'
 import { unzipModels } from './handoff.js'
-import { estimateSeconds, maxZ, toolsOf, matchPreset, hexDist } from './util.js'
+import { estimateSeconds, maxZ, toolsOf, matchPreset, hexDist, sizeOf } from './util.js'
 import { SPF, canRead, readProfile, applyProfile, profileZip, profileGuess } from './profiles.js'
 import { polish, setRule, DARK_CSS } from './polish.js'
 import { savePlate, loadPlate, clearPlate } from './store.js'
 import { plateInfo, sceneTheme } from './plate.js'
 import { mountToolbar, stopSpin } from './toolbar.js'
 
-const V = '0.1.9', API = '/api/plugins/custom-slicer', LOUNGE = '/api/plugins/custom-my_printer', SRC = 'https://github.com/keidischoi/g7-plugin-custom-slicer'
+const V = '0.1.10', API = '/api/plugins/custom-slicer', LOUNGE = '/api/plugins/custom-my_printer', SRC = 'https://github.com/keidischoi/g7-plugin-custom-slicer'
 const SEND_ADMIN_ONLY = true   // 「📤 내 프린터로 보내기」는 시험하는 동안 관리자에게만 (실제 프린터에서 확인되면 false 로)
 const LS_SET = 'slc-settings'
 const h = React.createElement
@@ -57,6 +57,21 @@ export function applyPrinter(s, name) {
   Object.assign(n, p, { printer_settings_id: name })
   const bt = printerDefaultBedType(name); if (bt) n.curr_bed_type = bt
   return n
+}
+
+/** 0.1.10 고른 프린터(라운지 · 출력 검사기) → 설정. 같은 엔진 프린터가 있으면 그것, 없으면 일반 프린터(Klipper 0.4)에 그 프린터의 판 크기 · 높이
+ *  돌려줌: { s, hit } — hit 은 맞춘 엔진 프린터 이름 · 'size' (판 크기만) · '' (못 맞춤) */
+export const GENERIC = 'MyKlipper 0.4 nozzle'
+export function fitPrinter(s, p) {
+  const hit = p ? matchPreset(printersByVendor, p, printerTechByVendor) : null
+  if (hit) return { s: s.printer_settings_id === hit[1] ? s : applyPrinter(s, hit[1]), hit: hit[1] }
+  const sz = sizeOf(p)
+  if (!sz || !(sz[0] > 20 && sz[1] > 20)) return { s, hit: '' }
+  const n = applyPrinter(s, GENERIC)
+  n.printable_area = [[0, 0], [sz[0], 0], [sz[0], sz[1]], [0, sz[1]]]   // 엔진 프린터 프로필과 같은 꼴
+  if (sz[2] > 20) n.printable_height = sz[2]
+  n.bed_exclude_area = []
+  return { s: n, hit: 'size' }
 }
 
 /** 0.1.3 프로젝트 3MF(Bambu Studio 최신)의 사용자 G-code 에 이 엔진이 모르는 변수가 있으면 슬라이스가 「CUSTOM_GCODE_ERROR: <칸>: …」 로 멈춤 →
@@ -324,18 +339,22 @@ function App({ files, popup, compact, printer, from }) {
       if (!ok) return
       setPid(+ok.id)
       if (want) return   // 부른 화면(출력 검사기)이 고른 프린터가 먼저
-      const hit = matchPreset(printersByVendor, ok, printerTechByVendor)
-      if (hit && !cur.current.printer_settings_id) setSettings((s) => applyPrinter(s, hit[1]))   // 처음 쓰면 내 프린터의 설정으로 (저장된 것이 있으면 그대로)
+      if (!cur.current.printer_settings_id) setSettings((s) => fitPrinter(s, ok).s)   // 처음 쓰면 내 프린터의 설정으로 (저장된 것이 있으면 그대로)
     })
     return () => { on = false }
   }, [])
   // 출력 검사기에서 고른 프린터 → 같은 엔진 프린터로 (못 찾으면 그대로 두고 알림)
+  const printerKey = printer ? [printer.brand, printer.model, printer.name, String(sizeOf(printer) || '')].join('|') : ''
   useEffect(() => {
     if (!printer) return
-    const hit = matchPreset(printersByVendor, printer, printerTechByVendor)
-    if (hit) setSettings((s) => (s.printer_settings_id === hit[1] ? s : applyPrinter(s, hit[1])))
-    else if (printer.model || printer.name) setNote('「' + (printer.name || printer.model) + '」 와 같은 슬라이서 프린터 설정이 없어요 — 오른쪽 프린터 칸에서 골라 주세요.')
-  }, [])
+    const r = fitPrinter(cur.current, printer)
+    if (r.hit) setSettings(r.s)
+    if (r.hit === 'size') setNote('「' + (printer.name || printer.model) + '」 와 같은 슬라이서 프린터가 없어 일반 프린터에 판 크기(' + sizeOf(printer).filter(Boolean).join('×') + ' mm)만 맞췄어요 — 오른쪽에서 바꿀 수 있어요.')
+    else if (!r.hit && (printer.model || printer.name)) setNote('「' + (printer.name || printer.model) + '」 와 같은 슬라이서 프린터 설정이 없어요 — 오른쪽 프린터 칸에서 골라 주세요.')
+    else setNote('')
+    const lp = lounge.list.find((x) => { const a = matchPreset(printersByVendor, x, printerTechByVendor), b = matchPreset(printersByVendor, printer, printerTechByVendor); return a && b && a[1] === b[1] })
+    if (lp) setPid(+lp.id)
+  }, [printerKey])
   useEffect(() => { setRes(null) }, [settings])   // 설정이 바뀌면 뷰어도 결과를 버림
   // 0.1.5 🧱 바닥판 — 출력 검사기와 같은 판 그림 (프린터 제조사 · 판 종류)
   useEffect(() => { plateInfo(String(settings.printer_settings_id || ''), String(settings.curr_bed_type || '')) }, [settings.printer_settings_id, settings.curr_bed_type])
@@ -427,9 +446,10 @@ function App({ files, popup, compact, printer, from }) {
 
   const pickLounge = (p) => {
     setPid(+p.id); setNote('')
-    const hit = matchPreset(printersByVendor, p, printerTechByVendor)
-    if (hit) setSettings((s) => (s.printer_settings_id === hit[1] ? s : applyPrinter(s, hit[1])))
-    else setNote('「' + (p.name || '') + '」 와 같은 프린터 설정을 못 찾았어요 — 오른쪽 프린터 칸에서 제조사 · 모델을 골라 주세요.')
+    const r = fitPrinter(cur.current, p)
+    if (r.hit) setSettings(r.s)
+    if (r.hit === 'size') setNote('「' + (p.name || '') + '」 와 같은 슬라이서 프린터가 없어 일반 프린터에 판 크기(' + sizeOf(p).filter(Boolean).join('×') + ' mm)만 맞췄어요 — 오른쪽에서 바꿀 수 있어요.')
+    else if (!r.hit) setNote('「' + (p.name || '') + '」 와 같은 프린터 설정을 못 찾았어요 — 오른쪽 프린터 칸에서 제조사 · 모델을 골라 주세요.')
   }
   const onSliced = useCallback(async ({ plate, stats, gcode }) => {
     setErr(''); fixes.current = []
@@ -581,9 +601,16 @@ function mount(el, opts = {}) {
   if (!el) return null
   unmount(el)
   const r = createRoot(el)
-  r.render(h(App, { files: opts.files || [], popup: opts.popup || null, compact: !!opts.compact, printer: opts.printer || null, from: opts.from || '' }))
-  roots.set(el, r)
+  const props = { files: opts.files || [], popup: opts.popup || null, compact: !!opts.compact, printer: opts.printer || null, from: opts.from || '' }
+  r.render(h(App, props))
+  roots.set(el, r); propsOf.set(el, props)
   return { unmount: () => unmount(el) }
+}
+const propsOf = new WeakMap()
+/** 0.1.10 붙인 슬라이서의 프린터만 바꿈 — 출력 검사기에서 프린터를 고르면 오른쪽 설정이 바로 따라감 (판 · 모델은 그대로) */
+function setPrinter(el, printer) {
+  const r = roots.get(el), p = propsOf.get(el); if (!r || !p) return false
+  const n = { ...p, printer: printer || null }; propsOf.set(el, n); r.render(h(App, n)); return true
 }
 function unmount(el) { const r = roots.get(el); if (r) { try { r.unmount() } catch (e) {} roots.delete(el) } }
 // 화면에서 빠진 자리는 정리 (다른 화면으로 가거나 탭을 바꿈) — 뷰어의 단축키 · 엔진이 남지 않게
@@ -597,5 +624,5 @@ function tick() {
     mount(el, c ? { files: c.files, printer: c.printer } : {})
   })
 }
-window.__slcApp = { version: V, mount, unmount, tick }
+window.__slcApp = { version: V, mount, unmount, tick, setPrinter }
 tick()

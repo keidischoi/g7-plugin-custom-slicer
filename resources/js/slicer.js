@@ -1,4 +1,4 @@
-/*! custom-slicer 0.1.9 — 🔪 슬라이서 불러오기 (전역) · AGPL-3.0-or-later
+/*! custom-slicer 0.1.10 — 🔪 슬라이서 불러오기 (전역) · AGPL-3.0-or-later
  *  - 슬라이서 화면(data-slc-app) · 다른 화면의 큰 창 · window.G7Slicer.mount 를 부를 때만 앱 · 엔진을 받음
  *  - 헤더 메뉴 「슬라이서」
  *  - 다른 확장의 받기 단추(data-wsl-send) 옆 「🖨️ 프린터로 보내기」 — 웹 슬라이서(custom-web_slicer)와 같은 작은 팝업을 이 플러그인이 맡음 (「↗ 자세히」로 큰 슬라이서)
@@ -7,7 +7,7 @@
   'use strict';
   if (window.__slcLoader) return;
   window.__slcLoader = true;
-  var API = '/api/plugins/custom-slicer', V = '0.1.9', loading = null;
+  var API = '/api/plugins/custom-slicer', V = '0.1.10', loading = null;
   function css() {
     if (document.getElementById('slc-css')) return;
     var l = document.createElement('link'); l.id = 'slc-css'; l.rel = 'stylesheet'; l.href = API + '/assets/app.css?v=' + V; document.head.appendChild(l);
@@ -91,6 +91,7 @@
     ready: ready,
     /** el 안에 슬라이서 — opts.files: File[] (STL · 3MF · OBJ · ZIP), opts.compact: 다른 화면의 탭 안 (단축키 끔 · 높이 맞춤), opts.printer: {brand, model, name} */
     mount: function (el, opts) { return ready().then(function (a) { return a.mount(el, opts || {}); }); },
+    setPrinter: function (el, p) { var a = window.__slcApp; return !!(a && a.setPrinter && a.setPrinter(el, p)); },   // 0.1.10 붙인 슬라이서의 프린터만 바꿈
     /** 🖨️ 빠른 보내기 팝업 (작은 창) — opts.files: File[] 또는 그 Promise, opts.printer */
     popup: popup,
     /** 🔪 큰 슬라이서 창 (크기 단추) */

@@ -1,4 +1,4 @@
-/*! custom-slicer 0.1.9 — 🖨️ 빠른 보내기 팝업 · AGPL-3.0-or-later · 소스: https://github.com/keidischoi/g7-plugin-custom-slicer
+/*! custom-slicer 0.1.10 — 🖨️ 빠른 보내기 팝업 · AGPL-3.0-or-later · 소스: https://github.com/keidischoi/g7-plugin-custom-slicer
  *  다른 화면(출력 검사기 · 맞춤 3D …)의 「🖨️ 프린터로 보내기」 — 예전 웹 슬라이서(custom-web_slicer)와 같은 흐름을 이 플러그인이 맡음
  *    프린터 고르기 → 품질 · 색마다 필라멘트 · AMS 칸 · 채우기 · 서포트 · 브림 · 🧹 베드 비웠어요 → 「🔪 슬라이스하고 보내기」 → 프린터 라운지
  *  「↗ 자세히」 — 판 배치 · 칠하기 · 모든 설정이 있는 슬라이서로: 📐 출력 검사기의 「슬라이스」 탭 · 🔪 전용 슬라이서 화면(/print-slicer) 중 회원이 고름
@@ -10,7 +10,7 @@ import { createSlicerClient } from 'three-slicer/client'
 import { unzipModels } from './handoff.js'
 import { estimateSeconds, matchPreset, hexDist } from './util.js'
 
-const V = '0.1.9', API = '/api/plugins/custom-slicer', LOUNGE = '/api/plugins/custom-my_printer'
+const V = '0.1.10', API = '/api/plugins/custom-slicer', LOUNGE = '/api/plugins/custom-my_printer'
 const PC = (PCMod && PCMod.read) ? PCMod : self.PCCore
 const MAX_TOOLS = 8
 const SEND_ADMIN_ONLY = true   // 「📤 보내기」는 시험하는 동안 관리자에게만 (실제 프린터에서 확인되면 false 로) — app.js 와 같이 바꿈
