@@ -1,6 +1,7 @@
 // custom-slicer — 뷰어 · 설정 칸 다듬기 · AGPL-3.0-or-later
 //  three-slicer 의 <Viewport/> · <SettingsPanel/> 은 자기 그림자 DOM(Shadow DOM) 안에서 그려서 바깥 CSS 가 닿지 않음 →
 //  그 그림자 뿌리마다 <style data-slc-polish> 하나를 넣어 입력칸 · 숫자칸 · 고르기 · 카드 · 단추를 출력 검사기 말씨(둥근 · 하늘색 · 정갈)로
+import { STEP_CSS, steppers } from './stepper.js'
 const CHEV = "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%2364748b' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E\")"
 const LENS = "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-3.5-3.5'/%3E%3C/svg%3E\")"
 const FIELD = [
@@ -112,9 +113,9 @@ export function polish(host, opts = {}) {
   const put = (root) => {
     if (seen.has(root)) return
     seen.add(root)
-    if (!Array.from(root.children).some((el) => el.tagName === 'STYLE' && el.hasAttribute('data-slc-polish'))) { const st = document.createElement('style'); st.setAttribute('data-slc-polish', '1'); st.textContent = POLISH_CSS + (opts.flow ? FLOW_CSS : ''); root.appendChild(st) }
-    walk(root)
-    try { new MutationObserver(() => walk(root)).observe(root, { childList: true, subtree: true }) } catch (e) {}
+    if (!Array.from(root.children).some((el) => el.tagName === 'STYLE' && el.hasAttribute('data-slc-polish'))) { const st = document.createElement('style'); st.setAttribute('data-slc-polish', '1'); st.textContent = POLISH_CSS + STEP_CSS + (opts.flow ? FLOW_CSS : ''); root.appendChild(st) }
+    walk(root); steppers(root)   // 0.1.10 숫자 칸 ▲▼
+    try { new MutationObserver(() => { walk(root); steppers(root) }).observe(root, { childList: true, subtree: true }) } catch (e) {}
   }
   const walk = (n) => { if (!n) return; if (n.shadowRoot) put(n.shadowRoot); if (n.querySelectorAll) n.querySelectorAll('*').forEach((c) => { if (c.shadowRoot) put(c.shadowRoot) }) }
   walk(host)
