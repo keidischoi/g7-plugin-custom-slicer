@@ -8,6 +8,8 @@ import { maxZ, toolsOf, matchPreset, estimateSeconds } from '../web/src/util.js'
 import { deflateRawSync } from 'node:zlib'
 import { readFileSync } from 'node:fs'
 
+/** 원본 파일 읽기 — git 이 줄바꿈을 CRLF 로 바꿔 받아도 검사 결과가 같게 (CR 을 뺌) */
+const readSrc = (u) => readFileSync(u, 'utf8').split(String.fromCharCode(13)).join('')
 let pass = 0, fail = 0
 const ok = (c, m) => { c ? pass++ : fail++; console.log((c ? '  ok   ' : '  FAIL ') + m) }
 
@@ -63,7 +65,7 @@ sl.dispose()
   ok(zip.name === 'A1 · PLA 시험.zip' && zip.size > 1000 && Number(back.layer_height) === 0.16 && String(back.sparse_infill_density).replace('%', '') === '23' && back.printable_height !== undefined && back.printer_settings_id === name,
     '0.1.6 프로필 올리기 파일: 프린터 · 품질 · 필라멘트 .json 묶음 → 다시 읽으면 같은 층 높이 · 채우기 · 프린터 (' + Math.round(zip.size / 1024) + 'KB)')
   ok(g.printer_name === 'Bambu Lab A1' && g.layer_height === 0.16 && /A1 · .*0.16mm/.test(g.title), '0.1.6 올리기 칸 처음 값 (제목 · 프린터 · 층 높이)')
-  const appS = readFileSync(new URL('../web/src/app.js', import.meta.url), 'utf8'), polS = readFileSync(new URL('../web/src/polish.js', import.meta.url), 'utf8'), plS = readFileSync(new URL('../web/src/plate.js', import.meta.url), 'utf8'), cssS = readFileSync(new URL('../web/src/app.css', import.meta.url), 'utf8')
+  const appS = readSrc(new URL('../web/src/app.js', import.meta.url)), polS = readSrc(new URL('../web/src/polish.js', import.meta.url)), plS = readSrc(new URL('../web/src/plate.js', import.meta.url)), cssS = readSrc(new URL('../web/src/app.css', import.meta.url))
   ok(appS.includes('window.__spfPrefill = { ...g, slicer: \'orca\', file,') && appS.includes("navTo('/slicer-profiles/new')") && !appS.includes('UploadDialog') && !appS.includes('uploadProfile') && appS.includes("'⬆️ 프로필 쓰러 가기'"),
     '0.1.6 바로 올리지 않고 「프로필 올리기」 작성 폼으로 파일 · 칸 · 판 사진을 넘김 (프로필 창 · 보낸 뒤 물어봄)')
   ok(appS.includes("wrap.current.setAttribute('data-slc-theme', dark ? 'dark' : 'light')") && cssS.includes('.slc[data-slc-theme=dark] {') && !cssS.includes('[data-theme=dark] .slc') && plS.includes('view.renderer.setClearColor(c.bg)')
@@ -98,14 +100,14 @@ sl.dispose()
 }
 // 불러오기 (plugin.iife.js) · 화면 (app.js)
 {
-  const ld = readFileSync(new URL('../resources/js/slicer.js', import.meta.url), 'utf8'), app = readFileSync(new URL('../web/src/app.js', import.meta.url), 'utf8')
-  ok(ld === readFileSync(new URL('../dist/js/plugin.iife.js', import.meta.url), 'utf8') && ld.includes("[data-wsl-send]:not([data-wsl-sent])") && ld.includes("src.setAttribute('data-wsl-sent', '1')") && ld.includes("a.setAttribute('data-cls-taken', '1')") && !ld.includes('window.open('),
+  const ld = readSrc(new URL('../resources/js/slicer.js', import.meta.url)), app = readSrc(new URL('../web/src/app.js', import.meta.url))
+  ok(ld === readSrc(new URL('../dist/js/plugin.iife.js', import.meta.url)) && ld.includes("[data-wsl-send]:not([data-wsl-sent])") && ld.includes("src.setAttribute('data-wsl-sent', '1')") && ld.includes("a.setAttribute('data-cls-taken', '1')") && !ld.includes('window.open('),
     '받기 단추 옆 「🔪 슬라이스 · 보내기」 — 웹 슬라이서 단추 자리를 먼저 차지 (하나만) · 내려받기 대신 넘김')
   ok(ld.includes('window.G7Slicer = {') && ld.includes('mount: function (el, opts)') && ld.includes('popup: popup') && app.includes('window.__slcApp = { version: V, mount, unmount, tick }'), 'window.G7Slicer.mount · popup (출력 검사기 탭이 씀)')
   ok(app.includes('const SEND_ADMIN_ONLY = true') && app.includes("'/printers/' + p.id + '/send-file'") && app.includes("fd.append('bed_clear', '1')") && app.includes('checked: bed'), '보내기: 프린터 라운지 send-file · 베드 확인 · 관리자 시험')
   ok(app.includes('h(Viewport, {') && app.includes('h(SettingsPanel, { settings, setSettings, embedded: true })') && app.includes('onSliced') && app.includes('shortcuts: !compact'), '화면: 뷰어 + 설정 칸 · 결과 받기 · 탭 안에서는 단축키 끔')
   ok(app.includes('github.com/keidischoi/g7-plugin-custom-slicer') && app.includes('AGPL-3.0'), '화면에 소스 링크 · AGPL')
-  const qk = readFileSync(new URL('../web/src/quick.js', import.meta.url), 'utf8'), css = readFileSync(new URL('../web/src/app.css', import.meta.url), 'utf8')
+  const qk = readSrc(new URL('../web/src/quick.js', import.meta.url)), css = readSrc(new URL('../web/src/app.css', import.meta.url))
   ok(ld.includes("b.textContent = '🖨️ 프린터로 보내기'") && ld.includes('quick.js?v=') && ld.includes('Q.open(el, {') && qk.includes('window.__slcQuick = { version: V, open }') && qk.includes("data-more=\"pck\"") && qk.includes("data-more=\"page\"") && qk.includes("navTo(where === 'pck' ? '/print-check/slice' : '/print-slicer')"),
     '받기 단추 → 예전과 같은 작은 팝업 · 「↗ 자세히」 두 곳 (출력 검사기 탭 · 전용 슬라이서)')
   ok(ld.includes("var SIZES = ['m', 'l', 'full']") && ld.includes('requestFullscreen') && app.includes("className: 'slc-sizes'") && css.includes('.slc-pop--m') && css.includes('.slc-pop--full'), '큰 슬라이서 창 크기 단추 (보통 · 크게 · 전체 화면)')
@@ -113,7 +115,7 @@ sl.dispose()
   ok(app.includes('cloudSave') && app.includes('ProfileDialog') && app.includes('polish(stage.current'), '웹저장소 저장 표시 · 🎛️ 슬라이서 프로필 · 뷰어 다듬기')
   ok(ld.includes("window.dispatchEvent(new Event('g7slicer:ready'))"), '0.1.1 불러오기가 끝나면 g7slicer:ready (먼저 그려진 출력 검사기가 탭을 보임)')
   {
-    const bm = readFileSync(new URL('../web/build.mjs', import.meta.url), 'utf8'), pl = readFileSync(new URL('../web/src/polish.js', import.meta.url), 'utf8')
+    const bm = readSrc(new URL('../web/build.mjs', import.meta.url)), pl = readSrc(new URL('../web/src/polish.js', import.meta.url))
     const { readdirSync } = await import('node:fs'), dist = new URL('../dist/web/', import.meta.url)
     const built = readdirSync(dist).filter((f) => f.endsWith('.js')).map((f) => readFileSync(new URL(f, dist), 'utf8')).join('\n')
     ok(bm.includes("sceneBackground: ['#161a1e', '#eef4fa', '#0f172a']") && built.includes('"#eef4fa"') && !built.includes('sceneBackground:"#161a1e"') && css.includes('--vp-dark-base:#f8fafc'), '0.1.2 밝은 판 — 장면 색은 묶을 때 바꿈 · 도구 띠 · 도구줄도 밝게')
@@ -126,13 +128,13 @@ sl.dispose()
     ok(app.includes("p2.delete('printer')") && app.includes('setWide(true)'), '0.1.3 🎛️ 프로필: 이 프린터 것이 없으면 모든 프린터 목록')
     ok(app.includes("h('footer', { className: 'slc-foot' },\n      h('p', null, '설정 칸은 OrcaSlicer") && css.includes('.slc-foot p + p'), '0.1.3 아래 안내 두 줄')
     ok(app.includes("className: 'slc-dock'") && app.includes("'📤 프린터로 보내기'") && css.includes('.slc-dock { position:sticky; bottom:12px;'), '0.1.4 슬라이스 결과 띠 (화면 아래에 붙음 · 📤 프린터로 보내기 · 받기 · ☁️)')
-    const sto = readFileSync(new URL('../web/src/store.js', import.meta.url), 'utf8')
+    const sto = readSrc(new URL('../web/src/store.js', import.meta.url))
     ok(sto.includes("const DB = 'slc-plate'") && sto.includes('MAX_AGE = 7 * 864e5') && app.includes("const slot = compact ? 'tab' : popup ? 'big' : 'page'") && app.includes('await loadPlate(slot)') && app.includes("addEventListener('drop', onDrop, true)") && app.includes('clearPlate(slot)'),
       '0.1.4 판 임시 저장 — 새로고침해도 모델이 남음 (자리마다 · 끌어 놓기 · Open · ☁️ 도 · 판을 비우면 지움)')
     ok(pl.includes('export function setRule(host, id, css)') && app.includes('select[data-testid="printer-model"]') && app.includes('lounge.list.length ?'), '0.1.4 프린터 칸 「Model」 줄 뺌 (위 내 프린터 칩이 고름 · 라운지 프린터가 없으면 그대로)')
     ok(app.includes('const fixedBar = (el) =>') && app.includes('document.elementFromPoint(x, y)') && app.includes('else if (y > b + 12) break'), '0.1.4 헤더가 두 줄이어도 맨 아랫줄 밑에 3D 뷰어가 붙음 (위에서부터 재기)')
     ok(bm.includes('document.documentElement.classList.contains("dark")') && built.includes('"#0f172a":"#eef4fa"') && pl.includes('export const DARK_CSS') && app.includes("setRule(stage.current, 'dark'") && css.includes('.slc[data-slc-theme=dark] {') && pl.includes('.sc-mini{'), '0.1.4 사이트 테마를 따름 — 3D 판(열 때) · 카드 · 입력칸 · 도구 띠(바로)')
-    const plt = readFileSync(new URL('../web/src/plate.js', import.meta.url), 'utf8'), tool = readFileSync(new URL('../web/src/toolbar.js', import.meta.url), 'utf8')
+    const plt = readSrc(new URL('../web/src/plate.js', import.meta.url)), tool = readSrc(new URL('../web/src/toolbar.js', import.meta.url))
     ok(bm.includes('globalThis.__slcPlateHook ? globalThis.__slcPlateHook(e, t,') && bm.includes('f.slaEdge, f.slcPlate]') && built.includes('__slcPlateHook') && plt.includes('export function plateCanvas(st, W, D)') && plt.includes("textured: { name: 'Textured PEI'") && app.includes('plateInfo(String(settings.printer_settings_id'),
       '0.1.5 🧱 바닥판 — 출력 검사기와 같은 판 그림 (제조사 · 판 종류 · 격자 · 눈금 · 글자) · 뷰어가 판을 지울 때 같이')
     ok(tool.includes("B('iso', 'cube', '비스듬히')") && tool.includes("B('platepick', 'sliders'") && tool.includes("B('shot', 'camera'") && tool.includes('v.objectsGroup') && app.includes('mountToolbar(stage.current, ctx)'), '0.1.5 🧰 보기 도구 (방향 · 맞추기 · 돌리기 · 판 보이기 · 판 바꾸기 · 사진 · 전체 화면)')
