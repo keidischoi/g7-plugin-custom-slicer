@@ -36,6 +36,21 @@ const scenePlugin = {
       }
       return { contents: s, loader: 'js' }
     })
+    // 0.1.5 🧱 바닥판 — 뷰어가 판(격자 선 · 테두리 · 이름표)을 만드는 함수에 갈고리 하나: 출력 검사기와 같은 판 그림(web/src/plate.js)을 그 아래에 깖
+    //  뷰어가 판을 지울 때 같이 지우게 지우기 목록에도 slcPlate 를 더함 — 못 찾으면(three-slicer 판이 바뀜) 빌드를 멈춤
+    b.onLoad({ filter: /three-slicer-viewer[\\/]dist[\\/]index\.js$/ }, (args) => {
+      let s = readFileSync(args.path, 'utf8')
+      const PAIRS = [
+        ['[f.gridThin, f.gridBold, f.border, f.label, f.slaFill, f.slaEdge]', '[f.gridThin, f.gridBold, f.border, f.label, f.slaFill, f.slaEdge, f.slcPlate]'],
+        ['t.scene.add(E), t.plateBeds.push({ gridThin: _, gridBold: N, border: x, label: E });',
+          't.scene.add(E); const __slcP = globalThis.__slcPlateHook ? globalThis.__slcPlateHook(e, t, { index: f, x: m, z: b, w: g, d: y, selected: F }) : null; __slcP && (t.scene.add(__slcP), _.visible = !__slcP.visible, N.visible = !__slcP.visible); t.plateBeds.push({ gridThin: _, gridBold: N, border: x, label: E, slcPlate: __slcP || void 0 });'],
+      ]
+      for (const [from, to] of PAIRS) {
+        if (s.split(from).length !== 2) throw new Error('뷰어 판 만들기 자리를 못 찾음 — three-slicer 판이 바뀌었으면 build.mjs 의 PAIRS 를 맞춰 주세요: ' + from.slice(0, 60))
+        s = s.replace(from, () => to)
+      }
+      return { contents: s, loader: 'js' }
+    })
   },
 }
 await build({
