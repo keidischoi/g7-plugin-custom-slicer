@@ -1,4 +1,4 @@
-/*! custom-slicer 0.1.3 — 🔪 슬라이서 화면 · AGPL-3.0-or-later · 소스: https://github.com/keidischoi/g7-plugin-custom-slicer
+/*! custom-slicer 0.1.4 — 🔪 슬라이서 화면 · AGPL-3.0-or-later · 소스: https://github.com/keidischoi/g7-plugin-custom-slicer
  *  엔진 · 화면: three-slicer (OrcaSlicer 를 WebAssembly 로 옮긴 것, AGPL) — <Viewport/>(판 배치 · 이동/회전/크기 · 칠하기 · 슬라이스 · G-code 미리 보기)
  *  + <SettingsPanel/>(OrcaSlicer 설정). 이 파일은 그 바깥 틀: 프린터 라운지의 내 프린터 · 📤 보내기 · .gcode.3mf · 다른 화면에서 넘겨받은 파일
  *  모델은 서버로 올라가지 않음 — 이 브라우저에서만 읽고 슬라이스 */
@@ -11,9 +11,10 @@ import { bambuHeader, buildGcode3mf } from './gcode3mf.js'
 import { unzipModels } from './handoff.js'
 import { estimateSeconds, maxZ, toolsOf, matchPreset, hexDist } from './util.js'
 import { SPF, canRead, readProfile, applyProfile } from './profiles.js'
-import { polish } from './polish.js'
+import { polish, setRule, DARK_CSS } from './polish.js'
+import { savePlate, loadPlate, clearPlate } from './store.js'
 
-const V = '0.1.3', API = '/api/plugins/custom-slicer', LOUNGE = '/api/plugins/custom-my_printer', SRC = 'https://github.com/keidischoi/g7-plugin-custom-slicer'
+const V = '0.1.4', API = '/api/plugins/custom-slicer', LOUNGE = '/api/plugins/custom-my_printer', SRC = 'https://github.com/keidischoi/g7-plugin-custom-slicer'
 const SEND_ADMIN_ONLY = true   // 「📤 내 프린터로 보내기」는 시험하는 동안 관리자에게만 (실제 프린터에서 확인되면 false 로)
 const LS_SET = 'slc-settings'
 const h = React.createElement
@@ -253,7 +254,36 @@ function App({ files, popup, compact, printer, from }) {
   const stage = useRef(null), names = useRef([]), cur = useRef(settings)
   cur.current = settings
 
-  useEffect(() => { let on = true; expandFiles(files).then((l) => { if (on) { names.current = l.map((f) => f.name); setReady(l) } }); return () => { on = false } }, [])
+  // 0.1.4 판 임시 저장 — 새로고침해도 모델이 남게 (이 브라우저에만 · 자리마다 따로)
+  const slot = compact ? 'tab' : popup ? 'big' : 'page', kept = useRef([])
+  const keep = (list, replace) => { kept.current = replace ? list.slice() : kept.current.concat(list); savePlate(slot, kept.current) }
+  useEffect(() => {
+    let on = true
+    expandFiles(files).then(async (l) => {
+      if (!on) return
+      if (l.length) keep(l, true)
+      else {
+        const back = await loadPlate(slot)
+        if (!on) return
+        if (back.length) { l = back; kept.current = back.slice(); setNote('🗂 지난번 판을 다시 불러왔어요 — 모델 ' + back.length + '개 (옮기거나 돌린 것은 처음 상태로). 비우려면 판에서 지우세요.') }
+      }
+      names.current = l.map((x) => x.name); setReady(l)
+    })
+    return () => { on = false }
+  }, [])
+  // 뷰어에 직접 끌어 놓거나 「Open」으로 연 파일도 임시 저장에 더함 (그림자 DOM 안의 파일 칸 · 끌어 놓기를 엿봄)
+  useEffect(() => {
+    if (!ready) return
+    const hooked = new WeakSet()
+    const onChange = (e) => { const t = e.target; if (t && t.type === 'file' && /stl/i.test(t.accept || '') && t.files && t.files.length && !t.__slcOurs) keep(Array.from(t.files)) }
+    const onDrop = (e) => { const fl = e.dataTransfer && e.dataTransfer.files; if (fl && fl.length) keep(Array.from(fl).filter((x) => /\.(stl|3mf|obj|amf|ply)$/i.test(x.name))) }
+    const hook = () => {
+      const walk = (n) => { if (!n) return; if (n.shadowRoot && !hooked.has(n.shadowRoot)) { hooked.add(n.shadowRoot); n.shadowRoot.addEventListener('change', onChange, true); n.shadowRoot.addEventListener('drop', onDrop, true) } if (n.shadowRoot) walk(n.shadowRoot); if (n.querySelectorAll) n.querySelectorAll('*').forEach((c) => { if (c.shadowRoot) walk(c) }) }
+      walk(stage.current)
+    }
+    hook(); const t = setInterval(hook, 1500); setTimeout(() => clearInterval(t), 15000)
+    return () => clearInterval(t)
+  }, [ready])
   useEffect(() => {
     let on = true
     Promise.all([loadMe(), loadLounge()]).then(([m, L]) => {
@@ -282,21 +312,44 @@ function App({ files, popup, compact, printer, from }) {
   useEffect(() => { fetch(SPF + '/profiles?per=6&lite=1', { headers: headers(), credentials: 'same-origin' }).then((r) => setSpf(r.ok), () => setSpf(false)) }, [])
   // 뷰어 · 설정 칸(그림자 DOM) 안 입력칸 · 숫자칸 · 카드를 출력 검사기 말씨로 다듬음
   useEffect(() => polish(stage.current, { flow: !popup }), [ready])
+  // 0.1.4 사이트 테마(밝게 · 어둡게)를 따라 뷰어 · 설정 칸 색을 바꿈 — <html class="dark"> 를 지켜봄
+  useEffect(() => {
+    if (!ready) return
+    const apply = () => setRule(stage.current, 'dark', document.documentElement.classList.contains('dark') ? DARK_CSS : '')
+    apply(); const t = setTimeout(apply, 1500)
+    let mo = null; try { mo = new MutationObserver(apply); mo.observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'data-theme'] }) } catch (e) {}
+    return () => { clearTimeout(t); try { mo && mo.disconnect() } catch (e) {} }
+  }, [ready])
+  // 0.1.4 프린터 칸의 「Model」 줄은 뺌 — 위의 내 프린터 칩이 고름 (프린터 라운지에 프린터가 없으면 그대로 둠: 그때는 거기서만 고를 수 있어서)
+  useEffect(() => {
+    if (!ready) return
+    const css = lounge.list.length ? '.sc-info:has(select[data-testid="printer-model"]){display:none !important}' : ''
+    setRule(stage.current, 'nomodel', css); const t = setTimeout(() => setRule(stage.current, 'nomodel', css), 1500)
+    return () => clearTimeout(t)
+  }, [ready, lounge.list.length])
   // 0.1.3 화면을 올리면 3D 뷰어가 사이트 헤더 바로 밑에 붙어 멈춤 (헤더 높이를 재서 --slc-top)
   const wrap = useRef(null)
   useEffect(() => {
     if (popup) return
     let last = -1, t = 0
+    /** 0.1.4 화면 위에 고정된 띠(사이트 헤더 · 그 밑 메뉴 줄 …)가 어디서 끝나나 — 위에서부터 4px 씩 내려가며 그 자리의 요소가
+     *  고정(fixed) · 붙음(sticky) 띠 안에 있으면 계속 (헤더가 두 줄이어도 맨 아랫줄 밑) · 이 슬라이서 안의 요소는 셈하지 않음 */
+    const fixedBar = (el) => {
+      for (let n = el; n && n !== document.body && n !== document.documentElement; n = n.parentElement) {
+        if (wrap.current && wrap.current.contains(n)) return false
+        const cs = getComputedStyle(n)
+        if (cs.position === 'fixed' || cs.position === 'sticky') { const r = n.getBoundingClientRect(); return r.width >= innerWidth * 0.4 && r.height <= innerHeight * 0.4 }
+      }
+      return false
+    }
     const top = () => {
       let b = 0
       try {
-        document.querySelectorAll('header, nav, [class*="sticky"], [class*="fixed"], [id*="header"]').forEach((el, i) => {
-          if (i > 80 || (wrap.current && wrap.current.contains(el))) return
-          const cs = getComputedStyle(el); if (cs.position !== 'fixed' && cs.position !== 'sticky') return
-          if (cs.visibility === 'hidden' || cs.display === 'none' || +cs.opacity === 0) return
-          const r = el.getBoundingClientRect(); if (r.height < 20 || r.height > innerHeight * 0.4 || r.top > 4 || r.bottom <= 0 || r.width < innerWidth * 0.5) return
-          if (r.bottom > b) b = r.bottom
-        })
+        const xs = [innerWidth * 0.5, innerWidth * 0.3, innerWidth * 0.7]
+        for (let y = 2; y < Math.min(320, innerHeight * 0.45); y += 4) {
+          const hit = xs.some((x) => { const e = document.elementFromPoint(x, y); return e && fixedBar(e) })
+          if (hit) b = y; else if (y > b + 12) break   // 띠 사이 작은 틈(12px)까지는 이어 봄
+        }
       } catch (e) {}
       return Math.round(b) + 10
     }
@@ -341,6 +394,7 @@ function App({ files, popup, compact, printer, from }) {
       }
       return
     }
+    if (name === 'objects' && Array.isArray(v) && !v.length) { kept.current = []; clearPlate(slot) }
     if (name === 'objects' && Array.isArray(v)) { names.current = v.map((o) => o.name).filter(Boolean); if (!v.length) setRes(null) }
   }, [])
   /** ☁️ 웹저장소 연결(custom-cloud_storage)이 켜져 있나 */
@@ -353,8 +407,9 @@ function App({ files, popup, compact, printer, from }) {
       walk(stage.current)
       if (!inp) throw new Error('뷰어를 찾지 못했어요')
       const dt = new DataTransfer(); list.forEach((x) => dt.items.add(x))
-      inp.files = dt.files
+      inp.files = dt.files; inp.__slcOurs = true
       inp.dispatchEvent(new Event('change', { bubbles: true }))
+      inp.__slcOurs = false; keep(list)
       if (!names.current.length) names.current = list.map((x) => x.name)
     } catch (e) { setErr('파일을 판에 올리지 못했어요: ' + ((e && e.message) || e)) }
   }
@@ -394,7 +449,7 @@ function App({ files, popup, compact, printer, from }) {
       applied ? h('span', { className: 'slc-from', title: applied }, '🎛️ ' + applied) : null),
     h('div', { className: 'slc-bar-r' },
       R ? h('span', { className: 'slc-sum' }, '⏱ ' + dur(R.seconds) + (R.guessed ? ' (어림)' : '') + ' · 🧵 ' + n1(R.weight) + ' g · 층 ' + R.layers.toLocaleString()) : h('span', { className: 'slc-hint' }, '모델을 올리고 오른쪽 아래 「Slice」를 누르세요'),
-      R && canSee && lounge.list.length ? h('button', { type: 'button', className: 'slc-btn pri', disabled: !canSend, title: canSend ? '' : '지금 보낼 수 있는 프린터가 없어요 (연결 프로그램 · 관리자 설정 「출력 파일 보내기」)', onClick: () => setSend(true) }, '📤 프린터로 보내기', SEND_ADMIN_ONLY ? h('small', { className: 'slc-adm' }, ' 🔒') : null) : null,
+      R && canSee ? h('button', { type: 'button', className: 'slc-btn pri', disabled: !canSend, title: canSend ? '' : (lounge.list.length ? '지금 보낼 수 있는 프린터가 없어요 (연결 프로그램 · 관리자 설정 「출력 파일 보내기」)' : '프린터 라운지에 내 프린터를 등록하면 보낼 수 있어요'), onClick: () => setSend(true) }, '📤 프린터로 보내기', SEND_ADMIN_ONLY ? h('small', { className: 'slc-adm' }, ' 🔒') : null) : null,
       R && R.gcode3mf ? h('button', { type: 'button', className: 'slc-btn', onClick: () => download('3mf') }, '⬇️ .gcode.3mf') : null,
       R ? h('button', { type: 'button', className: 'slc-btn', onClick: () => download('gcode') }, '⬇️ .gcode') : null,
       R && cloud() ? h('button', { type: 'button', className: 'slc-btn', title: '슬라이스 결과를 내 웹저장소(구글 드라이브 · 원드라이브 · 드롭박스)에 저장', onClick: () => cloudSave(R.gcode3mf ? '3mf' : 'gcode') }, '☁️ 저장') : null,
@@ -419,6 +474,14 @@ function App({ files, popup, compact, printer, from }) {
     note ? h('p', { className: 'slc-note' }, note, h('button', { type: 'button', onClick: () => setNote('') }, '✕')) : null,
     sent ? h('p', { className: 'slc-sent' }, '✅ ' + sent + ' ', h('a', { href: '/my-printer' }, '프린터 라운지에서 상태 보기 ›'), h('button', { type: 'button', onClick: () => setSent('') }, '✕')) : null,
     h('div', { className: 'slc-stage', ref: stage }, viewer),
+    // 0.1.4 슬라이스 결과 띠 — 페이지 흐름에서는 위 띠가 스크롤로 사라지므로 화면 아래에 붙여 늘 보이게 (큰 창은 위 띠 그대로)
+    R && !popup ? h('div', { className: 'slc-dock', role: 'region', 'aria-label': '슬라이스 결과' },
+      h('span', { className: 'slc-dsum' }, h('b', null, '✅ 슬라이스 완료'), ' ⏱ ' + dur(R.seconds) + (R.guessed ? ' (어림)' : '') + ' · 🧵 ' + n1(R.weight) + ' g · 층 ' + R.layers.toLocaleString()),
+      h('span', { className: 'slc-dbtns' },
+        canSee ? h('button', { type: 'button', className: 'slc-btn pri', disabled: !canSend, title: canSend ? '프린터 라운지의 내 프린터로 보내요' : (lounge.list.length ? '지금 보낼 수 있는 프린터가 없어요 (연결 프로그램 · 관리자 설정 「출력 파일 보내기」)' : '프린터 라운지에 내 프린터를 등록하면 보낼 수 있어요'), onClick: () => setSend(true) }, '📤 프린터로 보내기', SEND_ADMIN_ONLY ? h('small', { className: 'slc-adm' }, ' 🔒') : null) : null,
+        R.gcode3mf ? h('button', { type: 'button', className: 'slc-btn', onClick: () => download('3mf') }, '⬇️ .gcode.3mf') : null,
+        h('button', { type: 'button', className: 'slc-btn', onClick: () => download('gcode') }, '⬇️ .gcode'),
+        cloud() ? h('button', { type: 'button', className: 'slc-btn', onClick: () => cloudSave(R.gcode3mf ? '3mf' : 'gcode') }, '☁️ 저장') : null)) : null,
     h('footer', { className: 'slc-foot' },
       h('p', null, '설정 칸은 OrcaSlicer 와 같은 이름(영어)이에요. 결과는 Bambu Studio · OrcaSlicer 와 조금 다를 수 있으니 처음 쓰는 프린터는 첫 층을 지켜봐 주세요.'),
       h('p', null, '이 슬라이서는 ', h('b', null, 'AGPL-3.0'), ' 오픈소스예요 — ', h('a', { href: SRC, target: '_blank', rel: 'noopener' }, '소스 보기'), ' · 엔진 ', h('a', { href: 'https://github.com/kimgh06/Three_Slicer', target: '_blank', rel: 'noopener' }, 'three-slicer'), ' (OrcaSlicer 를 브라우저로 옮긴 것)')),

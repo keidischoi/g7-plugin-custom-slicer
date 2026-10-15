@@ -1,4 +1,4 @@
-/* custom-slicer 0.1.3 — 🔪 슬라이서 바깥 틀 · AGPL-3.0-or-later
+/* custom-slicer 0.1.4 — 🔪 슬라이서 바깥 틀 · AGPL-3.0-or-later
  *  모양은 출력 검사기(.pck)와 같은 말씨 — 하늘색→남색 그라데이션 · 둥근 카드 · 알약 칩. 뷰어 · 설정 칸은 자기 Shadow DOM 안에서 그리므로
  *  CSS 변수(--vp-*)로만 색을 맞춤 (그림자 경계를 넘는 건 변수뿐) */
 .slc { --ink:#0f172a; --mute:#64748b; --line:#e2e8f0; --card:#fff; --bg2:#f8fafc; --soft:#ecfeff; --a:#0ea5e9; --a2:#6366f1; --bad:#dc2626; --ok:#16a34a;
@@ -167,3 +167,26 @@ html.dark .slc, .dark .slc, [data-theme=dark] .slc { --ink:#e2e8f0; --mute:#94a3
  *  (뷰어 안쪽은 polish.js 의 FLOW_CSS) · 상자는 내용만큼 길어지고 overflow:clip (hidden 은 붙어 멈춤을 막음) */
 .slc--page .slc-stage, .slc--compact .slc-stage { position:relative; height:auto; min-height:0; flex:none; overflow:clip; }
 .slc-foot p { margin:0; } .slc-foot p + p { margin-top:2px; }
+
+/* 0.1.4 슬라이스 결과 띠 — 화면 아래에 붙음 (오른쪽 설정 칸의 Slice 띠와 겹치지 않게 왼쪽에) */
+.slc-dock { position:sticky; bottom:12px; z-index:30; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:8px 14px;
+  width:calc(100% - 420px); min-width:min(560px,100%); margin:-74px 0 12px 60px; padding:10px 14px; border-radius:18px;
+  background:rgba(255,255,255,.96); border:1px solid #bae6fd; box-shadow:0 10px 30px rgba(14,116,144,.22); backdrop-filter:blur(6px); animation:slc-up .25s ease-out; }
+@keyframes slc-up { from { transform:translateY(12px); opacity:0; } }
+.dark .slc-dock, html.dark .slc-dock { background:rgba(30,41,59,.96); border-color:#0e7490; }
+.slc-dsum { font-weight:700; font-size:13.5px; } .slc-dsum b { color:#0369a1; margin-right:4px; }
+.slc-dbtns { display:flex; flex-wrap:wrap; gap:6px; }
+@media (max-width:900px) { .slc-dock { width:auto; min-width:0; margin:8px 0 12px; } }
+
+/* 0.1.4 사이트가 어두운 테마면 슬라이서도 어둡게 — 뷰어 · 설정 칸 색 변수 (3D 판 색은 build.mjs 의 SCENE) */
+html.dark .slc, .dark .slc, [data-theme=dark] .slc, html.dark .slc-pop-box, .dark .slc-pop-box {
+  --vp-accent:#38bdf8; --vp-accent-rgb:56, 189, 248; --vp-accent-hover:#7dd3fc; --vp-accent-ink:#7dd3fc; --vp-accent-soft:#0b3a55; --vp-accent-soft-border:#0e7490; --vp-accent-deep:#0c4a6e; --vp-on-accent:#06202f;
+  --vp-dark-base:#0f172a; --vp-dark-base-rgb:15, 23, 42; --vp-dark-surface:#111c33; --vp-dark-surface-rgb:17, 28, 51; --vp-dark-control:#1e293b; --vp-dark-control-hover:#273449;
+  --vp-dark-border:#334155; --vp-dark-border-strong:#475569; --vp-dark-text:#e2e8f0; --vp-dark-text-muted:#cbd5e1; --vp-dark-text-faint:#94a3b8; --vp-dark-text-disabled:#64748b;
+  --vp-accent-on-dark:#7dd3fc; --vp-danger-on-dark:#fca5a5; --vp-danger-deep:#4a2229; --vp-warn-on-dark:#fcd34d; --vp-warn-deep:#3a2a10; --vp-warn-deep-rgb:58, 42, 16; --vp-warn-deep-border:#7a5a1e;
+  --vp-light-bg:#0b1220; --vp-light-surface:#1e293b; --vp-light-subtle:#172033; --vp-light-control:#334155; --vp-light-control-hover:#3b4a63; --vp-light-border:#334155; --vp-light-divider:#2b3a52;
+  --vp-light-text:#e2e8f0; --vp-light-text-muted:#94a3b8; --vp-light-text-faint:#64748b; --vp-info-soft:#1e1b4b; --vp-warn-soft:#3a2a10; --vp-danger-soft:#4a2229; --vp-info-ink:#a5b4fc; --vp-warn-ink:#fcd34d; --vp-danger-ink:#fca5a5; }
+html.dark .slc-stage, .dark .slc-stage, html.dark .slc-pop--full, .dark .slc-pop--full { background:#0f172a; }
+html.dark .slc-dock, .dark .slc-dock { background:rgba(15,23,42,.94); border-color:#0e7490; box-shadow:0 10px 30px rgba(0,0,0,.45); }
+html.dark .slc-dsum b, .dark .slc-dsum b { color:#7dd3fc; }
+html.dark .slc-dlg, .dark .slc-dlg, html.dark .slc-qbox, .dark .slc-qbox { background:#0f172a; color:#e2e8f0; }
