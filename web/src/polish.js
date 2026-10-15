@@ -79,14 +79,30 @@ input[type=range]{accent-color:#0ea5e9}
 .plate-tab,.tb-btn{border-radius:10px}
 `
 
-/** host 아래 그림자 뿌리를 찾아 스타일을 넣음 (나중에 생기는 뿌리도 — 패널을 열 때) · 돌려주는 함수로 멈춤 */
-export function polish(host) {
+/**
+ * 0.1.3 페이지 흐름 — 뷰어는 원래 상자 안에 꽉 차서(.app-shell absolute) 오른쪽 칸(.sidebar-scroll)만 따로 스크롤함 →
+ *  상자를 내용만큼 늘리고, 3D 화면 칸(.viewport-col) · 왼쪽 도구줄 · 위 띠만 사이트 헤더 밑(--slc-top)에 붙여 멈춤 ·
+ *  오른쪽 칸은 페이지와 같이 스크롤 · 슬라이스 띠(.side-bottom)는 화면 아래에 붙음
+ */
+export const FLOW_CSS = `
+.app-shell{position:relative !important;inset:auto !important;height:auto !important;min-height:calc(100vh - var(--slc-top,12px) - 16px)}
+.topbar{position:sticky;top:var(--slc-top,12px);z-index:20}
+.app-body{align-items:flex-start;overflow:visible !important;height:auto !important;flex:none !important}
+.viewport-col,.left-rail{position:sticky !important;top:calc(var(--slc-top,12px) + 44px);height:calc(100vh - var(--slc-top,12px) - 44px - 16px) !important;align-self:flex-start}
+.viewport-col{flex:1 1 auto;min-width:0}
+.sidebar{height:auto !important;max-height:none !important;overflow:visible !important;align-self:stretch}
+.sidebar-scroll{overflow:visible !important;height:auto !important;max-height:none !important;flex:none !important}
+.side-bottom{position:sticky;bottom:0;z-index:10;background:var(--_light-surface);box-shadow:0 -6px 16px rgba(15,23,42,.06)}
+`
+
+/** host 아래 그림자 뿌리를 찾아 스타일을 넣음 (나중에 생기는 뿌리도 — 패널을 열 때) · opts.flow: 페이지 흐름 · 돌려주는 함수로 멈춤 */
+export function polish(host, opts = {}) {
   if (!host || !POLISH_CSS) return () => {}
   const seen = new WeakSet()
   const put = (root) => {
     if (seen.has(root)) return
     seen.add(root)
-    if (!root.querySelector(':scope > style[data-slc-polish]')) { const st = document.createElement('style'); st.setAttribute('data-slc-polish', '1'); st.textContent = POLISH_CSS; root.appendChild(st) }
+    if (!root.querySelector(':scope > style[data-slc-polish]')) { const st = document.createElement('style'); st.setAttribute('data-slc-polish', '1'); st.textContent = POLISH_CSS + (opts.flow ? FLOW_CSS : ''); root.appendChild(st) }
     walk(root)
     try { new MutationObserver(() => walk(root)).observe(root, { childList: true, subtree: true }) } catch (e) {}
   }

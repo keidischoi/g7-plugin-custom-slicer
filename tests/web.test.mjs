@@ -93,7 +93,7 @@ sl.dispose()
     '받기 단추 → 예전과 같은 작은 팝업 · 「↗ 자세히」 두 곳 (출력 검사기 탭 · 전용 슬라이서)')
   ok(ld.includes("var SIZES = ['m', 'l', 'full']") && ld.includes('requestFullscreen') && app.includes("className: 'slc-sizes'") && css.includes('.slc-pop--m') && css.includes('.slc-pop--full'), '큰 슬라이서 창 크기 단추 (보통 · 크게 · 전체 화면)')
   ok(ld.includes('takeCarry: function ()') && qk.includes('window.__slcCarry = {') && app.includes('window.G7Slicer.takeCarry()'), '「↗ 자세히」로 파일 · 프린터를 들고 감 (한 번만 꺼냄)')
-  ok(app.includes("'data-cls-save': '슬라이스 결과 (.gcode.3mf)'") && app.includes('ProfileDialog') && app.includes('polish(stage.current)'), '웹저장소 저장 표시 · 🎛️ 슬라이서 프로필 · 뷰어 다듬기')
+  ok(app.includes('cloudSave') && app.includes('ProfileDialog') && app.includes('polish(stage.current'), '웹저장소 저장 표시 · 🎛️ 슬라이서 프로필 · 뷰어 다듬기')
   ok(ld.includes("window.dispatchEvent(new Event('g7slicer:ready'))"), '0.1.1 불러오기가 끝나면 g7slicer:ready (먼저 그려진 출력 검사기가 탭을 보임)')
   {
     const bm = readFileSync(new URL('../web/build.mjs', import.meta.url), 'utf8'), pl = readFileSync(new URL('../web/src/polish.js', import.meta.url), 'utf8')
@@ -101,6 +101,13 @@ sl.dispose()
     const built = readdirSync(dist).filter((f) => f.endsWith('.js')).map((f) => readFileSync(new URL(f, dist), 'utf8')).join('\n')
     ok(bm.includes("sceneBackground: ['#161a1e', '#eef4fa']") && built.includes('"#eef4fa"') && !built.includes('sceneBackground:"#161a1e"') && css.includes('--vp-dark-base:#f8fafc'), '0.1.2 밝은 판 — 장면 색은 묶을 때 바꿈 · 도구 띠 · 도구줄도 밝게')
     ok(pl.includes('*::-webkit-scrollbar{display:none') && css.includes('.slc ::-webkit-scrollbar'), '0.1.2 스크롤바 안 보임 (휠로는 그대로)')
+    ok(pl.includes('export const FLOW_CSS') && pl.includes('.viewport-col,.left-rail{position:sticky !important;top:calc(var(--slc-top,12px) + 44px)') && pl.includes('.sidebar-scroll{overflow:visible !important')
+      && pl.includes('.side-bottom{position:sticky;bottom:0') && app.includes('polish(stage.current, { flow: !popup })') && app.includes("wrap.current.style.setProperty('--slc-top'") && css.includes('overflow:clip'),
+      '0.1.3 페이지 흐름: 3D 화면은 헤더 밑에 붙어 멈춤 · 오른쪽 칸은 페이지와 같이 스크롤 · 슬라이스 띠는 화면 아래')
+    ok(app.includes('export const GCODE_ERR') && app.includes('setSettings((x) => fixGcode(x, key))') && app.includes('sliceRequest: sliceReq') && app.includes('fixes.current.length < 6'), '0.1.3 프로젝트 3MF 사용자 G-code 오류 → 그 칸만 프린터 기본으로 바꾸고 다시 슬라이스')
+    ok(app.includes("C.pick({ accept: '.stl,.3mf,.obj,.amf,.ply,.zip', multiple: true })") && app.includes("x.accept || ''") && app.includes('C.save(blob, name') && app.includes('C.offer(file, filename)') && !app.includes("'data-cls-save'"), '0.1.3 ☁️ 웹저장소: 열기(뷰어의 파일 칸으로 더함) · 결과 저장 · 뷰어 안 저장에 「에도 저장」')
+    ok(app.includes("p2.delete('printer')") && app.includes('setWide(true)'), '0.1.3 🎛️ 프로필: 이 프린터 것이 없으면 모든 프린터 목록')
+    ok(app.includes("h('footer', { className: 'slc-foot' },\n      h('p', null, '설정 칸은 OrcaSlicer") && css.includes('.slc-foot p + p'), '0.1.3 아래 안내 두 줄')
   }
 
 }
