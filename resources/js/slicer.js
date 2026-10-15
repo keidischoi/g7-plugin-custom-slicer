@@ -1,4 +1,4 @@
-/*! custom-slicer 0.1.0 — 🔪 슬라이서 불러오기 (전역) · AGPL-3.0-or-later
+/*! custom-slicer 0.1.1 — 🔪 슬라이서 불러오기 (전역) · AGPL-3.0-or-later
  *  - 슬라이서 화면(data-slc-app) · 다른 화면의 큰 창 · window.G7Slicer.mount 를 부를 때만 앱 · 엔진을 받음
  *  - 헤더 메뉴 「슬라이서」
  *  - 다른 확장의 받기 단추(data-wsl-send) 옆 「🖨️ 프린터로 보내기」 — 웹 슬라이서(custom-web_slicer)와 같은 작은 팝업을 이 플러그인이 맡음 (「↗ 자세히」로 큰 슬라이서)
@@ -7,7 +7,7 @@
   'use strict';
   if (window.__slcLoader) return;
   window.__slcLoader = true;
-  var API = '/api/plugins/custom-slicer', V = '0.1.0', loading = null;
+  var API = '/api/plugins/custom-slicer', V = '0.1.1', loading = null;
   function css() {
     if (document.getElementById('slc-css')) return;
     var l = document.createElement('link'); l.id = 'slc-css'; l.rel = 'stylesheet'; l.href = API + '/assets/app.css?v=' + V; document.head.appendChild(l);
@@ -98,6 +98,8 @@
     /** 팝업의 「↗ 출력 검사기에서」가 남긴 파일 · 프린터 — 한 번만 꺼냄 (5분 지나면 버림) */
     takeCarry: function () { var c = window.__slcCarry; window.__slcCarry = null; return c && Date.now() - (c.at || 0) < 300000 ? c : null; },
   };
+  // 0.1.1 먼저 그려진 화면(출력 검사기의 「슬라이스」 탭 · 단추)이 알 수 있게
+  try { window.dispatchEvent(new Event('g7slicer:ready')); } catch (e) {}
 
   // 헤더 메인 메뉴 「슬라이서」 (#slc-nav · #slc-nav-mobile) — 설정은 화면 HTML 에 같이 실려 옴: G7Config.appConfig.cextNav["custom-slicer"].cfg
   var NAV_ID = 'slc-nav', NAV_MOB = 'slc-nav-mobile', NAV_PATH = '/print-slicer', NAV_LABEL = '슬라이서';
