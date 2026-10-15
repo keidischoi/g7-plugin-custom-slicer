@@ -6,6 +6,7 @@ import { build } from 'esbuild'
 import { cpSync, rmSync, mkdirSync, readdirSync, statSync, writeFileSync, readFileSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { wrapKo } from './i18n/wrap.mjs'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..'), out = join(root, 'dist/web'), vw = join(root, 'node_modules/three-slicer-viewer/dist')
 rmSync(out, { recursive: true, force: true }); mkdirSync(out, { recursive: true })
@@ -53,8 +54,19 @@ const scenePlugin = {
     })
   },
 }
+/** 0.1.11 사이트 언어 — 이 플러그인 화면 코드의 한글 문자열을 __T('…') 로 감쌈 (영어 사이트면 web/i18n/en.js) */
+const T_PATH = join(root, 'web/i18n/t.js').split('\\').join('/')
+const langPlugin = {
+  name: 'slc-lang',
+  setup(b) {
+    b.onLoad({ filter: /web[\\/]src[\\/](app|quick|toolbar|plate|profiles)\.js$/ }, (args) => {
+      const r = wrapKo(readFileSync(args.path, 'utf8'))
+      return { contents: 'import { __T } from ' + JSON.stringify(T_PATH) + ';\n' + r.code, loader: 'js', resolveDir: dirname(args.path) }
+    })
+  },
+}
 await build({
-  plugins: [scenePlugin],
+  plugins: [scenePlugin, langPlugin],
   entryPoints: {
     app: join(root, 'web/src/app.js'),
     quick: join(root, 'web/src/quick.js'),   // 🖨️ 빠른 보내기 팝업 (React · 뷰어 없이 가볍게)

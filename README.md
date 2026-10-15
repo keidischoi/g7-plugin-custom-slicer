@@ -43,7 +43,8 @@ window.G7Slicer.takeCarry()                                                     
 
 출력 검사기와 같은 말씨 — 하늘색→남색 그라데이션 · 둥근 카드 · 알약 칩. 뷰어 · 설정 칸은 자기 그림자 DOM 안에서 그려서
 색은 CSS 변수(`--vp-*`)로, 입력칸 · 숫자칸 · 고르기 · 줄 간격은 그림자 뿌리마다 넣는 스타일(`web/src/polish.js`)로 맞춥니다.
-설정 이름은 OrcaSlicer 와 같은 영어입니다.
+사이트 언어를 따라갑니다 (G7 의 `g7_locale` → `<html lang>`): 한국어 사이트면 설정 이름 · 단위 · 고르기 값이 한국어이고 설정 이름 아래에 OrcaSlicer 영어 이름이 작게 붙습니다.
+영어 사이트면 뷰어는 원래 영어, 이 플러그인 화면(보내기 · 프로필 · 도구 등)도 영어(`web/i18n/en.js` — 빌드가 한글 문자열을 `__T()` 로 감쌈).
 
 ## 라이선스 (AGPL-3.0-or-later)
 
@@ -51,6 +52,7 @@ AGPL 엔진(three-slicer, OrcaSlicer 파생)을 회원 브라우저로 내려보
 다른 확장과는 HTTP 주소와 `window.G7Slicer` 로만 주고받고 코드를 가져다 쓰지 않습니다 (출력 검사기는 MIT 그대로).
 
 - `web/src/model-read.cjs` 는 같은 저작자의 출력 검사기(MIT)의 계산 핵심 — 여기서는 AGPL 로 함께 배포
+- `web/i18n/ko.json` — [OrcaSlicer 한국어 번역](https://github.com/SoftFever/OrcaSlicer/tree/main/localization/i18n/ko) (AGPL-3.0, OrcaSlicer 기여자 · 번역 crwusiz 외)에서 이 화면에 나오는 말만 고른 것 (`node web/i18n/make-ko.mjs <OrcaSlicer_ko.po>`)
 - `dist/web/three-slicer-LICENSE.txt` · `three-slicer-NOTICES.txt` — 엔진의 라이선스 · 제3자 고지
 
 ## 알려진 한계
