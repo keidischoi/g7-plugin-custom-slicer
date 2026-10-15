@@ -1,4 +1,4 @@
-/*! custom-slicer 0.1.4 — 🔪 슬라이서 화면 · AGPL-3.0-or-later · 소스: https://github.com/keidischoi/g7-plugin-custom-slicer
+/*! custom-slicer 0.1.5 — 🔪 슬라이서 화면 · AGPL-3.0-or-later · 소스: https://github.com/keidischoi/g7-plugin-custom-slicer
  *  엔진 · 화면: three-slicer (OrcaSlicer 를 WebAssembly 로 옮긴 것, AGPL) — <Viewport/>(판 배치 · 이동/회전/크기 · 칠하기 · 슬라이스 · G-code 미리 보기)
  *  + <SettingsPanel/>(OrcaSlicer 설정). 이 파일은 그 바깥 틀: 프린터 라운지의 내 프린터 · 📤 보내기 · .gcode.3mf · 다른 화면에서 넘겨받은 파일
  *  모델은 서버로 올라가지 않음 — 이 브라우저에서만 읽고 슬라이스 */
@@ -13,8 +13,10 @@ import { estimateSeconds, maxZ, toolsOf, matchPreset, hexDist } from './util.js'
 import { SPF, canRead, readProfile, applyProfile } from './profiles.js'
 import { polish, setRule, DARK_CSS } from './polish.js'
 import { savePlate, loadPlate, clearPlate } from './store.js'
+import { plateInfo } from './plate.js'
+import { mountToolbar, stopSpin } from './toolbar.js'
 
-const V = '0.1.4', API = '/api/plugins/custom-slicer', LOUNGE = '/api/plugins/custom-my_printer', SRC = 'https://github.com/keidischoi/g7-plugin-custom-slicer'
+const V = '0.1.5', API = '/api/plugins/custom-slicer', LOUNGE = '/api/plugins/custom-my_printer', SRC = 'https://github.com/keidischoi/g7-plugin-custom-slicer'
 const SEND_ADMIN_ONLY = true   // 「📤 내 프린터로 보내기」는 시험하는 동안 관리자에게만 (실제 프린터에서 확인되면 false 로)
 const LS_SET = 'slc-settings'
 const h = React.createElement
@@ -60,6 +62,9 @@ export function applyPrinter(s, name) {
 /** 0.1.3 프로젝트 3MF(Bambu Studio 최신)의 사용자 G-code 에 이 엔진이 모르는 변수가 있으면 슬라이스가 「CUSTOM_GCODE_ERROR: <칸>: …」 로 멈춤 →
  *  그 칸만 이 슬라이서가 아는 프린터 기본값으로 (없으면 지워서 엔진 기본) — 나머지 프로젝트 설정은 그대로 */
 export const GCODE_ERR = /CUSTOM_GCODE_ERROR:\s*([a-z0-9_]+)\s*:/i
+/** 0.1.5 「settings could not be loaded: Invalid value provided for parameter bed_mesh_max: 0x0」 처럼 설정값 하나가 틀린 경우 */
+export const PARAM_ERR = /Invalid value provided for parameter\s+([a-z0-9_]+)/i
+export function badKey(msg) { const p = PARAM_ERR.exec(msg); if (p) return p[1]; const g = GCODE_ERR.exec(msg); return g && g[1] !== 'settings' ? g[1] : '' }
 export function fixGcode(s, key) {
   const base = printerSettings(String(s.printer_settings_id || '')) || {}, n = { ...s }
   if (base[key] != null && String(base[key]) !== String(s[key])) n[key] = base[key]
@@ -308,10 +313,23 @@ function App({ files, popup, compact, printer, from }) {
     else if (printer.model || printer.name) setNote('「' + (printer.name || printer.model) + '」 와 같은 슬라이서 프린터 설정이 없어요 — 오른쪽 프린터 칸에서 골라 주세요.')
   }, [])
   useEffect(() => { setRes(null) }, [settings])   // 설정이 바뀌면 뷰어도 결과를 버림
+  // 0.1.5 🧱 바닥판 — 출력 검사기와 같은 판 그림 (프린터 제조사 · 판 종류)
+  useEffect(() => { plateInfo(String(settings.printer_settings_id || ''), String(settings.curr_bed_type || '')) }, [settings.printer_settings_id, settings.curr_bed_type])
   // 🎛️ 슬라이서 프로필 플러그인이 켜져 있나 (목록 하나만 물어봄)
   useEffect(() => { fetch(SPF + '/profiles?per=6&lite=1', { headers: headers(), credentials: 'same-origin' }).then((r) => setSpf(r.ok), () => setSpf(false)) }, [])
   // 뷰어 · 설정 칸(그림자 DOM) 안 입력칸 · 숫자칸 · 카드를 출력 검사기 말씨로 다듬음
   useEffect(() => polish(stage.current, { flow: !popup }), [ready])
+  // 0.1.5 🧰 보기 도구 (출력 검사기와 같은 세로 도구) — 뷰어가 다시 그려도 다시 붙음
+  useEffect(() => {
+    if (!ready) return
+    const ctx = {
+      shot: async () => { const png = await snap(stage.current); if (!png) { setErr('사진을 만들지 못했어요 — 판을 한 번 돌린 뒤 다시 눌러 주세요.'); return } const a = document.createElement('a'), u = URL.createObjectURL(new Blob([png], { type: 'image/png' })); a.href = u; a.download = ((names.current[0] || 'plate').replace(/\.[^.]+$/, '')) + '.png'; document.body.appendChild(a); a.click(); setTimeout(() => { a.remove(); URL.revokeObjectURL(u) }, 1500) },
+      full: () => { const el = wrap.current || stage.current; try { if (document.fullscreenElement) document.exitFullscreen(); else if (popup && popup.size) popup.size('full'); else el.requestFullscreen && el.requestFullscreen() } catch (e) {} },
+    }
+    const put = () => mountToolbar(stage.current, ctx)
+    put(); const t = setInterval(put, 1200)
+    return () => { clearInterval(t); stopSpin() }
+  }, [ready])
   // 0.1.4 사이트 테마(밝게 · 어둡게)를 따라 뷰어 · 설정 칸 색을 바꿈 — <html class="dark"> 를 지켜봄
   useEffect(() => {
     if (!ready) return
@@ -385,11 +403,11 @@ function App({ files, popup, compact, printer, from }) {
   }, [])
   const onEvent = useCallback((name, v) => {
     if (name === 'error' && v) {
-      const msg = String((v && (v.message || v.error)) || v), m = GCODE_ERR.exec(msg)
-      if (m && fixes.current.length < 6 && !fixes.current.includes(m[1])) {
-        const key = m[1]; fixes.current.push(key)
+      const msg = String((v && (v.message || v.error)) || v), key = badKey(msg)
+      if (key && fixes.current.length < 8 && !fixes.current.includes(key)) {
+        fixes.current.push(key)
         setSettings((x) => fixGcode(x, key))
-        setNote('🔧 프로젝트 파일의 「' + key + '」(사용자 G-code)에 이 슬라이서가 모르는 값이 있어 이 프린터의 기본 G-code 로 바꾸고 다시 슬라이스해요. 다른 설정은 그대로예요.')
+        setNote('🔧 「' + key + '」 설정값을 이 슬라이서가 읽지 못해 이 프린터의 기본값으로 바꾸고 다시 슬라이스해요. 다른 설정은 그대로예요.')
         setTimeout(() => setSliceReq((x) => x + 1), 500)
       }
       return
@@ -484,7 +502,7 @@ function App({ files, popup, compact, printer, from }) {
         cloud() ? h('button', { type: 'button', className: 'slc-btn', onClick: () => cloudSave(R.gcode3mf ? '3mf' : 'gcode') }, '☁️ 저장') : null)) : null,
     h('footer', { className: 'slc-foot' },
       h('p', null, '설정 칸은 OrcaSlicer 와 같은 이름(영어)이에요. 결과는 Bambu Studio · OrcaSlicer 와 조금 다를 수 있으니 처음 쓰는 프린터는 첫 층을 지켜봐 주세요.'),
-      h('p', null, '이 슬라이서는 ', h('b', null, 'AGPL-3.0'), ' 오픈소스예요 — ', h('a', { href: SRC, target: '_blank', rel: 'noopener' }, '소스 보기'), ' · 엔진 ', h('a', { href: 'https://github.com/kimgh06/Three_Slicer', target: '_blank', rel: 'noopener' }, 'three-slicer'), ' (OrcaSlicer 를 브라우저로 옮긴 것)')),
+      h('p', null, '이 슬라이서는 ', h('b', null, 'AGPL-3.0'), ' 오픈소스예요 — ', h('a', { href: SRC, target: '_blank', rel: 'noopener' }, '소스 보기'), ' · 엔진 ', h('a', { href: 'https://github.com/kimgh06/Three_Slicer', target: '_blank', rel: 'noopener' }, 'three-slicer'), ' (OrcaSlicer 를 브라우저로 옮긴 것) · © three-slicer · OrcaSlicer 기여자 · 보증 없음')),
     prof ? h(ProfileDialog, { settings, lounge, pid, onClose: () => setProf(false), onApply: (title, parts) => { setSettings((s) => applyProfile(s, parts)); setApplied(title); setProf(false); setNote('🎛️ 「' + title + '」 설정을 적용했어요 — 오른쪽 칸에서 확인하고 「Slice」를 누르세요.') } }) : null,
     send && R ? h(SendDialog, { R, lounge, pid0: pid, popup, onClose: () => setSend(false), onSent: (p) => setSent('「' + p.name + '」 로 보냈어요 — 연결 프로그램이 30초쯤 안에 받아 출력을 시작해요.') }) : null)
 }

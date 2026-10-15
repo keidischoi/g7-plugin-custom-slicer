@@ -104,7 +104,7 @@ sl.dispose()
     ok(pl.includes('export const FLOW_CSS') && pl.includes('.viewport-col,.left-rail{position:sticky !important;top:calc(var(--slc-top,12px) + 44px)') && pl.includes('.sidebar-scroll{overflow:visible !important')
       && pl.includes('.side-bottom{position:sticky;bottom:0') && app.includes('polish(stage.current, { flow: !popup })') && app.includes("wrap.current.style.setProperty('--slc-top'") && css.includes('overflow:clip'),
       '0.1.3 페이지 흐름: 3D 화면은 헤더 밑에 붙어 멈춤 · 오른쪽 칸은 페이지와 같이 스크롤 · 슬라이스 띠는 화면 아래')
-    ok(app.includes('export const GCODE_ERR') && app.includes('setSettings((x) => fixGcode(x, key))') && app.includes('sliceRequest: sliceReq') && app.includes('fixes.current.length < 6'), '0.1.3 프로젝트 3MF 사용자 G-code 오류 → 그 칸만 프린터 기본으로 바꾸고 다시 슬라이스')
+    ok(app.includes('export const GCODE_ERR') && app.includes('setSettings((x) => fixGcode(x, key))') && app.includes('sliceRequest: sliceReq') && app.includes('fixes.current.length < 8'), '0.1.3 프로젝트 3MF 사용자 G-code 오류 → 그 칸만 프린터 기본으로 바꾸고 다시 슬라이스')
     ok(app.includes("C.pick({ accept: '.stl,.3mf,.obj,.amf,.ply,.zip', multiple: true })") && app.includes("x.accept || ''") && app.includes('C.save(blob, name') && app.includes('C.offer(file, filename)') && !app.includes("'data-cls-save'"), '0.1.3 ☁️ 웹저장소: 열기(뷰어의 파일 칸으로 더함) · 결과 저장 · 뷰어 안 저장에 「에도 저장」')
     ok(app.includes("p2.delete('printer')") && app.includes('setWide(true)'), '0.1.3 🎛️ 프로필: 이 프린터 것이 없으면 모든 프린터 목록')
     ok(app.includes("h('footer', { className: 'slc-foot' },\n      h('p', null, '설정 칸은 OrcaSlicer") && css.includes('.slc-foot p + p'), '0.1.3 아래 안내 두 줄')
@@ -115,6 +115,12 @@ sl.dispose()
     ok(pl.includes('export function setRule(host, id, css)') && app.includes('select[data-testid="printer-model"]') && app.includes('lounge.list.length ?'), '0.1.4 프린터 칸 「Model」 줄 뺌 (위 내 프린터 칩이 고름 · 라운지 프린터가 없으면 그대로)')
     ok(app.includes('const fixedBar = (el) =>') && app.includes('document.elementFromPoint(x, y)') && app.includes('else if (y > b + 12) break'), '0.1.4 헤더가 두 줄이어도 맨 아랫줄 밑에 3D 뷰어가 붙음 (위에서부터 재기)')
     ok(bm.includes('document.documentElement.classList.contains("dark")') && built.includes('"#0f172a":"#eef4fa"') && pl.includes('export const DARK_CSS') && app.includes("setRule(stage.current, 'dark'") && css.includes('html.dark .slc, .dark .slc') && pl.includes('.sc-mini{'), '0.1.4 사이트 테마를 따름 — 3D 판(열 때) · 카드 · 입력칸 · 도구 띠(바로)')
+    const plt = readFileSync(new URL('../web/src/plate.js', import.meta.url), 'utf8'), tool = readFileSync(new URL('../web/src/toolbar.js', import.meta.url), 'utf8')
+    ok(bm.includes('globalThis.__slcPlateHook ? globalThis.__slcPlateHook(e, t,') && bm.includes('f.slaEdge, f.slcPlate]') && built.includes('__slcPlateHook') && plt.includes('export function plateCanvas(st, W, D)') && plt.includes("textured: { name: 'Textured PEI'") && app.includes('plateInfo(String(settings.printer_settings_id'),
+      '0.1.5 🧱 바닥판 — 출력 검사기와 같은 판 그림 (제조사 · 판 종류 · 격자 · 눈금 · 글자) · 뷰어가 판을 지울 때 같이')
+    ok(tool.includes("B('iso', 'cube', '비스듬히')") && tool.includes("B('platepick', 'sliders'") && tool.includes("B('shot', 'camera'") && tool.includes('v.objectsGroup') && app.includes('mountToolbar(stage.current, ctx)'), '0.1.5 🧰 보기 도구 (방향 · 맞추기 · 돌리기 · 판 보이기 · 판 바꾸기 · 사진 · 전체 화면)')
+    ok(tool.includes('.tb-logo>*{display:none !important}') && tool.includes('content:"3dsSlicer"') && app.includes('© three-slicer · OrcaSlicer 기여자 · 보증 없음'), '0.1.5 상단 이름표 3dsSlicer · 저작권 · 보증 없음 고지 (AGPL)')
+    ok(app.includes('export const PARAM_ERR') && app.includes("g[1] !== 'settings'") && app.includes('key = badKey(msg)'), '0.1.5 설정값 오류(Invalid value provided for parameter …)도 그 칸만 고치고 다시 슬라이스')
   }
 
 }
