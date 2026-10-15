@@ -6,6 +6,8 @@ import { buildGcode3mf, bambuHeader, md5hex, crc32 } from '../web/src/gcode3mf.j
 import { unzipModels } from '../web/src/handoff.js'
 import { maxZ, toolsOf, matchPreset, estimateSeconds, sizeOf } from '../web/src/util.js'
 import { bump } from '../web/src/stepper.js'
+import { wrapKo } from '../web/i18n/wrap.mjs'
+import EN from '../web/i18n/en.js'
 import { deflateRawSync } from 'node:zlib'
 import { readFileSync } from 'node:fs'
 
@@ -116,7 +118,7 @@ sl.dispose()
   ok(app.includes('h(Viewport, {') && app.includes('h(SettingsPanel, { settings, setSettings, embedded: true })') && app.includes('onSliced') && app.includes('shortcuts: !compact'), '화면: 뷰어 + 설정 칸 · 결과 받기 · 탭 안에서는 단축키 끔')
   ok(app.includes('github.com/keidischoi/g7-plugin-custom-slicer') && app.includes('AGPL-3.0'), '화면에 소스 링크 · AGPL')
   const qk = readSrc(new URL('../web/src/quick.js', import.meta.url)), css = readSrc(new URL('../web/src/app.css', import.meta.url))
-  ok(ld.includes("b.textContent = '🖨️ 프린터로 보내기'") && ld.includes('quick.js?v=') && ld.includes('Q.open(el, {') && qk.includes('window.__slcQuick = { version: V, open }') && qk.includes("data-more=\"pck\"") && qk.includes("data-more=\"page\"") && qk.includes("navTo(where === 'pck' ? '/print-check/slice' : '/print-slicer')"),
+  ok(ld.includes("b.textContent = __T('🖨️ 프린터로 보내기')") && ld.includes('quick.js?v=') && ld.includes('Q.open(el, {') && qk.includes('window.__slcQuick = { version: V, open }') && qk.includes("data-more=\"pck\"") && qk.includes("data-more=\"page\"") && qk.includes("navTo(where === 'pck' ? '/print-check/slice' : '/print-slicer')"),
     '받기 단추 → 예전과 같은 작은 팝업 · 「↗ 자세히」 두 곳 (출력 검사기 탭 · 전용 슬라이서)')
   ok(ld.includes("var SIZES = ['m', 'l', 'full']") && ld.includes('requestFullscreen') && app.includes("className: 'slc-sizes'") && css.includes('.slc-pop--m') && css.includes('.slc-pop--full'), '큰 슬라이서 창 크기 단추 (보통 · 크게 · 전체 화면)')
   ok(ld.includes('takeCarry: function ()') && qk.includes('window.__slcCarry = {') && app.includes('window.G7Slicer.takeCarry()'), '「↗ 자세히」로 파일 · 프린터를 들고 감 (한 번만 꺼냄)')
@@ -129,12 +131,12 @@ sl.dispose()
     ok(bm.includes("sceneBackground: ['#161a1e', '#eef4fa', '#0f172a']") && built.includes('"#eef4fa"') && !built.includes('sceneBackground:"#161a1e"') && css.includes('--vp-dark-base:#f8fafc'), '0.1.2 밝은 판 — 장면 색은 묶을 때 바꿈 · 도구 띠 · 도구줄도 밝게')
     ok(pl.includes('*::-webkit-scrollbar{display:none') && css.includes('.slc ::-webkit-scrollbar'), '0.1.2 스크롤바 안 보임 (휠로는 그대로)')
     ok(pl.includes('export const FLOW_CSS') && pl.includes('.viewport-col,.left-rail{position:sticky !important;top:calc(var(--slc-top,12px) + 44px)') && pl.includes('.sidebar-scroll{overflow:visible !important')
-      && pl.includes('.side-bottom{position:sticky;bottom:0') && app.includes('polish(stage.current, { flow: !popup })') && app.includes("wrap.current.style.setProperty('--slc-top'") && css.includes('overflow:clip'),
+      && pl.includes('.side-bottom{position:sticky;bottom:0') && app.includes('polish(stage.current, { flow: !popup') && app.includes("wrap.current.style.setProperty('--slc-top'") && css.includes('overflow:clip'),
       '0.1.3 페이지 흐름: 3D 화면은 헤더 밑에 붙어 멈춤 · 오른쪽 칸은 페이지와 같이 스크롤 · 슬라이스 띠는 화면 아래')
     ok(app.includes('export const GCODE_ERR') && app.includes('setSettings((x) => fixGcode(x, key))') && app.includes('sliceRequest: sliceReq') && app.includes('fixes.current.length < 8'), '0.1.3 프로젝트 3MF 사용자 G-code 오류 → 그 칸만 프린터 기본으로 바꾸고 다시 슬라이스')
     ok(app.includes("C.pick({ accept: '.stl,.3mf,.obj,.amf,.ply,.zip', multiple: true })") && app.includes("x.accept || ''") && app.includes('C.save(blob, name') && app.includes('C.offer(file, filename)') && !app.includes("'data-cls-save'"), '0.1.3 ☁️ 웹저장소: 열기(뷰어의 파일 칸으로 더함) · 결과 저장 · 뷰어 안 저장에 「에도 저장」')
     ok(app.includes("p2.delete('printer')") && app.includes('setWide(true)'), '0.1.3 🎛️ 프로필: 이 프린터 것이 없으면 모든 프린터 목록')
-    ok(app.includes("h('footer', { className: 'slc-foot' },\n      h('p', null, '설정 칸은 OrcaSlicer") && css.includes('.slc-foot p + p'), '0.1.3 아래 안내 두 줄')
+    ok(app.includes("h('footer', { className: 'slc-foot' },\n      h('p', null, '설정 이름은 한국어") && css.includes('.slc-foot p + p'), '0.1.3 아래 안내 두 줄')
     ok(app.includes("className: 'slc-dock'") && app.includes("'📤 프린터로 보내기'") && css.includes('.slc-dock { position:sticky; bottom:12px;'), '0.1.4 슬라이스 결과 띠 (화면 아래에 붙음 · 📤 프린터로 보내기 · 받기 · ☁️)')
     const sto = readSrc(new URL('../web/src/store.js', import.meta.url))
     ok(sto.includes("const DB = 'slc-plate'") && sto.includes('MAX_AGE = 7 * 864e5') && app.includes("const slot = compact ? 'tab' : popup ? 'big' : 'page'") && app.includes('await loadPlate(slot)') && app.includes("addEventListener('drop', onDrop, true)") && app.includes('clearPlate(slot)'),
@@ -155,6 +157,14 @@ sl.dispose()
     { const el = { value: '0.42', getAttribute: () => null, dispatchEvent () {} }, ip = globalThis.HTMLInputElement; globalThis.HTMLInputElement = class { set value (v) { this.__v = v } }; Object.defineProperty(globalThis.HTMLInputElement.prototype, 'value', { set (v) { el.value = v }, configurable: true }); globalThis.Event = globalThis.Event || class { constructor (t) { this.type = t } }
       bump(el, 1); const a1 = el.value; el.value = '10%'; bump(el, -1); const a2 = el.value; el.value = '0'; bump(el, -1); const a3 = el.value; el.value = '35'; bump(el, 1, true); const a4 = el.value; el.value = 'abc'; bump(el, 1); const a5 = el.value; globalThis.HTMLInputElement = ip
       ok(a1 === '0.43' && a2 === '9%' && a3 === '0' && a4 === '45' && a5 === 'abc' && readSrc(new URL('../web/src/polish.js', import.meta.url)).includes('steppers(root)'), '0.1.10 숫자 칸 ▲▼ (소수 자리 · % · 0 아래 안 감 · Shift 10배 · 글은 그대로)') }
+    { const KO = JSON.parse(readSrc(new URL('../web/i18n/ko.json', import.meta.url))), i18 = readSrc(new URL('../web/src/i18n.js', import.meta.url)), pol = readSrc(new URL('../web/src/polish.js', import.meta.url))
+      ok(KO['Layer height'] === '레이어 높이' && KO['Line width'] === '선 너비' && Object.keys(KO).length > 1000 && i18.includes("localStorage.getItem('g7_locale')") && i18.includes('.lbl[data-en]::after') && pol.includes('if (opts.ko) loadKo()') && app.includes("ko: siteLang() === 'ko'"),
+        '0.1.11 한국어 사이트 — 설정 이름 한국어 + 아래 영어 (OrcaSlicer 한국어 번역 · g7_locale)') }
+    { const miss = []; for (const f of ['app.js', 'quick.js', 'toolbar.js', 'plate.js', 'profiles.js']) wrapKo(readSrc(new URL('../web/src/' + f, import.meta.url))).found.forEach((x) => { if (/[가-힣]/.test(x) && EN[x] == null) miss.push(f + ': ' + x.slice(0, 40)) })
+      const w = wrapKo("const a = '판', b = { '키': 1 }, c = /'한'/.test(x) // '주석'\nconst d = `${x}한`"), ldr = readSrc(new URL('../resources/js/slicer.js', import.meta.url)), bm = readSrc(new URL('../web/build.mjs', import.meta.url))
+      if (miss.length) console.log('    영어 없음:', miss)
+      ok(!miss.length && w.found.length === 1 && w.code.includes("__T('판')") && w.code.includes("{ '키': 1 }") && w.code.includes("/'한'/") && ldr.includes('function __T(s)') && ldr.includes('label = __T(c.menu_label') && bm.includes('plugins: [scenePlugin, langPlugin]'),
+        '0.1.11 영어 사이트 — 화면 한글 문자열 모두 영어가 있음 (빌드가 __T 로 감쌈 · 키 · 정규식 · 주석 · 식 들어간 템플릿은 그대로) · 불러오기 · 메뉴도') }
     ok(app.includes('export const PARAM_ERR') && app.includes("g[1] !== 'settings'") && app.includes('key = badKey(msg)'), '0.1.5 설정값 오류(Invalid value provided for parameter …)도 그 칸만 고치고 다시 슬라이스')
   }
 

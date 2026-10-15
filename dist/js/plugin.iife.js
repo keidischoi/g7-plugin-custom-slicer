@@ -1,13 +1,16 @@
-/*! custom-slicer 0.1.10 — 🔪 슬라이서 불러오기 (전역) · AGPL-3.0-or-later
+/*! custom-slicer 0.1.11 — 🔪 슬라이서 불러오기 (전역) · AGPL-3.0-or-later
  *  - 슬라이서 화면(data-slc-app) · 다른 화면의 큰 창 · window.G7Slicer.mount 를 부를 때만 앱 · 엔진을 받음
  *  - 헤더 메뉴 「슬라이서」
  *  - 다른 확장의 받기 단추(data-wsl-send) 옆 「🖨️ 프린터로 보내기」 — 웹 슬라이서(custom-web_slicer)와 같은 작은 팝업을 이 플러그인이 맡음 (「↗ 자세히」로 큰 슬라이서)
  *  - window.G7Slicer = { version, mount(el, {files, compact}), popup({files}), ready() } — 출력 검사기의 「🔪 슬라이스」 탭이 씀 (코드를 가져가지 않고 이 주소로만) */
 (function () {
   'use strict';
+  // 0.1.11 사이트 언어 — 영어 사이트(g7_locale · <html lang>)면 영어 · 「」 는 “”
+  var EN_T = {"슬라이서를 불러오지 못했어요.":"Could not load the slicer.","슬라이서를 받지 못했어요 — 연결을 확인해 주세요.":"Could not download the slicer — check your connection.","보내기 창을 불러오지 못했어요.":"Could not load the send window.","보내기 창을 받지 못했어요 — 연결을 확인해 주세요.":"Could not download the send window — check your connection.","슬라이서":"Slicer","」 은(는) 슬라이스할 수 있는 모델 파일(STL · 3MF · OBJ)이 아니에요.":"” is not a model file that can be sliced (STL · 3MF · OBJ).","파일을 넘기지 못했어요: ":"Could not hand over the file: ","이 파일":"this file","을(를) 내 프린터로 — 프린터 고르기 · 설정 · 슬라이스 · 보내기를 이 화면에서 (「↗ 자세히」: 판 배치 · 모든 설정)":" to my printer — pick a printer · settings · slice · send right here (“↗ More”: arrange · all settings)","🖨️ 프린터로 보내기":"🖨️ Send to printer","파일을 만드는 데 너무 오래 걸렸어요 — 다시 눌러 주세요.":"Making the file took too long — please press again.","<div class=\"slc-qbox\" role=\"dialog\" aria-modal=\"true\" aria-label=\"프린터로 보내기\"><div class=\"slc-qhd\"><span>🖨️ 프린터로 보내기</span><button type=\"button\" data-slc-x aria-label=\"닫기\">✕</button></div><div data-slc-mount><p class=\"slc-qwait\">📦 파일을 준비하는 중…</p></div></div>":"<div class=\"slc-qbox\" role=\"dialog\" aria-modal=\"true\" aria-label=\"Send to printer\"><div class=\"slc-qhd\"><span>🖨️ Send to printer</span><button type=\"button\" data-slc-x aria-label=\"Close\">✕</button></div><div data-slc-mount><p class=\"slc-qwait\">📦 Preparing the file…</p></div></div>","<div class=\"slc-pop-box\" role=\"dialog\" aria-modal=\"true\" aria-label=\"슬라이서\"><div data-slc-mount><p class=\"slc-qwait\">🔪 슬라이서를 불러오는 중… (처음 한 번은 몇 MB 를 받아요)</p></div></div>":"<div class=\"slc-pop-box\" role=\"dialog\" aria-modal=\"true\" aria-label=\"Slicer\"><div data-slc-mount><p class=\"slc-qwait\">🔪 Loading the slicer… (a few MB the first time)</p></div></div>"};
+  function __T(s) { var l = ''; try { l = localStorage.getItem('g7_locale') || ''; } catch (e) {} l = l || document.documentElement.getAttribute('lang') || navigator.language || 'ko'; if (/^ko/i.test(l)) return s; var t = EN_T.hasOwnProperty(s) ? EN_T[s] : s; return t.replace(/「/g, '“').replace(/」/g, '”'); }
   if (window.__slcLoader) return;
   window.__slcLoader = true;
-  var API = '/api/plugins/custom-slicer', V = '0.1.10', loading = null;
+  var API = '/api/plugins/custom-slicer', V = '0.1.11', loading = null;
   function css() {
     if (document.getElementById('slc-css')) return;
     var l = document.createElement('link'); l.id = 'slc-css'; l.rel = 'stylesheet'; l.href = API + '/assets/app.css?v=' + V; document.head.appendChild(l);
@@ -19,8 +22,8 @@
     if (loading) return loading;
     loading = new Promise(function (ok, no) {
       var s = document.createElement('script'); s.type = 'module'; s.src = API + '/assets/app.js?v=' + V;
-      s.onload = function () { var n = 0; (function wait() { if (window.__slcApp) ok(window.__slcApp); else if (n++ < 100) setTimeout(wait, 50); else no(new Error('슬라이서를 불러오지 못했어요.')); })(); };
-      s.onerror = function () { loading = null; no(new Error('슬라이서를 받지 못했어요 — 연결을 확인해 주세요.')); };
+      s.onload = function () { var n = 0; (function wait() { if (window.__slcApp) ok(window.__slcApp); else if (n++ < 100) setTimeout(wait, 50); else no(new Error(__T('슬라이서를 불러오지 못했어요.'))); })(); };
+      s.onerror = function () { loading = null; no(new Error(__T('슬라이서를 받지 못했어요 — 연결을 확인해 주세요.'))); };
       document.head.appendChild(s);
     });
     return loading;
@@ -40,8 +43,8 @@
     if (quickLoading) return quickLoading;
     quickLoading = new Promise(function (ok, no) {
       var s = document.createElement('script'); s.type = 'module'; s.src = API + '/assets/quick.js?v=' + V;
-      s.onload = function () { var n = 0; (function wait() { if (window.__slcQuick) ok(window.__slcQuick); else if (n++ < 100) setTimeout(wait, 50); else no(new Error('보내기 창을 불러오지 못했어요.')); })(); };
-      s.onerror = function () { quickLoading = null; no(new Error('보내기 창을 받지 못했어요 — 연결을 확인해 주세요.')); };
+      s.onload = function () { var n = 0; (function wait() { if (window.__slcQuick) ok(window.__slcQuick); else if (n++ < 100) setTimeout(wait, 50); else no(new Error(__T('보내기 창을 불러오지 못했어요.'))); })(); };
+      s.onerror = function () { quickLoading = null; no(new Error(__T('보내기 창을 받지 못했어요 — 연결을 확인해 주세요.'))); };
       document.head.appendChild(s);
     });
     return quickLoading;
@@ -50,7 +53,7 @@
     css();
     var old = document.querySelector('[data-slc-pop]'); if (old) old.remove();
     var ov = document.createElement('div'); ov.className = 'slc-qpop'; ov.setAttribute('data-slc-pop', '1');
-    ov.innerHTML = '<div class="slc-qbox" role="dialog" aria-modal="true" aria-label="프린터로 보내기"><div class="slc-qhd"><span>🖨️ 프린터로 보내기</span><button type="button" data-slc-x aria-label="닫기">✕</button></div><div data-slc-mount><p class="slc-qwait">📦 파일을 준비하는 중…</p></div></div>';
+    ov.innerHTML = __T('<div class="slc-qbox" role="dialog" aria-modal="true" aria-label="프린터로 보내기"><div class="slc-qhd"><span>🖨️ 프린터로 보내기</span><button type="button" data-slc-x aria-label="닫기">✕</button></div><div data-slc-mount><p class="slc-qwait">📦 파일을 준비하는 중…</p></div></div>');
     var el = ov.querySelector('[data-slc-mount]'), onKey = function (e) { if (e.key === 'Escape') close(); };
     function close() { document.removeEventListener('keydown', onKey); ov.remove(); }
     ov.querySelector('[data-slc-x]').onclick = close;
@@ -67,7 +70,7 @@
     var size = 'l'; try { size = localStorage.getItem(LS_SIZE) || 'l'; } catch (e) {}
     if (SIZES.indexOf(size) < 0 || size === 'full') size = 'l';
     var ov = document.createElement('div'); ov.className = 'slc-pop slc-pop--' + size; ov.setAttribute('data-slc-pop', '1');
-    ov.innerHTML = '<div class="slc-pop-box" role="dialog" aria-modal="true" aria-label="슬라이서"><div data-slc-mount><p class="slc-qwait">🔪 슬라이서를 불러오는 중… (처음 한 번은 몇 MB 를 받아요)</p></div></div>';
+    ov.innerHTML = __T('<div class="slc-pop-box" role="dialog" aria-modal="true" aria-label="슬라이서"><div data-slc-mount><p class="slc-qwait">🔪 슬라이서를 불러오는 중… (처음 한 번은 몇 MB 를 받아요)</p></div></div>');
     var el = ov.querySelector('[data-slc-mount]'), onKey = function (e) { if (e.key === 'Escape' && !document.querySelector('.slc-modal') && !document.fullscreenElement) close(); };
     function close() { document.removeEventListener('keydown', onKey); document.removeEventListener('fullscreenchange', onFs); try { if (document.fullscreenElement === ov) document.exitFullscreen(); } catch (e) {} ov.remove(); }
     function onFs() { if (!document.fullscreenElement && size === 'full') setSize('l', true); }
@@ -103,7 +106,7 @@
   try { window.dispatchEvent(new Event('g7slicer:ready')); } catch (e) {}
 
   // 헤더 메인 메뉴 「슬라이서」 (#slc-nav · #slc-nav-mobile) — 설정은 화면 HTML 에 같이 실려 옴: G7Config.appConfig.cextNav["custom-slicer"].cfg
-  var NAV_ID = 'slc-nav', NAV_MOB = 'slc-nav-mobile', NAV_PATH = '/print-slicer', NAV_LABEL = '슬라이서';
+  var NAV_ID = 'slc-nav', NAV_MOB = 'slc-nav-mobile', NAV_PATH = '/print-slicer', NAV_LABEL = __T('슬라이서');
   var NAV_BASE = 'px-3 py-2 text-sm font-medium whitespace-nowrap cursor-pointer rounded-lg transition-colors';
   var NAV_ON = NAV_BASE + ' bg-gray-900 text-white dark:bg-white dark:text-gray-900';
   var NAV_OFF = NAV_BASE + ' text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800';
@@ -114,7 +117,7 @@
     location.href = p;
   }
   function nav() {
-    var c = navCfg(), on = c.enabled !== false && c.menu_enabled !== false, label = c.menu_label || NAV_LABEL, p = c.path || NAV_PATH;
+    var c = navCfg(), on = c.enabled !== false && c.menu_enabled !== false, label = __T(c.menu_label || NAV_LABEL), p = c.path || NAV_PATH;   // 0.1.11 영어 사이트면 Slicer
     var here = location.pathname === p || location.pathname.indexOf(p + '/') === 0;
     var btn = document.getElementById(NAV_ID), mob = document.getElementById(NAV_MOB);
     if (!on) { if (btn) btn.remove(); if (mob) mob.remove(); return; }
@@ -157,8 +160,8 @@
     var get = b ? Promise.resolve(b) : /^(data:|blob:)/.test(href) || (href.indexOf(location.origin + '/') === 0) ? fetch(href, { credentials: 'same-origin' }).then(function (r) { if (!r.ok) throw new Error(r.status); return r.blob(); }) : null;
     if (!get) return false;
     disarm(); a.setAttribute('data-cls-taken', '1');   // 부른 쪽이 「저장했어요」 알림을 안 띄우게 (웹저장소 연결과 같은 표시)
-    if (!MODEL.test(name)) { o.no(new Error('「' + name + '」 은(는) 슬라이스할 수 있는 모델 파일(STL · 3MF · OBJ)이 아니에요.')); return true; }
-    get.then(function (bl) { o.ok([new File([bl], name, { type: bl.type || '' })]); }, function (e) { o.no(new Error('파일을 넘기지 못했어요: ' + ((e && e.message) || e))); });
+    if (!MODEL.test(name)) { o.no(new Error(__T('「') + name + __T('」 은(는) 슬라이스할 수 있는 모델 파일(STL · 3MF · OBJ)이 아니에요.'))); return true; }
+    get.then(function (bl) { o.ok([new File([bl], name, { type: bl.type || '' })]); }, function (e) { o.no(new Error(__T('파일을 넘기지 못했어요: ') + ((e && e.message) || e))); });
     return true;
   }
   (function hook() {
@@ -177,12 +180,12 @@
       src.setAttribute('data-wsl-sent', '1');   // 웹 슬라이서가 같은 자리에 단추를 또 달지 않게
       var b = document.createElement('button'); b.type = 'button'; b.className = (src.getAttribute('data-wsl-send-class') || src.className || '') + ' slc-send2';
       b.setAttribute('data-cls-skip', '1'); b.setAttribute('data-slc-btn', '1');
-      b.title = (src.getAttribute('data-wsl-send') || '이 파일') + '을(를) 내 프린터로 — 프린터 고르기 · 설정 · 슬라이스 · 보내기를 이 화면에서 (「↗ 자세히」: 판 배치 · 모든 설정)';
-      b.textContent = '🖨️ 프린터로 보내기'; b.disabled = !!src.disabled; b.hidden = !!src.hidden;
+      b.title = (src.getAttribute('data-wsl-send') || __T('이 파일')) + __T('을(를) 내 프린터로 — 프린터 고르기 · 설정 · 슬라이스 · 보내기를 이 화면에서 (「↗ 자세히」: 판 배치 · 모든 설정)');
+      b.textContent = __T('🖨️ 프린터로 보내기'); b.disabled = !!src.disabled; b.hidden = !!src.hidden;
       b.addEventListener('click', function (e) {
         e.preventDefault(); e.stopPropagation(); if (src.disabled) return;
         disarm();
-        var files = new Promise(function (ok, no) { armed = { ok: ok, no: no, t: setTimeout(function () { if (armed) { disarm(); no(new Error('파일을 만드는 데 너무 오래 걸렸어요 — 다시 눌러 주세요.')); } }, 60000) }; });
+        var files = new Promise(function (ok, no) { armed = { ok: ok, no: no, t: setTimeout(function () { if (armed) { disarm(); no(new Error(__T('파일을 만드는 데 너무 오래 걸렸어요 — 다시 눌러 주세요.'))); } }, 60000) }; });
         popup({ files: files });
         src.click();
       });
