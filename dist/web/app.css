@@ -1,4 +1,4 @@
-/* custom-slicer 0.1.7 — 🔪 슬라이서 바깥 틀 · AGPL-3.0-or-later
+/* custom-slicer 0.1.8 — 🔪 슬라이서 바깥 틀 · AGPL-3.0-or-later
  *  모양은 출력 검사기(.pck)와 같은 말씨 — 하늘색→남색 그라데이션 · 둥근 카드 · 알약 칩. 뷰어 · 설정 칸은 자기 Shadow DOM 안에서 그리므로
  *  CSS 변수(--vp-*)로만 색을 맞춤 (그림자 경계를 넘는 건 변수뿐) */
 .slc { --ink:#0f172a; --mute:#64748b; --line:#e2e8f0; --card:#fff; --bg2:#f8fafc; --soft:#ecfeff; --a:#0ea5e9; --a2:#6366f1; --bad:#dc2626; --ok:#16a34a;
@@ -200,3 +200,11 @@
 .slc-share b { color:#0369a1; } .slc-share small { color:#64748b; } .slc-share span { margin-top:4px; }
 .slc[data-slc-theme=dark] .slc-uf { color:#cbd5e1; } .slc[data-slc-theme=dark] .slc-uf input, .slc[data-slc-theme=dark] .slc-uf textarea { background:#0f172a; color:#e2e8f0; border-color:#334155; }
 @media (max-width:560px) { .slc-ugrid { grid-template-columns:1fr; } }
+
+/* 0.1.8 「프로필 올리기」 작성 폼 팝업 */
+.slc-spfpop { align-items:stretch; padding:24px; }
+.slc-spfbox { position:relative; width:min(960px,100%); margin:auto; max-height:calc(100vh - 48px); display:flex; flex-direction:column; border-radius:22px; overflow:hidden; background:var(--card,#fff); box-shadow:0 24px 60px rgba(15,23,42,.35); }
+.slc-spfhd { display:flex; align-items:center; gap:10px; padding:12px 16px; border-bottom:1px solid var(--line,#e2e8f0); }
+.slc-spfhd b { font-size:15px; font-weight:900; } .slc-spfhd small { color:var(--mute,#64748b); font-size:12.5px; } .slc-spfhd .slc-x { margin-left:auto; }
+.slc-spfbody { flex:1; min-height:0; overflow:auto; padding:6px 10px 16px; scrollbar-width:none; } .slc-spfbody::-webkit-scrollbar { display:none; }
+.slc-spfbody .spf { max-width:none; }

@@ -1,4 +1,4 @@
-/*! custom-slicer 0.1.7 — 🔪 슬라이서 화면 · AGPL-3.0-or-later · 소스: https://github.com/keidischoi/g7-plugin-custom-slicer
+/*! custom-slicer 0.1.8 — 🔪 슬라이서 화면 · AGPL-3.0-or-later · 소스: https://github.com/keidischoi/g7-plugin-custom-slicer
  *  엔진 · 화면: three-slicer (OrcaSlicer 를 WebAssembly 로 옮긴 것, AGPL) — <Viewport/>(판 배치 · 이동/회전/크기 · 칠하기 · 슬라이스 · G-code 미리 보기)
  *  + <SettingsPanel/>(OrcaSlicer 설정). 이 파일은 그 바깥 틀: 프린터 라운지의 내 프린터 · 📤 보내기 · .gcode.3mf · 다른 화면에서 넘겨받은 파일
  *  모델은 서버로 올라가지 않음 — 이 브라우저에서만 읽고 슬라이스 */
@@ -16,7 +16,7 @@ import { savePlate, loadPlate, clearPlate } from './store.js'
 import { plateInfo, sceneTheme } from './plate.js'
 import { mountToolbar, stopSpin } from './toolbar.js'
 
-const V = '0.1.7', API = '/api/plugins/custom-slicer', LOUNGE = '/api/plugins/custom-my_printer', SRC = 'https://github.com/keidischoi/g7-plugin-custom-slicer'
+const V = '0.1.8', API = '/api/plugins/custom-slicer', LOUNGE = '/api/plugins/custom-my_printer', SRC = 'https://github.com/keidischoi/g7-plugin-custom-slicer'
 const SEND_ADMIN_ONLY = true   // 「📤 내 프린터로 보내기」는 시험하는 동안 관리자에게만 (실제 프린터에서 확인되면 false 로)
 const LS_SET = 'slc-settings'
 const h = React.createElement
@@ -197,7 +197,7 @@ function SendDialog({ R, lounge, pid0, onClose, onSent, popup, onShare }) {
 }
 
 /* ───────── 🎛️ 슬라이서 프로필 고르기 (custom-slicer_profiles) ───────── */
-function ProfileDialog({ settings, lounge, pid, onClose, onApply, onUpload }) {
+function ProfileDialog({ settings, lounge, pid, onClose, onApply, onUpload, canUpload }) {
   const lp = lounge.list.find((x) => +x.id === +pid)
   const base = String(settings.printer_settings_id || '').replace(/\s*\d+(\.\d+)?\s*nozzle\s*$/i, '')
   const [q, setQ] = useState(''), [who, setWho] = useState(lp ? lp.model || lp.name : base.replace(/^Bambu Lab /, ''))
@@ -245,7 +245,24 @@ function ProfileDialog({ settings, lounge, pid, onClose, onApply, onUpload }) {
                 : h('a', { className: 'slc-btn', href: '/slicer-profiles/' + it.id, target: '_blank', rel: 'noopener', title: '이 꼴(' + it.slicer_name + ')은 여기서 못 읽어요 — 그 슬라이서에서 쓰세요' }, '보기 ↗'))
           })),
       h('p', { className: 'slc-hint' }, 'Bambu Studio · OrcaSlicer 프로필(.json · .3mf · .orca_*)은 바로 적용돼요. 프로젝트 3MF 는 설정만 가져와요 (모델은 판에 올리지 않음).'),
-      h('div', { className: 'slc-acts' }, onUpload ? h('button', { type: 'button', className: 'slc-btn pri', onClick: onUpload, title: '지금 슬라이서 설정 · 판 사진을 채운 「프로필 올리기」 작성 화면으로 가요 — 확인하고 올리세요' }, '⬆️ 지금 설정으로 프로필 쓰기') : null, h('a', { className: 'slc-btn', href: '/slicer-profiles', target: '_blank', rel: 'noopener' }, '슬라이서 프로필 ↗'), h('button', { type: 'button', className: 'slc-btn', onClick: onClose }, '닫기'))))
+      h('div', { className: 'slc-acts' }, onUpload ? h('button', { type: 'button', className: 'slc-btn pri', onClick: onUpload, disabled: !canUpload, title: !canUpload ? '판에 모델을 먼저 올려 주세요 — 모델 없이 만든 설정은 올릴 수 없어요' : '지금 슬라이서 설정 · 판 사진을 채운 「프로필 올리기」 작성 화면으로 가요 — 확인하고 올리세요' }, '⬆️ 지금 설정으로 프로필 쓰기') : null, h('a', { className: 'slc-btn', href: '/slicer-profiles', target: '_blank', rel: 'noopener' }, '슬라이서 프로필 ↗'), h('button', { type: 'button', className: 'slc-btn', onClick: onClose }, '닫기'))))
+}
+
+/* ───────── 0.1.8 「프로필 올리기」 작성 폼 팝업 (슬라이서 프로필 0.2.2+ 가 그 안에 그림) ───────── */
+function SpfFormPop({ onClose, onDone }) {
+  const box = useRef(null)
+  useEffect(() => {
+    const pre = window.__spfPrefill; window.__spfPrefill = null
+    let on = true
+    window.G7SlicerProfiles.form(box.current, pre || {}, { done: (id, msg) => { if (on) onDone(id, msg) } }).catch((e) => { if (on && box.current) box.current.textContent = '⚠️ ' + ((e && e.message) || e) })
+    const key = (e) => { if (e.key === 'Escape') onClose() }
+    document.addEventListener('keydown', key)
+    return () => { on = false; document.removeEventListener('keydown', key); try { window.G7SlicerProfiles.close() } catch (e) {} }
+  }, [])
+  return h('div', { className: 'slc-modal slc-spfpop', onClick: (e) => { if (e.target === e.currentTarget) onClose() } },
+    h('div', { className: 'slc-spfbox', role: 'dialog', 'aria-modal': 'true', 'aria-label': '슬라이서 프로필 올리기' },
+      h('div', { className: 'slc-spfhd' }, h('b', null, '🎛️ 슬라이서 프로필 올리기'), h('small', null, '확인하고 아래 「올리기」 — 슬라이서 작업은 그대로 남아요'), h('button', { type: 'button', className: 'slc-x', 'aria-label': '닫기', onClick: onClose }, '✕')),
+      h('div', { className: 'slc-spfbody', ref: box }, h('p', { className: 'slc-hint' }, '불러오는 중…'))))
 }
 
 /* ───────── 화면 ───────── */
@@ -259,6 +276,8 @@ function App({ files, popup, compact, printer, from }) {
   // 0.1.6 ☁️ 웹저장소 연결이 슬라이서보다 늦게 불러와져도 단추가 나오게 (10초까지 지켜봄)
   const [hasCloud, setHasCloud] = useState(() => !!(window.G7Cloud && window.G7Cloud.pick))
   useEffect(() => { if (hasCloud) return; let n = 0; const t = setInterval(() => { if (window.G7Cloud && window.G7Cloud.pick) { setHasCloud(true); clearInterval(t) } else if (++n > 40) clearInterval(t) }, 250); return () => clearInterval(t) }, [])
+  const [objCount, setObjCount] = useState(0)   // 0.1.8 판에 올린 모델 수 (0 이면 프로필 쓰기를 막음)
+  const [spfPop, setSpfPop] = useState(false), [spfDone, setSpfDone] = useState(0)   // 0.1.8 「프로필 올리기」 작성 폼 팝업 · 올린 프로필 번호
   const [spf, setSpf] = useState(false), [prof, setProf] = useState(false), [applied, setApplied] = useState('')
   const [size, setSize] = useState(() => (popup && popup.current ? popup.current() : ''))
   const stage = useRef(null), names = useRef([]), cur = useRef(settings)
@@ -426,7 +445,9 @@ function App({ files, popup, compact, printer, from }) {
         gcode3mf: bambu ? buildGcode3mf({ gcode: full, thumb, seconds, weight, tools, settings: s, printer }) : null })
     } catch (e) { setErr('결과를 정리하지 못했어요: ' + ((e && e.message) || e)) }
   }, [])
-  const onEvent = useCallback((name, v) => {
+  // 0.1.8 뷰어는 알림을 {type, value} 하나로 줌 (예전엔 (이름, 값) 으로 받아 모델 수 · 오류 자동 고침 · 판 비우기가 하나도 안 들었음)
+  const onEvent = useCallback((ev, v2) => {
+    const name = typeof ev === 'string' ? ev : ev && ev.type, v = typeof ev === 'string' ? v2 : ev && ev.value
     if (name === 'error' && v) {
       const msg = String((v && (v.message || v.error)) || v), key = badKey(msg)
       if (key && fixes.current.length < 8 && !fixes.current.includes(key)) {
@@ -438,6 +459,7 @@ function App({ files, popup, compact, printer, from }) {
       return
     }
     if (name === 'objects' && Array.isArray(v) && !v.length) { kept.current = []; clearPlate(slot) }
+    if (name === 'objects' && Array.isArray(v)) setObjCount(v.length)
     if (name === 'objects' && Array.isArray(v)) { names.current = v.map((o) => o.name).filter(Boolean); if (!v.length) setRes(null) }
   }, [])
   /** ☁️ 웹저장소 연결(custom-cloud_storage)이 켜져 있나 */
@@ -472,14 +494,17 @@ function App({ files, popup, compact, printer, from }) {
   }
   /** 0.1.6 ⬆️ 슬라이서 프로필로 — 바로 올리지 않고 「프로필 올리기」 작성 폼에 파일 · 칸 · 판 사진을 채워 넘김 (회원이 확인 · 입력하고 올림) */
   const share = async () => {
+    if (!objCount) { setErr('판에 모델이 없어요 — 모델을 올리고(가능하면 슬라이스까지 해 본 뒤) 프로필을 써 주세요.'); return }
     const lp = lounge.list.find((x) => +x.id === +pid) || null, g = profileGuess(cur.current, lp)
     let file
     try { file = profileZip(cur.current, g.title) } catch (e) { setErr('프로필 파일을 만들지 못했어요: ' + ((e && e.message) || e)); return }
     const png = await snap(stage.current)
     window.__spfPrefill = { ...g, slicer: 'orca', file, photos: png ? [new File([png], 'slicer-screen.png', { type: 'image/png' })] : [], from: '🔪 3dsSlicer', at: Date.now(),
       description: (res ? '예상 ' + dur(res.seconds) + (res.guessed ? ' (어림)' : '') + ' · 필라멘트 ' + n1(res.weight) + ' g · ' + res.layers + '층\n\n' : '') + '🔪 3dsSlicer 에서 만든 설정 — OrcaSlicer 프리셋 묶음(.zip: 프린터 · 품질 · 필라멘트 .json). OrcaSlicer 「설정 가져오기」나 3dsSlicer 「🎛️ 슬라이서 프로필」로 바로 쓸 수 있어요.' }
+    // 0.1.8 슬라이서 프로필 0.2.2+ 는 작성 폼을 이 화면 위 팝업에 그림 — 페이지를 옮기지 않아 판 · 큰 창 · 출력 검사기 탭이 그대로
+    if (window.G7SlicerProfiles && typeof window.G7SlicerProfiles.form === 'function') { setSpfPop(true); return }
     if (popup && popup.close) popup.close()
-    navTo('/slicer-profiles/new')
+    navTo('/slicer-profiles/new')   // 예전 판(0.2.1)은 작성 화면으로 옮겨 감
   }
   const download = (kind) => {
     const R = res; if (!R) return
@@ -526,7 +551,7 @@ function App({ files, popup, compact, printer, from }) {
       h('span', { className: 'slc-badge' }, '🔒 모델은 이 브라우저에서만 — 서버로 안 가요')) : null,
     bar,
     err ? h('p', { className: 'slc-err' }, '⚠️ ' + err, h('button', { type: 'button', onClick: () => setErr('') }, '✕')) : null,
-    note ? h('p', { className: 'slc-note' }, note, h('button', { type: 'button', onClick: () => setNote('') }, '✕')) : null,
+    note ? h('p', { className: 'slc-note' }, note, spfDone && /프로필/.test(note) ? h('a', { href: '/slicer-profiles/' + spfDone, target: '_blank', rel: 'noopener', style: { marginLeft: 6 } }, '올린 프로필 보기 ↗') : null, h('button', { type: 'button', onClick: () => setNote('') }, '✕')) : null,
     sent ? h('p', { className: 'slc-sent' }, '✅ ' + sent + ' ', h('a', { href: '/my-printer' }, '프린터 라운지에서 상태 보기 ›'), h('button', { type: 'button', onClick: () => setSent('') }, '✕')) : null,
     h('div', { className: 'slc-stage', ref: stage }, viewer),
     // 0.1.4 슬라이스 결과 띠 — 페이지 흐름에서는 위 띠가 스크롤로 사라지므로 화면 아래에 붙여 늘 보이게 (큰 창은 위 띠 그대로)
@@ -540,7 +565,8 @@ function App({ files, popup, compact, printer, from }) {
     h('footer', { className: 'slc-foot' },
       h('p', null, '설정 칸은 OrcaSlicer 와 같은 이름(영어)이에요. 결과는 Bambu Studio · OrcaSlicer 와 조금 다를 수 있으니 처음 쓰는 프린터는 첫 층을 지켜봐 주세요.'),
       h('p', null, '이 슬라이서는 ', h('b', null, 'AGPL-3.0'), ' 오픈소스예요 — ', h('a', { href: SRC, target: '_blank', rel: 'noopener' }, '소스 보기'), ' · 엔진 ', h('a', { href: 'https://github.com/kimgh06/Three_Slicer', target: '_blank', rel: 'noopener' }, 'three-slicer'), ' (OrcaSlicer 를 브라우저로 옮긴 것) · © three-slicer · OrcaSlicer 기여자 · 보증 없음')),
-    prof ? h(ProfileDialog, { onUpload: lounge.logged ? () => { setProf(false); share() } : null, settings, lounge, pid, onClose: () => setProf(false), onApply: (title, parts) => { setSettings((s) => applyProfile(s, parts)); setApplied(title); setProf(false); setNote('🎛️ 「' + title + '」 설정을 적용했어요 — 오른쪽 칸에서 확인하고 「Slice」를 누르세요.') } }) : null,
+    spfPop ? h(SpfFormPop, { onClose: () => setSpfPop(false), onDone: (id, msg) => { setSpfPop(false); setNote('🎛️ ' + msg + ' — 다른 회원이 「잘 됐어요」로 평가할 수 있어요.'); setSpfDone(id) } }) : null,
+    prof ? h(ProfileDialog, { canUpload: objCount > 0, onUpload: lounge.logged ? () => { setProf(false); share() } : null, settings, lounge, pid, onClose: () => setProf(false), onApply: (title, parts) => { setSettings((s) => applyProfile(s, parts)); setApplied(title); setProf(false); setNote('🎛️ 「' + title + '」 설정을 적용했어요 — 오른쪽 칸에서 확인하고 「Slice」를 누르세요.') } }) : null,
     send && R ? h(SendDialog, { R, lounge, pid0: pid, popup, onShare: spf && lounge.logged ? () => share() : null, onClose: () => setSend(false), onSent: (p) => setSent('「' + p.name + '」 로 보냈어요 — 연결 프로그램이 30초쯤 안에 받아 출력을 시작해요.') }) : null)
 }
 
