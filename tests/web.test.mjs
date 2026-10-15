@@ -94,6 +94,7 @@ sl.dispose()
   ok(ld.includes("var SIZES = ['m', 'l', 'full']") && ld.includes('requestFullscreen') && app.includes("className: 'slc-sizes'") && css.includes('.slc-pop--m') && css.includes('.slc-pop--full'), '큰 슬라이서 창 크기 단추 (보통 · 크게 · 전체 화면)')
   ok(ld.includes('takeCarry: function ()') && qk.includes('window.__slcCarry = {') && app.includes('window.G7Slicer.takeCarry()'), '「↗ 자세히」로 파일 · 프린터를 들고 감 (한 번만 꺼냄)')
   ok(app.includes("'data-cls-save': '슬라이스 결과 (.gcode.3mf)'") && app.includes('ProfileDialog') && app.includes('polish(stage.current)'), '웹저장소 저장 표시 · 🎛️ 슬라이서 프로필 · 뷰어 다듬기')
+  ok(ld.includes("window.dispatchEvent(new Event('g7slicer:ready'))"), '0.1.1 불러오기가 끝나면 g7slicer:ready (먼저 그려진 출력 검사기가 탭을 보임)')
 
 }
 
