@@ -1,4 +1,4 @@
-/*! custom-slicer 0.1.12 — 🔪 슬라이서 화면 · AGPL-3.0-or-later · 소스: https://github.com/keidischoi/g7-plugin-custom-slicer
+/*! custom-slicer 0.1.13 — 🔪 슬라이서 화면 · AGPL-3.0-or-later · 소스: https://github.com/keidischoi/g7-plugin-custom-slicer
  *  엔진 · 화면: three-slicer (OrcaSlicer 를 WebAssembly 로 옮긴 것, AGPL) — <Viewport/>(판 배치 · 이동/회전/크기 · 칠하기 · 슬라이스 · G-code 미리 보기)
  *  + <SettingsPanel/>(OrcaSlicer 설정). 이 파일은 그 바깥 틀: 프린터 라운지의 내 프린터 · 📤 보내기 · .gcode.3mf · 다른 화면에서 넘겨받은 파일
  *  모델은 서버로 올라가지 않음 — 이 브라우저에서만 읽고 슬라이스 */
@@ -17,7 +17,7 @@ import { savePlate, loadPlate, clearPlate } from './store.js'
 import { plateInfo, sceneTheme } from './plate.js'
 import { mountToolbar, stopSpin } from './toolbar.js'
 
-const V = '0.1.12', API = '/api/plugins/custom-slicer', LOUNGE = '/api/plugins/custom-my_printer', SRC = 'https://github.com/keidischoi/g7-plugin-custom-slicer'
+const V = '0.1.13', API = '/api/plugins/custom-slicer', LOUNGE = '/api/plugins/custom-my_printer', SRC = 'https://github.com/keidischoi/g7-plugin-custom-slicer'
 const SEND_ADMIN_ONLY = true   // 「📤 내 프린터로 보내기」는 시험하는 동안 관리자에게만 (실제 프린터에서 확인되면 false 로)
 const LS_SET = 'slc-settings'
 const h = React.createElement
@@ -565,10 +565,29 @@ function App({ files, popup, compact, printer, from }) {
     settings, setSettings, files: ready.length ? ready : undefined, onSliced, onEvent, sliceRequest: sliceReq,
     onExport: (file, filename) => { try { const C = cloud(); if (C && typeof C.offer === 'function') C.offer(file, filename) } catch (e) {} return false },
     processPanel: h(SettingsPanel, { settings, setSettings, embedded: true }),
-    features: { versionBadge: false, shortcuts: !compact, logs: false },
+    features: { versionBadge: false, shortcuts: true, logs: false },   // 0.1.13 탭 안(compact)도 단축키 — 아래 keyGate 가 슬라이서를 쓰는 중일 때만 보냄
   }) : h('p', { className: 'slc-wait' }, '📦 파일을 준비하는 중…')
 
   const page = !popup && !compact
+  // 0.1.13 탭(내 프린터 등) 안의 슬라이서 — 마지막으로 누른 곳이 슬라이서 안일 때만 뷰어 단축키(Delete · 화살표 · m/r/s …)를 보냄.
+  //  다른 칸을 쓰는 동안에는 막아서 그 화면의 키를 뺏지 않음 (Esc · Tab 과 글 쓰는 칸은 늘 그대로)
+  useEffect(() => {
+    if (!compact) return undefined
+    let active = false
+    const down = (e) => { const st = stage.current; active = !!(st && (e.composedPath ? e.composedPath().indexOf(st) >= 0 : st.contains(e.target))) }
+    const VKEY = /^(Delete|Backspace|PageUp|PageDown|ArrowUp|ArrowDown|ArrowLeft|ArrowRight)$/
+    const gate = (e) => {
+      if (active) return
+      const t = e.composedPath ? e.composedPath()[0] : e.target
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return
+      const k = String(e.key || '')
+      const viewerKey = VKEY.test(k) || ((e.ctrlKey || e.metaKey) ? /^[rcvxkda]$/i.test(k) : /^[mgrszbltcfh1-9]$/i.test(k))
+      if (viewerKey) e.stopImmediatePropagation()
+    }
+    document.addEventListener('pointerdown', down, true)
+    window.addEventListener('keydown', gate, true)
+    return () => { document.removeEventListener('pointerdown', down, true); window.removeEventListener('keydown', gate, true) }
+  }, [compact])
   return h('div', { ref: wrap, className: 'slc' + (popup ? ' slc--pop' : '') + (compact ? ' slc--compact' : '') + (page ? ' slc--page' : '') },
     page ? h('header', { className: 'slc-hero' }, h('div', { className: 'slc-hero-bg', 'aria-hidden': 'true' }, h('i'), h('i'), h('i')),
       h('span', { className: 'slc-hero-ic' }, '🔪'),

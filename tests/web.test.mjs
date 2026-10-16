@@ -115,7 +115,15 @@ sl.dispose()
     '받기 단추 옆 「🔪 슬라이스 · 보내기」 — 웹 슬라이서 단추 자리를 먼저 차지 (하나만) · 내려받기 대신 넘김')
   ok(ld.includes('window.G7Slicer = {') && ld.includes('mount: function (el, opts)') && ld.includes('popup: popup') && app.includes('window.__slcApp = { version: V, mount, unmount, tick'), 'window.G7Slicer.mount · popup (출력 검사기 탭이 씀)')
   ok(app.includes('const SEND_ADMIN_ONLY = true') && app.includes("'/printers/' + p.id + '/send-file'") && app.includes("fd.append('bed_clear', '1')") && app.includes('checked: bed'), '보내기: 프린터 라운지 send-file · 베드 확인 · 관리자 시험')
-  ok(app.includes('h(Viewport, {') && app.includes('h(SettingsPanel, { settings, setSettings, embedded: true })') && app.includes('onSliced') && app.includes('shortcuts: !compact'), '화면: 뷰어 + 설정 칸 · 결과 받기 · 탭 안에서는 단축키 끔')
+  ok(app.includes('h(Viewport, {') && app.includes('h(SettingsPanel, { settings, setSettings, embedded: true })') && app.includes('onSliced') && app.includes('shortcuts: true') && app.includes('stopImmediatePropagation()') && app.includes("window.addEventListener('keydown', gate, true)"), '화면: 뷰어 + 설정 칸 · 결과 받기 · 0.1.13 탭 안에서는 슬라이서를 마지막으로 눌렀을 때만 단축키 (Delete 로 지우기)')
+  {
+    const { look } = await import('../web/src/i18n.js'), tb = readSrc(new URL('../web/src/toolbar.js', import.meta.url))
+    ok(look({}, '⚠ 499,902 triangles — slicing may take a while') === '⚠ 삼각형 499,902개 — 모델이 커서 슬라이스가 오래 걸릴 수 있어요'
+      && look({}, "ℹ Imported this project's 494 settings and 8 filaments and 1 plates. Not supported by this slicer, so left out: per-layer custom G-code, per-object setting overrides.") === 'ℹ 이 프로젝트의 설정 494개 · 필라멘트 8개 · 판 1개을(를) 가져왔어요. 이 슬라이서가 지원하지 않아 뺀 것: 층마다 넣는 사용자 G-code · 물체마다 다른 설정.'
+      && look({}, "Imported this project's 3 settings.") === '이 프로젝트의 설정 3개을(를) 가져왔어요.',
+      '0.1.13 알림 한국어 — 큰 모델 경고 · 프로젝트에서 가져온 것 / 뺀 것')
+    ok(!tb.includes("'wheel', 'keydown']") && tb.includes("if (e.key === 'Enter' || e.key === ' ') e.stopPropagation()") && tb.includes('b.blur()'), '0.1.13 도구 단추를 누른 뒤에도 Delete · 화살표가 판으로 감')
+  }
   ok(app.includes('github.com/keidischoi/g7-plugin-custom-slicer') && app.includes('AGPL-3.0'), '화면에 소스 링크 · AGPL')
   const qk = readSrc(new URL('../web/src/quick.js', import.meta.url)), css = readSrc(new URL('../web/src/app.css', import.meta.url))
   ok(ld.includes("b.textContent = __T('🖨️ 프린터로 보내기')") && ld.includes('quick.js?v=') && ld.includes('Q.open(el, {') && qk.includes('window.__slcQuick = { version: V, open }') && qk.includes("data-more=\"pck\"") && qk.includes("data-more=\"page\"") && qk.includes("navTo(where === 'pck' ? '/print-check/slice' : '/print-slicer')"),
