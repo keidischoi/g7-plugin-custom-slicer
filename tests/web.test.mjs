@@ -116,6 +116,10 @@ sl.dispose()
   ok(ld.includes('window.G7Slicer = {') && ld.includes('mount: function (el, opts)') && ld.includes('popup: popup') && app.includes('window.__slcApp = { version: V, mount, unmount, tick'), 'window.G7Slicer.mount · popup (출력 검사기 탭이 씀)')
   ok(app.includes('const SEND_ADMIN_ONLY = true') && app.includes("'/printers/' + p.id + '/send-file'") && app.includes("fd.append('bed_clear', '1')") && app.includes('checked: bed'), '보내기: 프린터 라운지 send-file · 베드 확인 · 관리자 시험')
   ok(app.includes('h(Viewport, {') && app.includes('h(SettingsPanel, { settings, setSettings, embedded: true })') && app.includes('onSliced') && app.includes('shortcuts: true') && app.includes('stopImmediatePropagation()') && app.includes("window.addEventListener('keydown', gate, true)"), '화면: 뷰어 + 설정 칸 · 결과 받기 · 0.1.13 탭 안에서는 슬라이서를 마지막으로 눌렀을 때만 단축키 (Delete 로 지우기)')
+  {   // 0.1.32 출력 시뮬레이션
+    const ly = readSrc(new URL('../web/src/layers.js', import.meta.url))
+    ok(readSrc(new URL('../web/src/toolbar.js', import.meta.url)).includes("B('sim', 'film'") && ly.includes('col.__slcSim = { toggle: simToggle') && ly.includes('const simTick = () =>') && ly.includes('const SPEEDS = [1, 4, 16, 64]') && ly.includes('if (v >= max) sim.layer++'), '0.1.32 출력 시뮬레이션 — 1층부터 끝까지 · 빠르기')
+  }
   {   // 0.1.31 칩 · 설정 프린터 맞춤
     const ap = readSrc(new URL('../web/src/app.js', import.meta.url))
     ok(ap.includes('const ok = same || mine || L.list.find((p) => p.can_send) || L.list[0]') && ap.includes('if (want || mine) return') && ap.includes("const r = fitPrinter(s, ok); return r.hit ? r.s : s"), '0.1.31 열 때 내 프린터 칩과 설정 프린터가 같게')
