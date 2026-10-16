@@ -61,5 +61,7 @@ foreach (['plugin.php', 'src/Listeners/RouteListener.php', 'src/Listeners/MenuLi
     exec('php -l '.escapeshellarg($root.'/'.$f).' 2>&1', $o, $c);
     ok($c === 0 && ! str_contains((string) file_get_contents($root.'/'.$f), 'WebSlicer'), 'PHP 문법 · 이름 '.$f);
 }
+$ac = (string) file_get_contents($root.'/src/Http/Controllers/AssetController.php');
+ok(str_contains($ac, "? 'public, max-age=31536000, immutable' : 'no-cache'"), '0.1.50 판 번호 없는 파일(worker)은 매번 확인 · 해시 조각만 길게 캐시');
 echo "\n".($fail ? "FAIL $fail / " : 'OK ').($pass + $fail)."\n";
 exit($fail ? 1 : 0);
