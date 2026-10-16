@@ -45,6 +45,9 @@ const scenePlugin = {
         ['[f.gridThin, f.gridBold, f.border, f.label, f.slaFill, f.slaEdge]', '[f.gridThin, f.gridBold, f.border, f.label, f.slaFill, f.slaEdge, f.slcPlate]'],
         ['t.scene.add(E), t.plateBeds.push({ gridThin: _, gridBold: N, border: x, label: E });',
           't.scene.add(E); const __slcP = globalThis.__slcPlateHook ? globalThis.__slcPlateHook(e, t, { index: f, x: m, z: b, w: g, d: y, selected: F }) : null; __slcP && (t.scene.add(__slcP), _.visible = !__slcP.visible, N.visible = !__slcP.visible); t.plateBeds.push({ gridThin: _, gridBold: N, border: x, label: E, slcPlate: __slcP || void 0 });'],
+        // 0.1.14 🎨 3MF 표준 색(colorgroup · basematerials) — 파일마다 물체를 올린 뒤 web/src/colors3mf.js 가 색을 읽어 필라멘트 칸 · 물체에 붙임
+        ['De[0]?.project && we(De[0].project, Ye), ht.info(',
+          'De[0]?.project && we(De[0].project, Ye), globalThis.__slcColorHook && await globalThis.__slcColorHook(ne, Ye, { api: t.current, colorsRef: e.extruderColorsRef, replaceAll: p, project: De[0]?.project, objects: n.current, max: Gt }), ht.info('],
       ]
       for (const [from, to] of PAIRS) {
         if (s.split(from).length !== 2) throw new Error('뷰어 판 만들기 자리를 못 찾음 — three-slicer 판이 바뀌었으면 build.mjs 의 PAIRS 를 맞춰 주세요: ' + from.slice(0, 60))
