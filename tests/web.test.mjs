@@ -160,7 +160,7 @@ sl.dispose()
     const { isDark, DARK_GLOSS } = await import('../web/src/plate.js')
     const dark = { r: 0.0242, g: 0.0242, b: 0.0242 }, gold = { r: 0.8, g: 0.42, b: 0.016 }
     const tp = readSrc(new URL('../web/build.mjs', import.meta.url))
-    ok(isDark(dark) && !isDark(gold) && dark.r === 0.0242 && DARK_GLOSS === 0.4 && readSrc(new URL('../web/src/plate.js', import.meta.url)).includes('m.roughness = dark ? DARK_GLOSS : BASE_ROUGH')
+    ok(isDark(dark) && !isDark(gold) && dark.r === 0.0242 && DARK_GLOSS === 0.5 && readSrc(new URL('../web/src/plate.js', import.meta.url)).includes('m.roughness = dark ? DARK_GLOSS : BASE_ROUGH')
       && tp.includes("float dark = 1.0 - smoothstep(0.12, 0.35, lum);"), '0.1.54 어두운 물체는 색 그대로 조금 매끈하게 · 미리 보기 검은 선에 옅은 음영')
   }
   {   // 0.1.43 3MF 자리 · 판 비우기
