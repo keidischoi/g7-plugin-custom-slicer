@@ -39,6 +39,15 @@ const scenePlugin = {
     })
     // 0.1.5 🧱 바닥판 — 뷰어가 판(격자 선 · 테두리 · 이름표)을 만드는 함수에 갈고리 하나: 출력 검사기와 같은 판 그림(web/src/plate.js)을 그 아래에 깖
     //  뷰어가 판을 지울 때 같이 지우게 지우기 목록에도 slcPlate 를 더함 — 못 찾으면(three-slicer 판이 바뀜) 빌드를 멈춤
+    // 0.1.39 🧱 브림 끄기가 안 먹던 것 — 엔진 설정 변환(settings_core)이 brim_width 만 보고 brim_type(「브림 없음」)을 안 봄 →
+    //  brim_type 이 no_brim 이면 엔진에 brim_width 0 을 넘김. 못 찾으면(three-slicer 판이 바뀜) 빌드를 멈춤
+    b.onLoad({ filter: /three-slicer-viewer[\\/]src[\\/]settings[\\/]settings_core\.js$/ }, (args) => {
+      let s = readFileSync(args.path, 'utf8')
+      const from = "    brim_width: num('brim_width'),"
+      if (s.split(from).length !== 2) throw new Error('엔진 설정의 brim_width 자리를 못 찾음 — three-slicer 판이 바뀌었으면 build.mjs 를 맞춰 주세요')
+      s = s.replace(from, () => "    brim_width: String(S('brim_type') ?? '').toLowerCase() === 'no_brim' ? 0 : num('brim_width'),")
+      return { contents: s, loader: 'js' }
+    })
     b.onLoad({ filter: /three-slicer-viewer[\\/]dist[\\/]index\.js$/ }, (args) => {
       let s = readFileSync(args.path, 'utf8')
       const PAIRS = [
