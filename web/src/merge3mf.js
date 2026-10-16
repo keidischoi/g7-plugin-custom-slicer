@@ -12,6 +12,19 @@ export const encState = (n) => (n === 1 ? '4' : n === 2 ? '8' : (n - 3).toString
 const pref = () => { try { return localStorage.getItem(LS) || '' } catch (e) { return '' } }
 const setPref = (v) => { try { localStorage.setItem(LS, v) } catch (e) {} }
 
+/** 0.1.48 파일마다 고른 것 (이름 · 크기 · 고친 때) — 최근 30개만 */
+const LS_FILES = 'slc-merge-files'
+const fileKey = (f) => [f.name, f.size, f.lastModified].join('|')
+export function lastChoice(f) { try { const v = (JSON.parse(localStorage.getItem(LS_FILES) || '{}') || {})[fileKey(f)]; return v === 'merge' || v === 'keep' ? v : '' } catch (e) { return '' } }
+export function rememberChoice(f, v) {
+  try {
+    const m = JSON.parse(localStorage.getItem(LS_FILES) || '{}') || {}, k = fileKey(f)
+    delete m[k]; m[k] = v
+    const keys = Object.keys(m); for (const x of keys.slice(0, Math.max(0, keys.length - 30))) delete m[x]
+    localStorage.setItem(LS_FILES, JSON.stringify(m))
+  } catch (e) {}
+}
+
 /** 묻는 창 — 'merge' | 'keep' */
 function ask(name, n) {
   return new Promise((resolve) => {
@@ -67,7 +80,10 @@ async function hook(file, list) {
   try {
     if (!file || !/\.3mf$/i.test(file.name || '') || !Array.isArray(list) || list.length < 2) return list
     if (list.some((k) => !k.modelPos)) return list
-    const p = pref(), choice = p === 'merge' || p === 'keep' ? p : await ask(file.name, list.length)
+    // 0.1.48 새로고침해서 판을 다시 불러올 때는 그 파일에 지난번 고른 것을 그대로 (묻는 창이 새로고침마다 뜨던 것)
+    const p = pref(), past = file.__slcRestored ? lastChoice(file) : ''
+    const choice = p === 'merge' || p === 'keep' ? p : past || await ask(file.name, list.length)
+    rememberChoice(file, choice)
     if (choice !== 'merge') return list
     // 0.1.45 부품마다 필라멘트 — 프로젝트(Bambu · Orca)는 물체 정보의 extruder, 아니면 3MF 의 부품 색 → 임시 번호(색 차례) · 색 갈고리가 나중에 실제 칸으로 바꿈
     const meta = list[0].project && list[0].project.objectMeta

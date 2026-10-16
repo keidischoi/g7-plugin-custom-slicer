@@ -150,6 +150,9 @@ sl.dispose()
     ok(gs.length === 2 && gs[0].ext === 2 && gs[0].pos.length === 18 && gs[0].pos[9] === 18 && gs[1].ext === 1 && gs[1].pos[0] === 9
       && mg.includes("mergeList(list, String(file.name).replace(/\\.3mf$/i, ''), null)") && !cg.includes('rec.paint.color.set(') && cg.includes('globalThis.__slcShowParts(rec)') && pg.includes('globalThis.__slcPartsTick(THREE)'),
     '0.1.47 합친 물체는 칠하지 않고 화면에만 부품 조각으로 색')
+    const st = readSrc(new URL('../web/src/store.js', import.meta.url)), bs = readSrc(new URL('../web/build.mjs', import.meta.url))
+    ok(mg.includes('past = file.__slcRestored ? lastChoice(file)') && mg.includes('rememberChoice(file, choice)') && st.includes('f.__slcRestored = true')
+      && bs.includes(`"    skirt_loops: settings && 'skirt_loops' in settings ? num('skirt_loops') : 0,"`), '0.1.48 새로고침 때 합치기를 다시 묻지 않음 · 프로필에 없는 스커트는 0')
     const { liftColor } = await import('../web/src/plate.js')
     const dark = { r: 0.0242, g: 0.0242, b: 0.0242 }, gold = { r: 0.8, g: 0.42, b: 0.016 }
     ok(liftColor(dark) && Math.abs(dark.r - 0.1) < 1e-9 && !liftColor(gold) && gold.r === 0.8, '0.1.46 아주 어두운 물체만 화면에서 밝힘')
