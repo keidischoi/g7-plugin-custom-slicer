@@ -61,7 +61,9 @@ export function mountLayers(root, col) {
 
   const sync = () => {
     const lo = q('layer-lo'), hi = q('layer-hi'), m = q('move-range')
-    const on = !!(lo && hi)
+    // 0.1.24 미리 보기 탭일 때만 — 준비 탭에서도 뷰어가 슬라이더를 쥐고 있어서 위 물체 도구줄 · 오른쪽 🧰 도구와 겹쳤음
+    const pv = root.querySelector('[data-testid="mode-preview"]')
+    const on = !!(lo && hi) && !!(pv && pv.classList.contains('on'))
     col.classList.toggle('slc-pv', on); ly.hidden = !on; mv.hidden = !(on && m)
     if (!on) { stopPlay(); return }
     // 0.1.23 겹치지 않게 — 아래 판 고르기(1 · +) 위에서 끝남 · 3D 칸 아래가 화면 밖이면 화면 안까지만
