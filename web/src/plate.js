@@ -160,6 +160,7 @@ globalThis.__slcPlateHook = (THREE, view, p) => {
       let liftAt = 0
       view.scene.onBeforeRender = function (rd, sc, cam) {
         try { if (head && cam) { head.position.copy(cam.position); if (view.orbit && view.orbit.target) head.target.position.copy(view.orbit.target); head.target.updateMatrixWorld() } } catch (e) {}
+        try { if (globalThis.__slcPartsTick) globalThis.__slcPartsTick(THREE) } catch (e) {}   // 0.1.47 합친 물체의 부품 색 (merge3mf.js)
         try { const t = performance.now(); if (t - liftAt > 250) { liftAt = t; liftScene(view.scene) } } catch (e) {}
         try {
           const below = !!cam && cam.position.y < -0.5, on = STATE.show !== false && !below
