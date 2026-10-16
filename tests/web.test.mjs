@@ -118,7 +118,7 @@ sl.dispose()
   ok(app.includes('h(Viewport, {') && app.includes('h(SettingsPanel, { settings, setSettings, embedded: true })') && app.includes('onSliced') && app.includes('shortcuts: true') && app.includes('stopImmediatePropagation()') && app.includes("window.addEventListener('keydown', gate, true)"), '화면: 뷰어 + 설정 칸 · 결과 받기 · 0.1.13 탭 안에서는 슬라이서를 마지막으로 눌렀을 때만 단축키 (Delete 로 지우기)')
   {   // 0.1.39 브림 없음
     const bm = readSrc(new URL('../web/build.mjs', import.meta.url))
-    ok(bm.includes("brim_width: ['no_brim', 'auto_brim', ''].includes(String(S('brim_type') ?? 'auto_brim').toLowerCase()) ? 0 : num('brim_width'),"), '0.1.39 브림 종류가 브림 없음이면 엔진 너비 0')
+    ok(bm.includes("brim_width: ['no_brim', 'auto_brim', ''].includes(String(S('brim_type') ?? 'auto_brim').toLowerCase()) ? 0 : (num('brim_width') > 0 ? num('brim_width') : 5),"), '0.1.39 브림 종류가 브림 없음이면 엔진 너비 0')
     const sc = readSrc(new URL('../node_modules/three-slicer-viewer/src/settings/settings_core.js', import.meta.url))
     ok(sc.split("    brim_width: num('brim_width'),").length === 2, '0.1.39 엔진 설정 변환에 brim_width 자리가 하나 (빌드 갈고리가 맞음)')
   }
