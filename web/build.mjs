@@ -56,6 +56,19 @@ const scenePlugin = {
           'const z = ta(ae, le === "color", p?.current), fe = new R.Mesh(j, (le === "color" ? __slcPaintMat : ga)(z, r.current?.paintClipPlanes?.() ?? null));'],
         ['const C = new R.Mesh(W, ga(J, r.current?.paintClipPlanes?.() ?? null));',
           'const C = new R.Mesh(W, (ae ? __slcPaintMat : ga)(J, r.current?.paintClipPlanes?.() ?? null));'],
+        // 0.1.17 🐢 뷰어가 뚝뚝 끊기던 것 — 마우스가 움직일 때마다 물체 위 강조(hover)를 찾으려고 모든 삼각형에 광선을 쏨
+        //  (50만 삼각형 피규어 ≈ 60ms → 판을 돌리는 동안 초당 15장). 누른 채 움직이면(판 돌리기 · 끌기) 건너뛰고,
+        //  한 번에 12ms 넘게 걸리는 큰 모델은 마우스가 90ms 멈췄을 때만 찾음
+        [`      if (ke(h) || re.dragging || re.axis) return;
+      Ue(h);
+      const M = Xe();
+      M !== fe && (fe = M, Fe(), U(), w(qe()));`,
+          `      if (ke(h) || re.dragging || re.axis) return;
+      if (h.buttons) return;
+      Ue(h);
+      const __hv = V.current.__slcHov || (V.current.__slcHov = { cost: 0, tm: 0 }), __hf = () => { const __t = performance.now(), M = Xe(); __hv.cost = performance.now() - __t; M !== fe && (fe = M, Fe(), U(), w(qe())); };
+      clearTimeout(__hv.tm);
+      __hv.cost > 12 ? __hv.tm = setTimeout(__hf, 90) : __hf();`],
       ]
       for (const [from, to] of PAIRS) {
         if (s.split(from).length !== 2) throw new Error('뷰어 판 만들기 자리를 못 찾음 — three-slicer 판이 바뀌었으면 build.mjs 의 PAIRS 를 맞춰 주세요: ' + from.slice(0, 60))

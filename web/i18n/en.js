@@ -96,7 +96,7 @@ export default {
   '」 안에 STL · 3MF · OBJ 가 없어요.': '” has no STL · 3MF · OBJ inside.', 'ZIP 을 풀지 못했어요: ': 'Could not unzip: ',
   '<div class="slc-pm" hidden><small>판 종류</small>': '<div class="slc-pm" hidden><small>Plate type</small>', '자동 (프린터 · 판 설정에 맞춤)': 'Auto (follows printer · plate setting)',
   '<small>판 색</small><div class="slc-pcol">': '<small>Plate color</small><div class="slc-pcol">', '도구': 'Tools', '숨기기': 'Hide',
-  '비스듬히': 'Isometric', '위에서': 'Top', '앞에서': 'Front', '옆에서': 'Side', '모델에 맞추기': 'Fit model', '판 전체 보기': 'Fit plate', '천천히 돌리기': 'Slow spin', '물체를 잡고 끌어 옮기기 (화살표 없이) · 켜기 · 끄기': 'Drag objects to move them (no arrows) · on · off',
+  '비스듬히': 'Isometric', '위에서': 'Top', '앞에서': 'Front', '옆에서': 'Side', '모델에 맞추기': 'Fit model', '판 전체 보기': 'Fit plate', '천천히 돌리기': 'Slow spin', '물체를 잡고 끌어 옮기기 (켜면 이동 화살표 숨김) · 켜기 · 끄기': 'Drag objects to move them (hides the move arrows) · on · off',
   '바닥판 보이기 · 숨기기': 'Show · hide build plate', '바닥판 바꾸기 (종류 · 색)': 'Change build plate (type · color)', '사진 저장 (PNG)': 'Save image (PNG)',
   'PEI 판': 'PEI plate', '유리 판': 'Glass plate', '알루미늄 빌드 판': 'Aluminium build plate', '격자만': 'Grid only', '자동': 'Auto', '금색 PEI': 'Gold PEI',
   '검정': 'Black', '회색': 'Gray', '흰색': 'White', '남색': 'Navy', '파랑': 'Blue', '초록': 'Green', '민트': 'Mint', '빨강': 'Red', '주황': 'Orange', '노랑': 'Yellow', '보라': 'Purple', '핑크': 'Pink', '갈색': 'Brown', '은색': 'Silver',

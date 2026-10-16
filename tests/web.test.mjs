@@ -116,6 +116,11 @@ sl.dispose()
   ok(ld.includes('window.G7Slicer = {') && ld.includes('mount: function (el, opts)') && ld.includes('popup: popup') && app.includes('window.__slcApp = { version: V, mount, unmount, tick'), 'window.G7Slicer.mount · popup (출력 검사기 탭이 씀)')
   ok(app.includes('const SEND_ADMIN_ONLY = true') && app.includes("'/printers/' + p.id + '/send-file'") && app.includes("fd.append('bed_clear', '1')") && app.includes('checked: bed'), '보내기: 프린터 라운지 send-file · 베드 확인 · 관리자 시험')
   ok(app.includes('h(Viewport, {') && app.includes('h(SettingsPanel, { settings, setSettings, embedded: true })') && app.includes('onSliced') && app.includes('shortcuts: true') && app.includes('stopImmediatePropagation()') && app.includes("window.addEventListener('keydown', gate, true)"), '화면: 뷰어 + 설정 칸 · 결과 받기 · 0.1.13 탭 안에서는 슬라이서를 마지막으로 눌렀을 때만 단축키 (Delete 로 지우기)')
+  {   // 0.1.17 hover 광선 줄이기
+    const bm = readSrc(new URL('../web/build.mjs', import.meta.url))
+    ok(readSrc(new URL('../web/src/freedrag.js', import.meta.url)).includes("const hide = lookPref().drag !== false && tc.mode === 'translate'") && readSrc(new URL('../web/src/toolbar.js', import.meta.url)).includes('applyArrows(viewOf())'), '0.1.17 끌어 옮기기가 켜지면 이동 화살표 숨김 · 끄면 보임')
+    ok(bm.includes('if (h.buttons) return;') && bm.includes('__hv.cost > 12 ? __hv.tm = setTimeout(__hf, 90) : __hf();'), '0.1.17 누른 채 움직이면 hover 검사 건너뜀 · 큰 모델은 멈췄을 때만')
+  }
   {   // 0.1.16 칠한 색 불투명
     const bm = readSrc(new URL('../web/build.mjs', import.meta.url))
     ok(bm.includes('const __slcPaintMat = (e, t = null) => new R.MeshStandardMaterial({') && bm.includes('flatShading: !0') && bm.includes('(le === "color" ? __slcPaintMat : ga)(z,') && bm.includes('(ae ? __slcPaintMat : ga)(J,'),
