@@ -61,6 +61,15 @@ const scenePlugin = {
       s = s.replace(pt, () => "    { const __pt = S('enable_prime_tower'); towerSettings.enable_prime_tower = __pt === true || __pt === 1 || /^(1|true)$/i.test(String(__pt ?? '')) }")
       return { contents: s, loader: 'js' }
     })
+    // 0.1.54 🌗 슬라이스 미리 보기의 검은 필라멘트 선 — 뷰어 셰이더는 선 색 × 빛이라 검은 색은 빛을 받아도 검게만 보였음 →
+    //  어두운 선에만 옅은 회색 음영을 더해 층 · 둥근 결이 보이게 (밝은 색 선은 그대로)
+    b.onLoad({ filter: /three-slicer-viewer[\\/]dist[\\/]toolpath\.js$/ }, (args) => {
+      let s = readFileSync(args.path, 'utf8')
+      const from = 'fragColor = vec4(vColor * (0.55 + 0.45 * lambert), 1.0);'
+      if (s.split(from).length !== 2) throw new Error('미리 보기 셰이더 자리를 못 찾음 — three-slicer 판이 바뀌었으면 build.mjs 를 맞춰 주세요')
+      s = s.replace(from, () => 'float lum = dot(vColor, vec3(0.2126, 0.7152, 0.0722));\n  float dark = 1.0 - smoothstep(0.12, 0.35, lum);\n  fragColor = vec4(vColor * (0.55 + 0.45 * lambert) + dark * vec3(0.03 + 0.10 * lambert), 1.0);')
+      return { contents: s, loader: 'js' }
+    })
     b.onLoad({ filter: /three-slicer-viewer[\\/]dist[\\/]index\.js$/ }, (args) => {
       let s = readFileSync(args.path, 'utf8')
       const PAIRS = [

@@ -172,7 +172,7 @@ function partsTick(THREE) {
     }
     for (const m of st.meshes) {
       const hex = cols[m.userData.slcPart - 1] || '#9ca3af'
-      if (m.userData.slcHex !== hex) { m.userData.slcHex = hex; m.material.color.set(hex); m.material.userData.slcLift = null }
+      if (m.userData.slcHex !== hex) { m.userData.slcHex = hex; m.material.color.set(hex) }
     }
   }
 }

@@ -128,7 +128,7 @@ sl.dispose()
     const r = ml([{ name: 'a', objectid: '1', modelPos: new Float32Array(18), paint: own }, { name: 'b', objectid: '2', modelPos: new Float32Array(27) }], 'k', [1, 3])[0]
     const pl = readSrc(new URL('../web/src/plate.js', import.meta.url))
     ok(encState(1) === '4' && encState(2) === '8' && encState(3) === '0C' && encState(5) === '2C' && r.paint.color.get(0) === '8' && r.paint.color.get(1) === '4' && r.paint.color.get(2) === '0C' && r.paint.color.get(4) === '0C' && r.paint.color.size === 5
-      && pl.includes("new THREE.DirectionalLight(0xffffff, 0.85)") && pl.includes('head.position.copy(cam.position)'), '0.1.45 합칠 때 부품마다 필라멘트로 칠함 · 카메라 조명')
+      && pl.includes("new THREE.DirectionalLight(0xffffff, 1.2)") && pl.includes('head.position.copy(cam.position)'), '0.1.45 합칠 때 부품마다 필라멘트로 칠함 · 카메라 조명')
   }
   {   // 0.1.46 합친 부품은 자를 때 필라멘트 묶음으로 · 어두운 물체 밝히기
     const { slicePartsOf } = await import('../web/src/merge3mf.js')
@@ -157,9 +157,11 @@ sl.dispose()
     const ap = readSrc(new URL('../web/src/app.js', import.meta.url))
     ok(bs.includes('globalThis.__slcFileOf && globalThis.__slcFileOf(ne, wt.id)') && ap.includes('const live = liveFiles(kept.current, v.map((o) => o.id))') && ap.includes("savedSig.current = ''; savePlate(slot, kept.current)"), '0.1.51 물체를 지우면 판 임시 저장에서 그 파일도 뺌')
     ok(bs.includes("towerSettings.enable_prime_tower = __pt === true || __pt === 1 || /^(1|true)$/i.test(String(__pt ?? ''))"), '0.1.53 프라임 타워 켬 · 끔을 화면 값(기본값 끔 포함)대로 엔진에')
-    const { liftColor } = await import('../web/src/plate.js')
+    const { isDark, DARK_GLOSS } = await import('../web/src/plate.js')
     const dark = { r: 0.0242, g: 0.0242, b: 0.0242 }, gold = { r: 0.8, g: 0.42, b: 0.016 }
-    ok(liftColor(dark) && Math.abs(dark.r - 0.1) < 1e-9 && !liftColor(gold) && gold.r === 0.8, '0.1.46 아주 어두운 물체만 화면에서 밝힘')
+    const tp = readSrc(new URL('../web/build.mjs', import.meta.url))
+    ok(isDark(dark) && !isDark(gold) && dark.r === 0.0242 && DARK_GLOSS === 0.4 && readSrc(new URL('../web/src/plate.js', import.meta.url)).includes('m.roughness = dark ? DARK_GLOSS : BASE_ROUGH')
+      && tp.includes("float dark = 1.0 - smoothstep(0.12, 0.35, lum);"), '0.1.54 어두운 물체는 색 그대로 조금 매끈하게 · 미리 보기 검은 선에 옅은 음영')
   }
   {   // 0.1.43 3MF 자리 · 판 비우기
     const { originOf } = await import('../web/src/place3mf.js')

@@ -1,4 +1,4 @@
-/*! custom-slicer 0.1.53 — 🔪 슬라이서 불러오기 (전역) · AGPL-3.0-or-later
+/*! custom-slicer 0.1.54 — 🔪 슬라이서 불러오기 (전역) · AGPL-3.0-or-later
  *  - 슬라이서 화면(data-slc-app) · 다른 화면의 큰 창 · window.G7Slicer.mount 를 부를 때만 앱 · 엔진을 받음
  *  - 헤더 메뉴 「슬라이서」
  *  - 다른 확장의 받기 단추(data-wsl-send) 옆 「🖨️ 프린터로 보내기」 — 웹 슬라이서(custom-web_slicer)와 같은 작은 팝업을 이 플러그인이 맡음 (「↗ 자세히」로 큰 슬라이서)
@@ -10,7 +10,7 @@
   function __T(s) { var l = ''; try { l = localStorage.getItem('g7_locale') || ''; } catch (e) {} l = l || document.documentElement.getAttribute('lang') || navigator.language || 'ko'; if (/^ko/i.test(l)) return s; var t = EN_T.hasOwnProperty(s) ? EN_T[s] : s; return t.replace(/「/g, '“').replace(/」/g, '”'); }
   if (window.__slcLoader) return;
   window.__slcLoader = true;
-  var API = '/api/plugins/custom-slicer', V = '0.1.53', loading = null;
+  var API = '/api/plugins/custom-slicer', V = '0.1.54', loading = null;
   function css() {
     if (document.getElementById('slc-css')) return;
     var l = document.createElement('link'); l.id = 'slc-css'; l.rel = 'stylesheet'; l.href = API + '/assets/app.css?v=' + V; document.head.appendChild(l);
