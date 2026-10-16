@@ -48,6 +48,14 @@ const scenePlugin = {
         // 0.1.14 🎨 3MF 표준 색(colorgroup · basematerials) — 파일마다 물체를 올린 뒤 web/src/colors3mf.js 가 색을 읽어 필라멘트 칸 · 물체에 붙임
         ['De[0]?.project && we(De[0].project, Ye), ht.info(',
           'De[0]?.project && we(De[0].project, Ye), globalThis.__slcColorHook && await globalThis.__slcColorHook(ne, Ye, { api: t.current, colorsRef: e.extruderColorsRef, replaceAll: p, project: De[0]?.project, objects: n.current, max: Gt }), ht.info('],
+        // 0.1.16 🎨 칠한 색(material paint) — 뷰어는 칠한 곳을 55% 비치는 덧칠로 그려 밑의 1번 필라멘트 색과 섞여 흐릿했음 →
+        //  색 칠하기만 물체와 같은 빛을 받는 불투명 재질로 (서포트 칠하기 · 칠하는 중 서포트 표시는 그대로 반투명)
+        ['}), ba = 999, Sd = 4e3;',
+          '}), ba = 999, Sd = 4e3; const __slcPaintMat = (e, t = null) => new R.MeshStandardMaterial({ color: e, roughness: 0.6, metalness: 0.05, flatShading: !0, side: R.DoubleSide, polygonOffset: !0, polygonOffsetFactor: ha, polygonOffsetUnits: ha, clippingPlanes: t });'],
+        ['const z = ta(ae, le === "color", p?.current), fe = new R.Mesh(j, ga(z, r.current?.paintClipPlanes?.() ?? null));',
+          'const z = ta(ae, le === "color", p?.current), fe = new R.Mesh(j, (le === "color" ? __slcPaintMat : ga)(z, r.current?.paintClipPlanes?.() ?? null));'],
+        ['const C = new R.Mesh(W, ga(J, r.current?.paintClipPlanes?.() ?? null));',
+          'const C = new R.Mesh(W, (ae ? __slcPaintMat : ga)(J, r.current?.paintClipPlanes?.() ?? null));'],
       ]
       for (const [from, to] of PAIRS) {
         if (s.split(from).length !== 2) throw new Error('뷰어 판 만들기 자리를 못 찾음 — three-slicer 판이 바뀌었으면 build.mjs 의 PAIRS 를 맞춰 주세요: ' + from.slice(0, 60))

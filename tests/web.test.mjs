@@ -116,6 +116,11 @@ sl.dispose()
   ok(ld.includes('window.G7Slicer = {') && ld.includes('mount: function (el, opts)') && ld.includes('popup: popup') && app.includes('window.__slcApp = { version: V, mount, unmount, tick'), 'window.G7Slicer.mount · popup (출력 검사기 탭이 씀)')
   ok(app.includes('const SEND_ADMIN_ONLY = true') && app.includes("'/printers/' + p.id + '/send-file'") && app.includes("fd.append('bed_clear', '1')") && app.includes('checked: bed'), '보내기: 프린터 라운지 send-file · 베드 확인 · 관리자 시험')
   ok(app.includes('h(Viewport, {') && app.includes('h(SettingsPanel, { settings, setSettings, embedded: true })') && app.includes('onSliced') && app.includes('shortcuts: true') && app.includes('stopImmediatePropagation()') && app.includes("window.addEventListener('keydown', gate, true)"), '화면: 뷰어 + 설정 칸 · 결과 받기 · 0.1.13 탭 안에서는 슬라이서를 마지막으로 눌렀을 때만 단축키 (Delete 로 지우기)')
+  {   // 0.1.16 칠한 색 불투명
+    const bm = readSrc(new URL('../web/build.mjs', import.meta.url))
+    ok(bm.includes('const __slcPaintMat = (e, t = null) => new R.MeshStandardMaterial({') && bm.includes('flatShading: !0') && bm.includes('(le === "color" ? __slcPaintMat : ga)(z,') && bm.includes('(ae ? __slcPaintMat : ga)(J,'),
+      '0.1.16 칠한 색은 불투명 · 물체와 같은 빛 (서포트 칠하기는 반투명 그대로)')
+  }
   {   // 0.1.15 ✋ 끌어 옮기기
     const fd = readSrc(new URL('../web/src/freedrag.js', import.meta.url)), tb = readSrc(new URL('../web/src/toolbar.js', import.meta.url)), pl = readSrc(new URL('../web/src/plate.js', import.meta.url))
     ok(fd.includes("send('dragging-changed', true)") && fd.includes("send('dragging-changed', false)") && fd.includes("tc.mode !== 'translate'") && fd.includes('tc.axis') && fd.includes('< 4) return') && fd.includes('lookPref().drag === false')
