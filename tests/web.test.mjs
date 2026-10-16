@@ -116,6 +116,11 @@ sl.dispose()
   ok(ld.includes('window.G7Slicer = {') && ld.includes('mount: function (el, opts)') && ld.includes('popup: popup') && app.includes('window.__slcApp = { version: V, mount, unmount, tick'), 'window.G7Slicer.mount · popup (출력 검사기 탭이 씀)')
   ok(app.includes('const SEND_ADMIN_ONLY = true') && app.includes("'/printers/' + p.id + '/send-file'") && app.includes("fd.append('bed_clear', '1')") && app.includes('checked: bed'), '보내기: 프린터 라운지 send-file · 베드 확인 · 관리자 시험')
   ok(app.includes('h(Viewport, {') && app.includes('h(SettingsPanel, { settings, setSettings, embedded: true })') && app.includes('onSliced') && app.includes('shortcuts: true') && app.includes('stopImmediatePropagation()') && app.includes("window.addEventListener('keydown', gate, true)"), '화면: 뷰어 + 설정 칸 · 결과 받기 · 0.1.13 탭 안에서는 슬라이서를 마지막으로 눌렀을 때만 단축키 (Delete 로 지우기)')
+  {   // 0.1.23
+    const bm = readSrc(new URL('../web/build.mjs', import.meta.url)), nz = readSrc(new URL('../web/src/nozzle.js', import.meta.url)), ly = readSrc(new URL('../web/src/layers.js', import.meta.url)), ap = readSrc(new URL('../web/src/app.js', import.meta.url))
+    ok(bm.includes('globalThis.__slcNozzle ? globalThis.__slcNozzle(R, e)') && nz.includes('globalThis.__slcNozzle = makeNozzle') && ap.includes("import './nozzle.js'"), '0.1.23 미리 보기 노즐 — 실제 핫엔드 모양')
+    ok(ly.includes("root.querySelector('.plate-bar')") && ap.includes("root.querySelector('.slc-ly')"), '0.1.23 층 슬라이더 · 판 고르기 · 완료 띠가 겹치지 않음')
+  }
   {   // 0.1.22 층 · 노즐 슬라이더
     const ly = readSrc(new URL('../web/src/layers.js', import.meta.url)), tb = readSrc(new URL('../web/src/toolbar.js', import.meta.url))
     ok(ly.includes("q('layer-lo'), hi = q('layer-hi'), m = q('move-range')") && ly.includes("Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')") && ly.includes("data-mv") && tb.includes('mountLayers(root, col)'),
