@@ -116,6 +116,15 @@ sl.dispose()
   ok(ld.includes('window.G7Slicer = {') && ld.includes('mount: function (el, opts)') && ld.includes('popup: popup') && app.includes('window.__slcApp = { version: V, mount, unmount, tick'), 'window.G7Slicer.mount · popup (출력 검사기 탭이 씀)')
   ok(app.includes('const SEND_ADMIN_ONLY = true') && app.includes("'/printers/' + p.id + '/send-file'") && app.includes("fd.append('bed_clear', '1')") && app.includes('checked: bed'), '보내기: 프린터 라운지 send-file · 베드 확인 · 관리자 시험')
   ok(app.includes('h(Viewport, {') && app.includes('h(SettingsPanel, { settings, setSettings, embedded: true })') && app.includes('onSliced') && app.includes('shortcuts: true') && app.includes('stopImmediatePropagation()') && app.includes("window.addEventListener('keydown', gate, true)"), '화면: 뷰어 + 설정 칸 · 결과 받기 · 0.1.13 탭 안에서는 슬라이서를 마지막으로 눌렀을 때만 단축키 (Delete 로 지우기)')
+  {   // 0.1.35 슬라이싱 결과 — G-code 읽기
+    const { parseGcode } = await import('../web/src/results.js')
+    const gc = ['M83', 'G28', ';LAYER_CHANGE', ';Z:0.2', 'G1 Z0.2', ';TYPE:Outer wall', 'G0 X10 Y10', 'G1 X20 Y10 E1.5', 'G1 X20 Y20 E1.5', 'G1 E-0.8', 'G0 X30 Y30', 'G1 E0.8', ';TYPE:Prime tower', 'G1 X35 Y30 E2',
+      'T1', ';LAYER_CHANGE', ';Z:0.4', 'G1 Z0.4', ';TYPE:Outer wall', 'G0 X12 Y12', 'G1 X22 Y12 E1', ';WIPE_START', 'G1 X23 Y12 E-0.2', ';WIPE_END', '; FLUSH_START', 'G1 X40 Y40 E5', '; FLUSH_END'].join('\n')
+    const d = parseGcode(gc)
+    ok(d.layers === 2 && d.changes === 1 && Math.abs(d.tools[0].model - 3) < 1e-6 && Math.abs(d.tools[0].tower - 2) < 1e-6 && Math.abs(d.tools[1].model - 1) < 1e-6 && Math.abs(d.tools[1].flush - 5) < 1e-6
+      && d.marks.seam.n === 2 && d.marks.seam.pos[0] === 10 && d.marks.seam.pos[3] === 12 && d.marks.retract.n === 1 && d.marks.unretract.n === 1 && d.marks.wipe.n >= 1 && d.marks.seam.start[1] === 1,
+      '0.1.35 G-code → 필라멘트별 모델 · 타워 · 플러시 · 교체 · 재봉선 · 수축 · 수축 복귀 · 닦기 · 층마다 시작 자리')
+  }
   {   // 0.1.33 판 두께 · 켬 표시
     const pl = readSrc(new URL('../web/src/plate.js', import.meta.url)), tb = readSrc(new URL('../web/src/toolbar.js', import.meta.url))
     ok(pl.includes('function plateBody(THREE, top, w, d)') && pl.includes("{ depth: 1.6, bevelEnabled: false") && pl.includes('{ depth: 8, bevelEnabled: false') && pl.includes('new THREE.ShapeGeometry(roundRect(THREE, p.w, p.d, 5), 6)') && tb.includes("b.innerHTML = ic(on ? 'eye' : 'eyeoff')") && tb.includes('.slc-vg button{transition:color .15s}'), '0.1.33 바닥판 두께(판 · 받침 · 띠) · 바닥판 보이기 켬/끔 바로 보임')
@@ -263,7 +272,7 @@ sl.dispose()
     { const KO = JSON.parse(readSrc(new URL('../web/i18n/ko.json', import.meta.url))), i18 = readSrc(new URL('../web/src/i18n.js', import.meta.url)), pol = readSrc(new URL('../web/src/polish.js', import.meta.url))
       ok(KO['Layer height'] === '레이어 높이' && KO['Line width'] === '선 너비' && Object.keys(KO).length > 1000 && i18.includes("localStorage.getItem('g7_locale')") && i18.includes('.lbl[data-en]::after') && pol.includes('if (opts.ko) loadKo()') && app.includes("ko: siteLang() === 'ko'"),
         '0.1.11 한국어 사이트 — 설정 이름 한국어 + 아래 영어 (OrcaSlicer 한국어 번역 · g7_locale)') }
-    { const miss = []; for (const f of ['app.js', 'quick.js', 'toolbar.js', 'plate.js', 'profiles.js', 'layers.js']) wrapKo(readSrc(new URL('../web/src/' + f, import.meta.url))).found.forEach((x) => { if (/[가-힣]/.test(x) && EN[x] == null) miss.push(f + ': ' + x.slice(0, 40)) })
+    { const miss = []; for (const f of ['app.js', 'quick.js', 'toolbar.js', 'plate.js', 'profiles.js', 'layers.js', 'results.js']) wrapKo(readSrc(new URL('../web/src/' + f, import.meta.url))).found.forEach((x) => { if (/[가-힣]/.test(x) && EN[x] == null) miss.push(f + ': ' + x.slice(0, 40)) })
       const w = wrapKo("const a = '판', b = { '키': 1 }, c = /'한'/.test(x) // '주석'\nconst d = `${x}한`"), ldr = readSrc(new URL('../resources/js/slicer.js', import.meta.url)), bm = readSrc(new URL('../web/build.mjs', import.meta.url))
       if (miss.length) console.log('    영어 없음:', miss)
       ok(!miss.length && w.found.length === 1 && w.code.includes("__T('판')") && w.code.includes("{ '키': 1 }") && w.code.includes("/'한'/") && ldr.includes('function __T(s)') && ldr.includes('label = __T(c.menu_label') && bm.includes('plugins: [scenePlugin, langPlugin]'),
