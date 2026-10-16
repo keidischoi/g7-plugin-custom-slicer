@@ -23,6 +23,7 @@ const ICONS = {
   flipv: '<path d="M12 3v18"/><path d="M5 8 2.5 12 5 16M19 8l2.5 4L19 16"/><path d="M7 6h3M7 18h3M14 6h3M14 18h3"/>',
   layd: '<path d="M3 20h18"/><rect x="5" y="12" width="14" height="5" rx="1.2"/><path d="M9 9a5 5 0 0 1 8-2l1.5 1.5M18.5 5v3.5H15"/>',
   face: '<path d="M3 20h18"/><path d="M7 20 12 7l5 13"/><path d="M12 3v2M7.5 15h9"/>',
+  film: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 5v14M17 5v14M3 9h4M3 15h4M17 9h4M17 15h4"/><path d="m10.5 9.8 3.8 2.2-3.8 2.2z" fill="currentColor"/>',
   hide: '<path d="M9 18l6-6-6-6"/>',
 }
 const ic = (n) => '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + (ICONS[n] || '') + '</svg>'
@@ -137,8 +138,11 @@ export function mountToolbar(host, ctx) {
     '<div class="slc-vg">' + B('iso', 'cube', '비스듬히') + B('top', 'top', '위에서') + B('front', 'front', '앞에서') + B('side', 'side', '옆에서') + B('fit', 'fit', '모델에 맞추기') + B('plate', 'plate', '판 전체 보기') + '</div>' +
     '<div class="slc-vg">' + B('drag', 'move', '물체를 잡고 끌어 옮기기 (켜면 이동 화살표 숨김) · 켜기 · 끄기', pref.drag !== false) + B('auto', 'rotate', '천천히 돌리기') + B('plateshow', 'layers', '바닥판 보이기 · 숨기기', pref.show !== false) + B('platepick', 'sliders', '바닥판 바꾸기 (종류 · 색)') + '</div>' +
     '<div class="slc-vg">' + B('flip', 'flipv', '위아래 뒤집기 (고른 물체)') + B('lay', 'layd', '앞으로 눕히기 90° (고른 물체)') + B('face', 'face', '면으로 놓기 — 누른 뒤 고른 물체의 바닥이 될 면을 클릭') + '</div>' +
+    '<div class="slc-vg slc-pvonly">' + B('sim', 'film', '출력 시뮬레이션 — 1층부터 끝까지 노즐이 움직이는 대로 재생 · 멈춤') +
+      '<button type="button" data-v="spd" data-tip="' + esc('시뮬레이션 빠르기 (누를 때마다 ×1 · ×4 · ×16 · ×64)') + '" aria-label="' + esc('시뮬레이션 빠르기 (누를 때마다 ×1 · ×4 · ×16 · ×64)') + '"><span>×4</span></button></div>' +
     '<div class="slc-vg">' + B('shot', 'camera', '사진 저장 (PNG)') + B('full', 'expand', '전체 화면') + '</div>' + pm()
   col.appendChild(tb)
+  if (col.__slcSim) col.__slcSim.ui()   // 0.1.32 빠르기 글자 (이 브라우저에 기억한 값)
   // 판에서 마우스 · 키를 누르면 뷰어로 가지 않게 (도구를 누르다 판이 돌지 않게)
   for (const ev of ['pointerdown', 'mousedown', 'wheel']) tb.addEventListener(ev, (e) => e.stopPropagation())
   // 0.1.13 키는 Enter · 스페이스(단추 누르기)만 막음 — 예전엔 모든 키를 막아, 도구 단추를 누른 뒤 Delete 를 눌러도 물체가 안 지워졌음
@@ -163,6 +167,7 @@ export function mountToolbar(host, ctx) {
       if (on && !(vw && vw.transform && vw.transform.object)) { nope(b); return }
       b.classList.toggle('on', on); faceMode(vw, on, () => b.classList.remove('on'))
     }
+    else if (v === 'sim' || v === 'spd') { const S = col.__slcSim; if (S) (v === 'sim' ? S.toggle : S.speed)() }
     else if (v === 'auto') { const on = !b.classList.contains('on'); b.classList.toggle('on', on); spin(on) }
     else if (v === 'plateshow') { const on = !b.classList.contains('on'); b.classList.toggle('on', on); setLookPref({ show: on }); refreshPlates() }
     else if (v === 'platepick') { menu.hidden = !menu.hidden }

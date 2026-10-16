@@ -30,7 +30,11 @@ export const LAYER_CSS = `
   border-radius:14px;background:color-mix(in srgb,var(--_light-surface) 92%,transparent);border:1px solid var(--_light-divider);box-shadow:0 1px 2px rgba(15,23,42,.06),0 6px 18px rgba(15,23,42,.10);backdrop-filter:blur(6px)}
 .slc-mv button{display:grid;place-items:center;flex:none;width:28px;height:26px;padding:0;border:0;border-radius:8px;background:none;color:var(--_light-text);font:700 12px system-ui,sans-serif;cursor:pointer}
 .slc-mv button:hover{background:var(--_accent-soft);color:var(--_accent-ink)}
-.slc-mv button.play{background:var(--_accent);color:#fff}
+.slc-mv button.play{background:var(--_accent);color:#fff;text-shadow:none}
+/* 0.1.32 🎬 출력 시뮬레이션 · 빠르기 — 🧰 도구 줄의 미리 보기 묶음 (미리 보기에서만) */
+.slc-vt .slc-pvonly{display:none!important}
+.slc-pv .slc-vt .slc-pvonly{display:flex!important}
+.slc-vg button[data-v=spd] span{font:800 11px system-ui,sans-serif}
 /* 0.1.30 노즐 띠도 층 슬라이더와 같은 모양 — 바탕 투명 · 같은 줄 · 같은 손잡이 (가로) */
 .slc-mv{background:transparent!important;border-color:transparent!important;box-shadow:none!important;backdrop-filter:none!important}
 .slc-mv button,.slc-mv b{text-shadow:0 0 3px var(--_light-surface),0 0 2px var(--_light-surface),0 0 1px var(--_light-surface)}
@@ -74,8 +78,33 @@ export function mountLayers(root, col) {
   const tr = ly.querySelector('.slc-ly-tr'), fill = ly.querySelector('.slc-ly-fill'), thHi = ly.querySelector('[data-th=hi]'), thLo = ly.querySelector('[data-th=lo]')
   const nHi = ly.querySelector('[data-n=hi]'), nLo = ly.querySelector('[data-n=lo]'), one = ly.querySelector('[data-ly=one]')
   const mtr = mv.querySelector('.slc-mv-tr'), mfill = mv.querySelector('.slc-mv-fill'), mth = mv.querySelector('.slc-mv-th'), mb = mv.querySelector('b'), play = mv.querySelector('[data-mv=play]')
-  let timer = 0
-  const stopPlay = () => { clearInterval(timer); timer = 0; play.classList.remove('play'); play.textContent = '▶' }
+  let timer = 0, simT = 0, sim = null
+  // 🎬 단추 · 빠르기 단추는 오른쪽 🧰 도구 줄에 있음 (미리 보기에서만 보임 · toolbar.js) — col.__slcSim 으로 부름
+  const SPEEDS = [1, 4, 16, 64]
+  let spd = 4; try { spd = Number(localStorage.getItem('slc-sim-spd')) || 4 } catch (e) {}
+  if (SPEEDS.indexOf(spd) < 0) spd = 4
+  const simUI = () => {
+    for (const b of col.querySelectorAll('[data-v=sim]')) b.classList.toggle('on', !!simT)
+    for (const b of col.querySelectorAll('[data-v=spd] span')) b.textContent = '×' + spd
+  }
+  const stopSim = () => { clearInterval(simT); simT = 0; sim = null; simUI() }
+  const stopPlay = () => { clearInterval(timer); timer = 0; play.classList.remove('play'); play.textContent = '▶'; stopSim() }
+  /** 0.1.32 출력 시뮬레이션 — 1층부터 맨 위 층까지: 위 층 손잡이를 한 층씩 올리고, 그 층 안에서 노즐 움직임을 처음부터 끝까지.
+   *  한 층에 ×1 은 약 3초 (×4 · ×16 · ×64 는 그만큼 빨리). 뷰어가 층을 바꾸면 그 층의 움직임 수(move-range max)를 새로 정하므로 한 틱 기다림 */
+  const simTick = () => {
+    const hi = q('layer-hi'), m = q('move-range'); if (!hi || !m || !sim) { stopSim(); return }
+    const top = Number(hi.max) || 0
+    if (sim.layer > top) { stopSim(); setVal(hi, top); sync(); return }
+    if (Number(hi.value) !== sim.layer) { setVal(hi, sim.layer); sim.wait = 2; sync(); return }
+    if (sim.wait > 0) { sim.wait--; if (!sim.wait) { setVal(m, 0); sim.t = performance.now(); sim.acc = 0 } return }
+    // 시간으로 진행 — 화면 그리기가 느려 틱이 늦어도 빠르기가 맞게 (×1: 한 층 3초)
+    const now = performance.now(), dt = Math.min(250, now - (sim.t || now)); sim.t = now
+    const max = Number(m.max) || 0; sim.acc = (sim.acc || 0) + max * dt * spd / 3000
+    const step = Math.floor(sim.acc); if (step < 1) return
+    sim.acc -= step
+    const v = Math.min(max, Number(m.value) + step); setVal(m, v); sync()
+    if (v >= max) sim.layer++
+  }
 
   const sync = () => {
     const lo = q('layer-lo'), hi = q('layer-hi'), m = q('move-range')
@@ -116,6 +145,7 @@ export function mountLayers(root, col) {
     sync()
   }
   tr.addEventListener('pointerdown', (e) => {
+    stopPlay()
     const lo = q('layer-lo'), hi = q('layer-hi'); if (!lo || !hi) return
     const v = valAt(e.clientY), t = e.target.getAttribute('data-th')
     drag = t || (Math.abs(v - Number(hi.value)) <= Math.abs(v - Number(lo.value)) ? 'hi' : 'lo')
@@ -142,6 +172,17 @@ export function mountLayers(root, col) {
   mtr.addEventListener('pointermove', (e) => { if (mdrag) mput(e.clientX) })
   mtr.addEventListener('pointerup', () => { mdrag = false }); mtr.addEventListener('pointercancel', () => { mdrag = false })
   mtr.addEventListener('wheel', (e) => { const m = q('move-range'); if (!m) return; e.preventDefault(); stopPlay(); setVal(m, Math.min(Number(m.max), Math.max(0, Number(m.value) + (e.deltaY < 0 ? 1 : -1) * (e.shiftKey ? 10 : 1)))); sync() }, { passive: false })
+  const simToggle = () => {
+    if (simT) { stopSim(); return }
+    stopPlay()
+    const lo = q('layer-lo'), hi = q('layer-hi'); if (!hi) return
+    if (lo) setVal(lo, 0)
+    const at = Number(hi.value), top = Number(hi.max) || 0
+    sim = { layer: at >= top ? 0 : at, wait: 0 }   // 맨 위였으면 1층부터, 아니면 지금 층부터 이어서
+    simT = setInterval(simTick, 33); simUI()
+  }
+  const simSpeed = () => { spd = SPEEDS[(SPEEDS.indexOf(spd) + 1) % SPEEDS.length]; try { localStorage.setItem('slc-sim-spd', String(spd)) } catch (er) {} simUI() }
+  col.__slcSim = { toggle: simToggle, speed: simSpeed, ui: simUI }
   mv.addEventListener('click', (e) => {
     const b = e.target.closest('button'); if (!b) return
     try { b.blur() } catch (er) {}
@@ -151,6 +192,7 @@ export function mountLayers(root, col) {
     else if (k === 'next') { stopPlay(); setVal(m, Math.min(max, Number(m.value) + 1)) }
     else if (k === 'play') {
       if (timer) { stopPlay(); return }
+      stopSim()
       if (Number(m.value) >= max) setVal(m, 0)
       play.classList.add('play'); play.textContent = '❚❚'
       const step = Math.max(1, Math.round(max / 240))   // 끝까지 약 8초
