@@ -7,11 +7,23 @@ import { lookPref } from './plate.js'
 
 const done = new WeakSet()
 
+/** 0.1.17 끌어 옮기기가 켜져 있으면 이동 화살표(손잡이)를 숨김 — 끌어서 옮기니 필요 없음. 끄면 다시 보임 (축 하나로만 옮길 때).
+ *  돌리기 · 크기 손잡이는 그대로. 숨긴 손잡이는 잡히지도 않음 (TransformControls 는 보이는 손잡이만 잡음) */
+export function applyArrows(v) {
+  const tc = v && v.transform; if (!tc) return
+  const hide = lookPref().drag !== false && tc.mode === 'translate'
+  if (tc.showX !== !hide) tc.showX = !hide
+  if (tc.showZ !== !hide) tc.showZ = !hide
+  if (v.invalidate) v.invalidate()
+}
+
 /** v: 뷰어 3D 상태 ({ camera, renderer, orbit, transform, objectsGroup, toolpathGroup, invalidate }) — 한 번만 붙음 */
 export function attachDrag(v) {
   const el = v && v.renderer && v.renderer.domElement
   if (!el || !v.transform || !v.orbit || !v.camera || !v.objectsGroup || done.has(el)) return
   done.add(el)
+  applyArrows(v)
+  v.transform.addEventListener('change', () => applyArrows(v))   // 뷰어가 이동 · 돌리기 · 크기를 바꿀 때마다
   const ray = new Raycaster(), ndc = new Vector2(), plane = new Plane(), hit = new Vector3()
   let arm = null   // { obj, x, y, start, pos0, on, cursor }
   const aim = (e) => {
@@ -20,7 +32,6 @@ export function attachDrag(v) {
     ray.setFromCamera(ndc, v.camera)
   }
   const shown = (o) => { for (let n = o; n; n = n.parent) if (n.visible === false) return false; return true }
-  const inside = (o, root) => { for (let n = o; n; n = n.parent) if (n === root) return true; return false }
   const send = (type, value) => { try { v.transform.dispatchEvent(value === undefined ? { type } : { type, value }) } catch (er) {} }
 
   // 뷰어의 pointerdown(물체 고르기) 다음에 돌아야 해서 같은 칸에 나중에 붙임 — 누른 물체가 이미 골라져 이동 손잡이가 붙어 있음
@@ -31,8 +42,10 @@ export function attachDrag(v) {
     if (!obj || tc.dragging || tc.axis || tc.mode !== 'translate' || !v.orbit.enabled) return   // 손잡이를 잡음 · 크기 · 돌리기 · 칠하기 중
     if (v.toolpathGroup && v.toolpathGroup.visible) return   // 미리 보기(슬라이스 결과) 화면
     aim(e)
-    const first = ray.intersectObjects(v.objectsGroup.children, true).find((h) => shown(h.object))   // 맨 앞에 보이는 것
-    if (!first || !inside(first.object, obj)) return   // 고른 물체의 몸이 아님 (빈 곳 · 다른 물체)
+    // 0.1.17 고른 물체(여럿이면 묶음 안 물체)의 몸에만 광선 — 칠한 덧칠 · 다른 물체까지 보면 큰 모델에서 누를 때마다 100ms 넘게 걸림
+    const bodies = (obj.isMesh ? [obj] : obj.children.filter((c) => c.isMesh)).filter(shown)
+    const first = ray.intersectObjects(bodies, false)[0]
+    if (!first) return   // 고른 물체의 몸이 아님 (빈 곳 · 다른 물체)
     plane.set(new Vector3(0, 1, 0), -first.point.y)
     arm = { obj, x: e.clientX, y: e.clientY, start: first.point.clone(), pos0: obj.getWorldPosition(new Vector3()), on: false, cursor: el.style.cursor }
     v.orbit.enabled = false   // 판이 돌지 않게 — 끌지 않고 떼면 다시 켬

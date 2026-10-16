@@ -2,7 +2,7 @@
 //  뷰어의 3D 칸(.viewport-col, 그림자 DOM) 오른쪽 위에 붙임: 비스듬히 · 위 · 앞 · 옆 · 모델에 맞추기 · 판 전체 /
 //  천천히 돌리기 · 바닥판 보이기 / 바닥판 바꾸기(종류 · 색) · 사진 저장 · 전체 화면 · 접기
 import { PLATES, PLATE_COLORS, lookPref, setLookPref, refreshPlates, viewOf } from './plate.js'
-import { attachDrag } from './freedrag.js'
+import { attachDrag, applyArrows } from './freedrag.js'
 
 const ICONS = {
   cube: '<path d="M12 2.5 20.5 7v10L12 21.5 3.5 17V7z"/><path d="M3.5 7 12 11.5 20.5 7M12 11.5v10"/>',
@@ -121,7 +121,7 @@ export function mountToolbar(host, ctx) {
     '<small>판 색</small><div class="slc-pcol">' + PLATE_COLORS.map((c) => '<button type="button" data-pcolor="' + c[0] + '" title="' + esc(c[1]) + '" aria-label="' + esc(c[1]) + '"' + ((lookPref().color || '') === c[0] ? ' class="on"' : '') + ' style="--c:' + (c[0] || 'transparent') + '">' + (c[0] ? '' : 'A') + '</button>').join('') + '</div></div>'
   tb.innerHTML = '<button type="button" class="slc-vtg" data-vt-toggle>' + ic(mini ? 'tools' : 'hide') + '<span>' + (mini ? '도구' : '숨기기') + '</span></button>' +
     '<div class="slc-vg">' + B('iso', 'cube', '비스듬히') + B('top', 'top', '위에서') + B('front', 'front', '앞에서') + B('side', 'side', '옆에서') + B('fit', 'fit', '모델에 맞추기') + B('plate', 'plate', '판 전체 보기') + '</div>' +
-    '<div class="slc-vg">' + B('drag', 'move', '물체를 잡고 끌어 옮기기 (화살표 없이) · 켜기 · 끄기', pref.drag !== false) + B('auto', 'rotate', '천천히 돌리기') + B('plateshow', 'layers', '바닥판 보이기 · 숨기기', pref.show !== false) + B('platepick', 'sliders', '바닥판 바꾸기 (종류 · 색)') + '</div>' +
+    '<div class="slc-vg">' + B('drag', 'move', '물체를 잡고 끌어 옮기기 (켜면 이동 화살표 숨김) · 켜기 · 끄기', pref.drag !== false) + B('auto', 'rotate', '천천히 돌리기') + B('plateshow', 'layers', '바닥판 보이기 · 숨기기', pref.show !== false) + B('platepick', 'sliders', '바닥판 바꾸기 (종류 · 색)') + '</div>' +
     '<div class="slc-vg">' + B('shot', 'camera', '사진 저장 (PNG)') + B('full', 'expand', '전체 화면') + '</div>' + pm()
   col.appendChild(tb)
   // 판에서 마우스 · 키를 누르면 뷰어로 가지 않게 (도구를 누르다 판이 돌지 않게)
@@ -141,7 +141,7 @@ export function mountToolbar(host, ctx) {
     else if (v === 'side') look([1, 0.32, 0])
     else if (v === 'fit') fit('model')
     else if (v === 'plate') fit('plate')
-    else if (v === 'drag') { const on = !b.classList.contains('on'); b.classList.toggle('on', on); setLookPref({ drag: on }) }
+    else if (v === 'drag') { const on = !b.classList.contains('on'); b.classList.toggle('on', on); setLookPref({ drag: on }); applyArrows(viewOf()) }
     else if (v === 'auto') { const on = !b.classList.contains('on'); b.classList.toggle('on', on); spin(on) }
     else if (v === 'plateshow') { const on = !b.classList.contains('on'); b.classList.toggle('on', on); setLookPref({ show: on }); refreshPlates() }
     else if (v === 'platepick') { menu.hidden = !menu.hidden }
