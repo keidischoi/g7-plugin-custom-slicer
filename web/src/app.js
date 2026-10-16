@@ -1,4 +1,4 @@
-/*! custom-slicer 0.1.34 — 🔪 슬라이서 화면 · AGPL-3.0-or-later · 소스: https://github.com/keidischoi/g7-plugin-custom-slicer
+/*! custom-slicer 0.1.35 — 🔪 슬라이서 화면 · AGPL-3.0-or-later · 소스: https://github.com/keidischoi/g7-plugin-custom-slicer
  *  엔진 · 화면: three-slicer (OrcaSlicer 를 WebAssembly 로 옮긴 것, AGPL) — <Viewport/>(판 배치 · 이동/회전/크기 · 칠하기 · 슬라이스 · G-code 미리 보기)
  *  + <SettingsPanel/>(OrcaSlicer 설정). 이 파일은 그 바깥 틀: 프린터 라운지의 내 프린터 · 📤 보내기 · .gcode.3mf · 다른 화면에서 넘겨받은 파일
  *  모델은 서버로 올라가지 않음 — 이 브라우저에서만 읽고 슬라이스 */
@@ -12,6 +12,7 @@ import { unzipModels } from './handoff.js'
 import { siteLang } from './i18n.js'
 import './colors3mf.js'   // 0.1.14 3MF 원본 색 (뷰어 불러오기 갈고리)
 import './nozzle.js'   // 0.1.23 미리 보기 노즐 모양 (뷰어 노즐 갈고리)
+import { setResultSource } from './results.js'   // 0.1.35 📊 슬라이싱 결과
 import { estimateSeconds, maxZ, toolsOf, matchPreset, hexDist, sizeOf } from './util.js'
 import { SPF, canRead, readProfile, applyProfile, profileZip, profileGuess } from './profiles.js'
 import { polish, setRule, DARK_CSS } from './polish.js'
@@ -19,7 +20,7 @@ import { savePlate, loadPlate, clearPlate } from './store.js'
 import { plateInfo, sceneTheme } from './plate.js'
 import { mountToolbar, stopSpin } from './toolbar.js'
 
-const V = '0.1.34', API = '/api/plugins/custom-slicer', LOUNGE = '/api/plugins/custom-my_printer', SRC = 'https://github.com/keidischoi/g7-plugin-custom-slicer'
+const V = '0.1.35', API = '/api/plugins/custom-slicer', LOUNGE = '/api/plugins/custom-my_printer', SRC = 'https://github.com/keidischoi/g7-plugin-custom-slicer'
 const SEND_ADMIN_ONLY = true   // 「📤 내 프린터로 보내기」는 시험하는 동안 관리자에게만 (실제 프린터에서 확인되면 false 로)
 const LS_SET = 'slc-settings'
 const h = React.createElement
@@ -323,7 +324,11 @@ function App({ files, popup, compact, printer, from }) {
   useEffect(() => {
     if (!ready) return
     const hooked = new WeakSet()
-    const onChange = (e) => { const t = e.target; if (t && t.type === 'file' && /stl/i.test(t.accept || '') && t.files && t.files.length && !t.__slcOurs) keep(Array.from(t.files)) }
+    const onChange = (e) => {
+      const t = e.target; if (t && t.type === 'file' && /stl/i.test(t.accept || '') && t.files && t.files.length && !t.__slcOurs) keep(Array.from(t.files))
+      // 0.1.35 G-code 파일을 열면 그 G-code 로 슬라이싱 결과
+      const gf = t && t.files && Array.from(t.files).find((f) => /\.(gcode|gco|g)$/i.test(f.name)); if (gf) gf.text().then((tx) => setResultSource({ gcode: tx, settings: cur.current, seconds: 0 })).catch(() => {})
+    }
     const onDrop = (e) => { const fl = e.dataTransfer && e.dataTransfer.files; if (fl && fl.length) keep(Array.from(fl).filter((x) => /\.(stl|3mf|obj|amf|ply)$/i.test(x.name))) }
     const hook = () => {
       const walk = (n) => { if (!n) return; if (n.shadowRoot && !hooked.has(n.shadowRoot)) { hooked.add(n.shadowRoot); n.shadowRoot.addEventListener('change', onChange, true); n.shadowRoot.addEventListener('drop', onDrop, true) } if (n.shadowRoot) walk(n.shadowRoot); if (n.querySelectorAll) n.querySelectorAll('*').forEach((c) => { if (c.shadowRoot) walk(c) }) }
@@ -364,6 +369,8 @@ function App({ files, popup, compact, printer, from }) {
     if (lp) setPid(+lp.id)
   }, [printerKey])
   useEffect(() => { setRes(null) }, [settings])   // 설정이 바뀌면 뷰어도 결과를 버림
+  // 0.1.35 📊 슬라이싱 결과 — 필라멘트별 사용량 · 교체 · 비용 · 수축 · 닦기 · 재봉선 (G-code 를 따로 읽음)
+  useEffect(() => { setResultSource(res ? { gcode: res.gcode, settings: cur.current, seconds: res.seconds } : null) }, [res])
   // 0.1.5 🧱 바닥판 — 출력 검사기와 같은 판 그림 (프린터 제조사 · 판 종류)
   useEffect(() => { plateInfo(String(settings.printer_settings_id || ''), String(settings.curr_bed_type || '')) }, [settings.printer_settings_id, settings.curr_bed_type])
   // 🎛️ 슬라이서 프로필 플러그인이 켜져 있나 (목록 하나만 물어봄)
@@ -584,7 +591,7 @@ function App({ files, popup, compact, printer, from }) {
       let root = null
       const walk = (n) => { if (!n || root) return; if (n.shadowRoot && n.shadowRoot.querySelector('.viewport-col')) { root = n.shadowRoot; return } if (n.shadowRoot) walk(n.shadowRoot); if (n.children) for (const c of n.children) walk(c) }
       walk(st); if (!root) return
-      const sr = st.getBoundingClientRect(), vp = root.querySelector('.viewport-col').getBoundingClientRect(), sc = root.querySelector('.stats-card')
+      const sr = st.getBoundingClientRect(), vp = root.querySelector('.viewport-col').getBoundingClientRect(), sc = root.querySelector('.slc-res:not([hidden])') || root.querySelector('.stats-card')
       const cr = sc && sc.offsetParent ? sc.getBoundingClientRect() : null
       let left = (cr ? cr.right : vp.left) - sr.left + 12
       const right = Math.max(12, sr.right - vp.right + 12)   // 0.1.27 층 슬라이더가 왼쪽으로 가서 다시 3D 칸 오른쪽 끝까지

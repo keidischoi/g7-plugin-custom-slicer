@@ -50,6 +50,7 @@ export const LAYER_CSS = `
 `
 
 import { viewOf } from './plate.js'
+import { mountResults } from './results.js'
 
 const done = new WeakSet()
 const setVal = (inp, v) => {   // React 가 쥔 입력칸 값 바꾸기 — 값을 넣고 input 알림
@@ -108,7 +109,9 @@ export function mountLayers(root, col) {
     if (v >= max) sim.layer++
   }
 
+  const res = mountResults(root, col)   // 0.1.35 📊 슬라이싱 결과 · 3D 표시 (미리 보기에서만)
   const sync = () => {
+    try { res.update() } catch (e) {}
     const lo = q('layer-lo'), hi = q('layer-hi'), m = q('move-range')
     // 0.1.24 미리 보기 탭일 때만 — 준비 탭에서도 뷰어가 슬라이더를 쥐고 있어서 위 물체 도구줄 · 오른쪽 🧰 도구와 겹쳤음
     const pv = root.querySelector('[data-testid="mode-preview"]')
@@ -119,7 +122,7 @@ export function mountLayers(root, col) {
     if (!on) { stopPlay(); return }
     // 0.1.28 자리 — 노즐 띠는 위 가운데(CSS) / 층 슬라이더는 왼쪽 「슬라이스 정보」 상자 위에서 끝남 · 3D 칸 아래가 화면 밖이면 화면 안까지만
     const cr = col.getBoundingClientRect(), vis = (e) => (e && e.offsetParent && !e.hidden ? e.getBoundingClientRect() : null)
-    const sr = vis(root.querySelector('.stats-card'))
+    const sr = vis(root.querySelector('.slc-res')) || vis(root.querySelector('.stats-card'))   // 0.1.35 결과 상자 위에서 끝남
     const offscreen = Math.max(0, Math.round(cr.bottom - window.innerHeight))
     const lyB = Math.max(46 + offscreen, sr ? Math.round(cr.bottom - sr.top) + 10 : 0)
     if (ly.__b !== lyB) { ly.__b = lyB; ly.style.bottom = lyB + 'px' }

@@ -92,7 +92,7 @@ const T_PATH = join(root, 'web/i18n/t.js').split('\\').join('/')
 const langPlugin = {
   name: 'slc-lang',
   setup(b) {
-    b.onLoad({ filter: /web[\\/]src[\\/](app|quick|toolbar|plate|profiles|layers)\.js$/ }, (args) => {
+    b.onLoad({ filter: /web[\\/]src[\\/](app|quick|toolbar|plate|profiles|layers|results)\.js$/ }, (args) => {
       const r = wrapKo(readFileSync(args.path, 'utf8'))
       return { contents: 'import { __T } from ' + JSON.stringify(T_PATH) + ';\n' + r.code, loader: 'js', resolveDir: dirname(args.path) }
     })
