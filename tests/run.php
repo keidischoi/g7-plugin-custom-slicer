@@ -62,6 +62,6 @@ foreach (['plugin.php', 'src/Listeners/RouteListener.php', 'src/Listeners/MenuLi
     ok($c === 0 && ! str_contains((string) file_get_contents($root.'/'.$f), 'WebSlicer'), 'PHP 문법 · 이름 '.$f);
 }
 $ac = (string) file_get_contents($root.'/src/Http/Controllers/AssetController.php');
-ok(str_contains($ac, "? 'public, max-age=31536000, immutable' : 'no-cache'"), '0.1.50 판 번호 없는 파일(worker)은 매번 확인 · 해시 조각만 길게 캐시');
+ok(str_contains($ac, "\$hashed || \$fresh ? 'public, max-age=31536000, immutable' : 'no-cache'") && str_contains($ac, "\$fresh = \$v !== '' && \$v === self::version();"), '0.1.50 · 0.1.52 해시 조각 · 지금 판 번호(?v)만 길게 캐시 — worker · 옛 번호는 매번 확인');
 echo "\n".($fail ? "FAIL $fail / " : 'OK ').($pass + $fail)."\n";
 exit($fail ? 1 : 0);
