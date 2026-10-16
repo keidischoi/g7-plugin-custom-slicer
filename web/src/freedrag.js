@@ -2,10 +2,50 @@
 //  뷰어(three-slicer-viewer)는 화살표(이동 손잡이)를 잡아야만 옮겨짐. 0.1.15 고른 물체의 몸을 잡고 끌면 판 위(바닥과 나란히)를 자유롭게 옮김.
 //  뷰어의 이동 손잡이(TransformControls)가 끌 때 내는 것과 같은 알림(dragging-changed · objectChange · change)을 보내서
 //  되돌리기 · 판 옮김 · 바닥 붙이기 · 오버행 다시 그리기는 뷰어가 원래대로 함. 🧰 도구의 ✋ 단추로 끔 (lookPref().drag)
-import { Raycaster, Vector2, Vector3, Plane } from 'three'
+import { Raycaster, Vector2, Vector3, Plane, Box3 } from 'three'
 import { lookPref } from './plate.js'
 
 const done = new WeakSet()
+const PAINT_ORDER = 999   // 뷰어가 칠한 색 덧칠 메시에 주는 renderOrder
+
+/** 0.1.18 옮기는 동안 잔상 — 칠한 색 덧칠은 물체의 자식이 아니라 판 전체 좌표로 따로 있어서, 끄는 동안 제자리에 남고
+ *  놓은 뒤 뷰어가 새로 만들 때까지(큰 모델은 몇 초) 옛 자리에 색이 남았음. 끄기 시작할 때 고른 물체 안에만 있는 덧칠은
+ *  같이 옮기고, 다른 물체와 섞인 덧칠은 끄는 동안 숨김. 놓으면 뷰어가 새 덧칠로 바꿈 (안 바꾸면 10초 뒤 다시 보임) */
+function ghostFix(v) {
+  const tc = v.transform
+  let run = null   // { obj, p0, follow: [{ m, w0 }], hidden: [m] }
+  const box = new Box3(), ob = new Box3(), tmp = new Vector3()
+  const overlays = (sel) => v.objectsGroup.children.filter((c) => c.isMesh && c.renderOrder === PAINT_ORDER && c.visible && !sel.has(c))
+  tc.addEventListener('dragging-changed', (e) => {
+    const obj = tc.object
+    if (e.value) {
+      if (!obj) return
+      const sel = new Set(); obj.traverse((n) => sel.add(n))
+      box.setFromObject(obj).expandByScalar(0.5)
+      run = { obj, p0: obj.getWorldPosition(new Vector3()), follow: [], hidden: [] }
+      for (const m of overlays(sel)) {
+        if (!m.geometry.boundingBox) m.geometry.computeBoundingBox()
+        ob.copy(m.geometry.boundingBox).applyMatrix4(m.matrixWorld)
+        if (!ob.intersectsBox(box)) continue   // 다른 물체의 색 — 그대로
+        if (tc.mode === 'translate' && box.containsBox(ob)) run.follow.push({ m, w0: m.getWorldPosition(new Vector3()) })
+        else { m.visible = false; run.hidden.push(m) }
+      }
+      return
+    }
+    if (!run) return
+    const r = run; run = null
+    setTimeout(() => {   // 뷰어가 덧칠을 새로 만들면 옛 것은 판에서 빠짐 — 남아 있으면(안 바뀜) 되돌림
+      for (const m of r.hidden) if (m.parent) m.visible = true
+      for (const f of r.follow) if (f.m.parent) { f.m.position.copy(f.m.parent.worldToLocal(f.w0.clone())); f.m.updateMatrixWorld(true) }
+      if (v.invalidate) v.invalidate()
+    }, 10000)
+  })
+  tc.addEventListener('objectChange', () => {
+    if (!run || !run.follow.length) return
+    const d = run.obj.getWorldPosition(tmp).sub(run.p0)
+    for (const f of run.follow) { const w = f.w0.clone().add(d); f.m.position.copy(f.m.parent ? f.m.parent.worldToLocal(w) : w); f.m.updateMatrixWorld(true) }
+  })
+}
 
 /** 0.1.17 끌어 옮기기가 켜져 있으면 이동 화살표(손잡이)를 숨김 — 끌어서 옮기니 필요 없음. 끄면 다시 보임 (축 하나로만 옮길 때).
  *  돌리기 · 크기 손잡이는 그대로. 숨긴 손잡이는 잡히지도 않음 (TransformControls 는 보이는 손잡이만 잡음) */
@@ -23,6 +63,7 @@ export function attachDrag(v) {
   if (!el || !v.transform || !v.orbit || !v.camera || !v.objectsGroup || done.has(el)) return
   done.add(el)
   applyArrows(v)
+  ghostFix(v)   // 0.1.18 화살표로 옮길 때도 같이
   v.transform.addEventListener('change', () => applyArrows(v))   // 뷰어가 이동 · 돌리기 · 크기를 바꿀 때마다
   const ray = new Raycaster(), ndc = new Vector2(), plane = new Plane(), hit = new Vector3()
   let arm = null   // { obj, x, y, start, pos0, on, cursor }
