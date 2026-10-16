@@ -118,6 +118,7 @@ sl.dispose()
   ok(app.includes('h(Viewport, {') && app.includes('h(SettingsPanel, { settings, setSettings, embedded: true })') && app.includes('onSliced') && app.includes('shortcuts: true') && app.includes('stopImmediatePropagation()') && app.includes("window.addEventListener('keydown', gate, true)"), '화면: 뷰어 + 설정 칸 · 결과 받기 · 0.1.13 탭 안에서는 슬라이서를 마지막으로 눌렀을 때만 단축키 (Delete 로 지우기)')
   {   // 0.1.37 바닥 밑
     const pl = readSrc(new URL('../web/src/plate.js', import.meta.url))
+    ok(readSrc(new URL('../web/src/results.js', import.meta.url)).includes('mvPosition.xyz -= normalize(mvPosition.xyz) * 0.6;'), '0.1.38 재봉선 점을 벽 밖으로 당겨 층마다 보임')
     ok(pl.includes('view.scene.onBeforeRender = function (rd, sc, cam)') && pl.includes('cam.position.y < -0.5') && pl.includes("if (typeof prev === 'function') return prev.apply(this, arguments)"), '0.1.37 바닥 밑에서 보면 판 숨김')
   }
   {   // 0.1.35 슬라이싱 결과 — G-code 읽기
