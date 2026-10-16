@@ -88,6 +88,9 @@ input[type=range]{accent-color:#0ea5e9}
 .slice-btn:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 18px rgba(14,165,233,.45)}
 .slice-btn:disabled{background:#cbd5e1;box-shadow:none;color:#f8fafc}
 .export-btn{border-radius:12px;font-weight:700}
+/* 0.1.26 3D 화면 아래 — 슬라이스 정보 상자 · 판 고르기(1 · +)가 맨 아래 안내 줄(1 object(s) · selected …)과 겹치지 않게 그 위로 */
+.stats-card{bottom:48px!important}
+.plate-bar{bottom:48px!important}
 /* 0.1.19 오른쪽 칸 경고(⚠ 큰 모델 · 판 밖) · 알림(ℹ 프로젝트에서 가져온 것) — 글자만 있던 것을 둥근 상자로 */
 .slice-warn.side-warn{display:block;margin:8px 2px;padding:9px 12px;border-radius:12px;font-size:12.5px;line-height:1.55;color:#b45309;
   border:1px solid color-mix(in srgb,currentColor 35%,transparent);background:color-mix(in srgb,currentColor 9%,transparent)}

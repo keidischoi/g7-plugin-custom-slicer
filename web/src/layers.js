@@ -4,6 +4,8 @@
 //  뷰어의 원래 슬라이더 값을 바꿔서 움직이므로 보이는 모양 · 단축키(↑↓ · L · T)는 뷰어 그대로.
 
 export const LAYER_CSS = `
+/* 0.1.26 hidden 이 진짜로 숨기게 — 아래 display:flex 가 hidden 을 이겨서 준비 화면에서도 보였음 */
+.slc-ly[hidden],.slc-mv[hidden]{display:none!important}
 .slc-pv .slc-vt{right:64px}
 .slc-ly{position:absolute;top:58px;right:10px;bottom:46px;z-index:16;display:flex;flex-direction:column;align-items:center;gap:6px;width:46px;padding:8px 0;
   border-radius:14px;background:color-mix(in srgb,var(--_light-surface) 92%,transparent);border:1px solid var(--_light-divider);box-shadow:0 1px 2px rgba(15,23,42,.06),0 6px 18px rgba(15,23,42,.10);backdrop-filter:blur(6px);user-select:none;touch-action:none}
@@ -27,6 +29,8 @@ export const LAYER_CSS = `
 .slc-mv b{flex:none;min-width:86px;font:700 11.5px system-ui,sans-serif;color:var(--_light-text);font-variant-numeric:tabular-nums;text-align:right}
 .slc-mv b small{font-weight:600;color:var(--_light-text-muted)}
 `
+
+import { viewOf } from './plate.js'
 
 const done = new WeakSet()
 const setVal = (inp, v) => {   // React 가 쥔 입력칸 값 바꾸기 — 값을 넣고 input 알림
@@ -63,7 +67,9 @@ export function mountLayers(root, col) {
     const lo = q('layer-lo'), hi = q('layer-hi'), m = q('move-range')
     // 0.1.24 미리 보기 탭일 때만 — 준비 탭에서도 뷰어가 슬라이더를 쥐고 있어서 위 물체 도구줄 · 오른쪽 🧰 도구와 겹쳤음
     const pv = root.querySelector('[data-testid="mode-preview"]')
-    const on = !!(lo && hi) && !!(pv && pv.classList.contains('on'))
+    // 0.1.26 두 번 확인 — 미리 보기 탭이 켜져 있고 · 3D 화면이 실제로 길(툴패스)을 보이고 있을 때만 (준비 화면에서는 늘 숨김)
+    const vw = viewOf(), paths = !vw || !vw.toolpathGroup || vw.toolpathGroup.visible
+    const on = !!(lo && hi) && !!(pv && pv.classList.contains('on')) && paths
     col.classList.toggle('slc-pv', on); ly.hidden = !on; mv.hidden = !(on && m)
     if (!on) { stopPlay(); return }
     // 0.1.23 겹치지 않게 — 아래 판 고르기(1 · +) 위에서 끝남 · 3D 칸 아래가 화면 밖이면 화면 안까지만

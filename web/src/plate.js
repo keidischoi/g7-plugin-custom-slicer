@@ -81,7 +81,7 @@ export function plateCanvas(st, W, D) {
   g.fillStyle = L.label; g.font = '600 ' + Math.max(10, Math.round(9 * px)) + 'px system-ui,sans-serif'
   for (mm = 0; mm <= W; mm += 10) { const tx = mm * px, big = mm % 50 === 0; g.fillRect(tx - 0.75, chh - (big ? 14 : 7), 1.5, big ? 14 : 7); if (big && mm > 0 && mm < W) g.fillText(String(mm), tx + 3, chh - 16) }
   for (mm = 0; mm <= D; mm += 10) { const ty = chh - mm * px, big = mm % 50 === 0; g.fillRect(0, ty - 0.75, big ? 14 : 7, 1.5); if (big && mm > 0 && mm < D) g.fillText(String(mm), 16, ty + 4) }
-  if (st.brand) { g.save(); g.fillStyle = L.label; g.font = '800 ' + Math.round(Math.min(cw / 12, 7.5 * px)) + 'px system-ui,sans-serif'; g.textAlign = 'center'; g.globalAlpha = 0.9; g.fillText(spaced(st.brand), cw / 2, chh - 26); g.restore() }
+  if (st.brand) { g.save(); g.fillStyle = L.label; g.font = '800 ' + Math.round(Math.min(cw / 12, 7.5 * px)) + 'px system-ui,sans-serif'; g.textAlign = 'center'; g.globalAlpha = 0.9; g.textBaseline = 'alphabetic'; g.fillText(spaced(st.brand), cw / 2, chh - 16 - Math.max(10, Math.round(9 * px)) - Math.round(5 * px)); g.restore() }   // 0.1.26 아래 눈금 숫자(100 · 150) 줄 위로 — 예전엔 같은 줄에 겹쳤음
   g.save(); g.fillStyle = L.label; g.font = '600 ' + Math.round(Math.min(cw / 30, 4.5 * px)) + 'px system-ui,sans-serif'; g.textAlign = 'right'; g.fillText(L.name + ' · ' + Math.round(W) + '×' + Math.round(D) + ' mm', cw - 10, 22); g.restore()
   g.strokeStyle = st.accent; g.lineWidth = 2; g.globalAlpha = 0.7; g.beginPath(); g.arc(cw / 2, chh / 2, 6, 0, 6.3); g.stroke(); g.globalAlpha = 1
   return c
