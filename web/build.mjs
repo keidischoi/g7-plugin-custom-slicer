@@ -94,8 +94,9 @@ const scenePlugin = {
         // 0.1.19 🐢 끌기 시작 때 뷰어가 칠한 색을 물체에 붙은 모양으로 새로 만듦(큰 모델 0.8초 → 끄는 중 멈칫). freedrag.js 가
         //  덧칠을 직접 따라 옮길 수 있을 때(옮기기 · 그 물체만의 덧칠)는 globalThis.__slcFollowPaint 를 켜서 건너뜀
         // 0.1.19 고른 물체를 감싸는 네모 입체 상자는 크기 바꾸기(모서리 손잡이)일 때만 — 고르기 · 옮기기 · 돌리기에는 안 보임 (선택은 물체 색 강조로 보임)
+        // 0.1.49 대신 고른 물체에 얇은 하늘색 테두리 상자 (web/src/plate.js __slcSel)
         // 0.1.20 물체를 고르거나 마우스를 올려도 색이 안 바뀌게 — 뷰어는 고른 것 · 올린 것을 하늘색으로 빛나게(emissive) 했음 (원래 색을 보며 고르기)
-        ['h.material.emissive ? h.material.emissive.set(M ? at.accent : h === fe ? at.accentHover : 0) :', 'h.material.emissive ? h.material.emissive.set(0) :'],
+        ['h.material.emissive ? h.material.emissive.set(M ? at.accent : h === fe ? at.accentHover : 0) :', 'h.material.emissive ? (h.material.emissive.set(0), globalThis.__slcSel && globalThis.__slcSel(h, M)) :'],
         // 0.1.23 🔩 미리 보기 노즐 — 주황 원뿔 대신 실제 핫엔드 모양 (web/src/nozzle.js)
         ['  }), r = new R.Mesh(t, n);\n  return r.renderOrder = 10, r.frustumCulled = !1, r.visible = !1, r;', '  }), r = globalThis.__slcNozzle ? globalThis.__slcNozzle(R, e) : new R.Mesh(t, n);\n  return r.renderOrder = r.renderOrder || 10, r.frustumCulled = !1, r.visible = !1, r;'],
         ['b = S || null, a.visible = !!b;', 'b = S || null, a.visible = !!b && !!x;'],

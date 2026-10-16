@@ -153,6 +153,7 @@ sl.dispose()
     const st = readSrc(new URL('../web/src/store.js', import.meta.url)), bs = readSrc(new URL('../web/build.mjs', import.meta.url))
     ok(mg.includes('past = file.__slcRestored ? lastChoice(file)') && mg.includes('rememberChoice(file, choice)') && st.includes('f.__slcRestored = true')
       && bs.includes(`"    skirt_loops: settings && 'skirt_loops' in settings ? num('skirt_loops') : 0,"`), '0.1.48 새로고침 때 합치기를 다시 묻지 않음 · 프로필에 없는 스커트는 0')
+    ok(bs.includes('globalThis.__slcSel && globalThis.__slcSel(h, M)') && pg.includes('new T.Box3Helper(mesh.geometry.boundingBox.clone()') && pg.includes('STATE.THREE = THREE'), '0.1.49 고른 물체에 테두리 상자')
     const { liftColor } = await import('../web/src/plate.js')
     const dark = { r: 0.0242, g: 0.0242, b: 0.0242 }, gold = { r: 0.8, g: 0.42, b: 0.016 }
     ok(liftColor(dark) && Math.abs(dark.r - 0.1) < 1e-9 && !liftColor(gold) && gold.r === 0.8, '0.1.46 아주 어두운 물체만 화면에서 밝힘')
@@ -233,7 +234,7 @@ sl.dispose()
   }
   {   // 0.1.20 고르기 색 없음
     const bm = readSrc(new URL('../web/build.mjs', import.meta.url)), fd = readSrc(new URL('../web/src/freedrag.js', import.meta.url))
-    ok(bm.includes("'h.material.emissive ? h.material.emissive.set(0) :'") && !fd.includes('emissive.set('), '0.1.20 고르거나 올려도 물체 색 그대로')
+    ok(bm.includes("'h.material.emissive ? (h.material.emissive.set(0), ") && !fd.includes('emissive.set('), '0.1.20 고르거나 올려도 물체 색 그대로')
   }
   {   // 0.1.19
     const bm = readSrc(new URL('../web/build.mjs', import.meta.url)), fd = readSrc(new URL('../web/src/freedrag.js', import.meta.url)), or = readSrc(new URL('../web/src/orient.js', import.meta.url)), tb = readSrc(new URL('../web/src/toolbar.js', import.meta.url)), pc = readSrc(new URL('../web/src/polish.js', import.meta.url)), ap = readSrc(new URL('../web/src/app.js', import.meta.url))

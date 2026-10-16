@@ -146,10 +146,31 @@ function liftScene(scene) {
     }
   })
 }
+/** 0.1.49 고른 물체 표시 — 0.1.20 부터 고른 물체를 빛나게 하지 않아(원래 색을 보며 고르기) 골랐는지 알 수 없었음 →
+ *  고른 물체에 얇은 하늘색 테두리 상자 (물체를 따라 옮기고 돌아감 · 다른 물체에 가려도 보임). build.mjs 가 뷰어의 선택 표시 자리에서 부름 */
+globalThis.__slcSel = (mesh, on) => {
+  try {
+    const T = STATE.THREE
+    if (!T || !mesh || !mesh.geometry) return
+    let box = mesh.userData.slcSelBox
+    if (!on) { if (box) box.visible = false; return }
+    if (!box || box.userData.geo !== mesh.geometry) {
+      if (box) { mesh.remove(box); box.geometry.dispose(); box.material.dispose() }
+      mesh.geometry.computeBoundingBox()
+      const dark = document.documentElement.classList.contains('dark')
+      box = new T.Box3Helper(mesh.geometry.boundingBox.clone(), new T.Color(dark ? 0x38bdf8 : 0x0ea5e9))
+      box.material.depthTest = false; box.material.transparent = true; box.material.opacity = 0.9
+      box.renderOrder = 1000; box.raycast = () => {}; box.userData.geo = mesh.geometry
+      mesh.add(box); mesh.userData.slcSelBox = box
+    }
+    box.visible = true
+  } catch (e) {}
+}
 /** build.mjs 가 뷰어의 판 만들기 함수에서 부름 — (THREE, 뷰어 상태, {x, z, w, d}) → 판 그림 메시 (뷰어가 판을 지울 때 같이 지움) */
 globalThis.__slcPlateHook = (THREE, view, p) => {
   try {
     STATE.views.add(view)
+    STATE.THREE = THREE
     // 0.1.37 바닥 밑에서 볼 때는 판을 숨김 — 그리기마다 카메라가 판(높이 0)보다 아래인지 봄 (판 위로 오면 다시 보임)
     if (view.scene && !view.scene.__slcBelow) {
       view.scene.__slcBelow = true
