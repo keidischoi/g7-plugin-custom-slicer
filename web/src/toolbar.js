@@ -26,6 +26,7 @@ const ICONS = {
   film: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 5v14M17 5v14M3 9h4M3 15h4M17 9h4M17 15h4"/><path d="m10.5 9.8 3.8 2.2-3.8 2.2z" fill="currentColor"/>',
   eye: '<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
   eyeoff: '<path d="M2 12s3.6-7 10-7c2 0 3.7.7 5.1 1.6M22 12s-3.6 7-10 7c-2 0-3.7-.7-5.1-1.6"/><path d="M3 3l18 18"/>',
+  trash: '<path d="M4 7h16M9 7V4.5h6V7M6.5 7l1 13h9l1-13"/><path d="M10 11v6M14 11v6"/>',
   hide: '<path d="M9 18l6-6-6-6"/>',
 }
 const ic = (n) => '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + (ICONS[n] || '') + '</svg>'
@@ -38,6 +39,7 @@ export const TOOL_CSS = `
 /* 0.1.26 겹치지 않게 — 높이가 모자라면 아래 판 고르기(1 · +)까지 내려가지 않고 왼쪽에 한 줄 더 (툴팁이 잘리지 않게 스크롤 대신 줄 바꿈) */
 .slc-vt{max-height:calc(100% - 150px);flex-wrap:wrap-reverse;align-content:flex-end;column-gap:6px}
 .slc-vt>.slc-vtg{order:-1}
+.slc-pv .slc-vt .slc-preponly{display:none!important}   /* 0.1.43 판 비우기는 준비 화면에서만 */
 /* 0.1.30 줄 바꿈(wrap-reverse)이면 가로 방향이 뒤집혀 flex-end 가 왼쪽이 됨 → 도구 묶음이 칸 왼쪽에 붙어 벽에서 40px 떨어져 보였음.
  *  flex-start(뒤집혀서 오른쪽)로 맞춤 · 벽과의 간격은 예전처럼 10px · 둥근 모서리 */
 .slc-vt{align-items:flex-start}
@@ -142,6 +144,7 @@ export function mountToolbar(host, ctx) {
   tb.innerHTML = '<button type="button" class="slc-vtg" data-vt-toggle>' + ic(mini ? 'tools' : 'hide') + '<span>' + (mini ? '도구' : '숨기기') + '</span></button>' +
     '<div class="slc-vg">' + B('iso', 'cube', '비스듬히') + B('top', 'top', '위에서') + B('front', 'front', '앞에서') + B('side', 'side', '옆에서') + B('fit', 'fit', '모델에 맞추기') + B('plate', 'plate', '판 전체 보기') + '</div>' +
     '<div class="slc-vg">' + B('drag', 'move', '물체를 잡고 끌어 옮기기 (켜면 이동 화살표 숨김) · 켜기 · 끄기', pref.drag !== false) + B('auto', 'rotate', '천천히 돌리기') + B('plateshow', pref.show !== false ? 'eye' : 'eyeoff', '바닥판 보이기 · 숨기기', pref.show !== false) + B('platepick', 'sliders', '바닥판 바꾸기 (종류 · 색)') + '</div>' +
+    '<div class="slc-vg slc-preponly">' + B('clear', 'trash', '판 비우기 — 판의 물체를 모두 지움 (Ctrl+Z 로 되돌리기)') + '</div>' +
     '<div class="slc-vg">' + B('flip', 'flipv', '위아래 뒤집기 (고른 물체)') + B('lay', 'layd', '앞으로 눕히기 90° (고른 물체)') + B('face', 'face', '면으로 놓기 — 누른 뒤 고른 물체의 바닥이 될 면을 클릭') + '</div>' +
     '<div class="slc-vg slc-pvonly">' + B('sim', 'film', '출력 시뮬레이션 — 1층부터 끝까지 노즐이 움직이는 대로 재생 · 멈춤') +
       '<button type="button" data-v="spd" data-tip="' + esc('시뮬레이션 빠르기 (누를 때마다 ×1 · ×4 · ×16 · ×64)') + '" aria-label="' + esc('시뮬레이션 빠르기 (누를 때마다 ×1 · ×4 · ×16 · ×64)') + '"><span>×4</span></button></div>' +
@@ -166,6 +169,11 @@ export function mountToolbar(host, ctx) {
     else if (v === 'fit') fit('model')
     else if (v === 'plate') fit('plate')
     else if (v === 'drag') { const on = !b.classList.contains('on'); b.classList.toggle('on', on); setLookPref({ drag: on }); applyArrows(viewOf()) }
+    else if (v === 'clear') {   // 0.1.43 뷰어의 「모두 지우기」 단추를 누름 (준비 화면 위 도구줄 · 되돌리기 됨)
+      const d = root.querySelector('[data-testid="tool-delete-all"]')
+      if (!d || d.disabled) { nope(b); return }
+      d.click()
+    }
     else if (v === 'flip' || v === 'lay') { if (!(v === 'flip' ? flip : layDown)(viewOf())) nope(b) }
     else if (v === 'face') {
       const vw = viewOf(), on = !b.classList.contains('on')

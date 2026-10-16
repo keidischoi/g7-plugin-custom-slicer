@@ -144,7 +144,7 @@ globalThis.__slcPlateHook = (THREE, view, p) => {
     m.rotation.x = -Math.PI / 2
     m.position.set(p.x, -0.05, p.z)
     m.renderOrder = -10
-    m.userData.slcPlate = { w: p.w, d: p.d, THREE }
+    m.userData.slcPlate = { w: p.w, d: p.d, THREE, selected: !!p.selected }   // 0.1.43 selected: 3MF 물체를 놓을 판
     m.visible = (STATE.show = lookPref().show !== false)
     return m
   } catch (e) { return null }
