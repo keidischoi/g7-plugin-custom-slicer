@@ -59,6 +59,8 @@ const scenePlugin = {
           't.scene.add(E); const __slcP = globalThis.__slcPlateHook ? globalThis.__slcPlateHook(e, t, { index: f, x: m, z: b, w: g, d: y, selected: F }) : null; __slcP && (t.scene.add(__slcP), _.visible = !__slcP.visible, N.visible = !__slcP.visible); t.plateBeds.push({ gridThin: _, gridBold: N, border: x, label: E, slcPlate: __slcP || void 0 });'],
         // 0.1.14 🎨 3MF 표준 색(colorgroup · basematerials) — 파일마다 물체를 올린 뒤 web/src/colors3mf.js 가 색을 읽어 필라멘트 칸 · 물체에 붙임
         // 0.1.43 📐 3MF 자리 — 물체마다 파일의 원래 자리(가운데 · 바닥 높이)를 기억(org)하고, 올린 뒤 원래 모양대로 판 빈자리에 (web/src/place3mf.js)
+        // 0.1.44 🧩 여러 물체 3MF — 올리기 전에 하나로 합칠지 물음 (web/src/merge3mf.js)
+        ['const Ye = [];\n        for (const Ke of De) {', 'const Ye = [];\n        for (const Ke of (globalThis.__slcMerge ? await globalThis.__slcMerge(ne, De) : De)) {'],
         ['wt && Ke.objectid && Ye.push({ objectid: Ke.objectid, id: wt.id, paint: Ke.paint, bbox: Ke.bbox });',
           'wt && Ke.objectid && Ye.push({ objectid: Ke.objectid, id: wt.id, paint: Ke.paint, bbox: Ke.bbox, org: globalThis.__slcOrg ? globalThis.__slcOrg(Ke.modelPos) : null });'],
         ['De[0]?.project && we(De[0].project, Ye), ht.info(',
@@ -107,7 +109,7 @@ const T_PATH = join(root, 'web/i18n/t.js').split('\\').join('/')
 const langPlugin = {
   name: 'slc-lang',
   setup(b) {
-    b.onLoad({ filter: /web[\\/]src[\\/](app|quick|toolbar|plate|profiles|layers|results)\.js$/ }, (args) => {
+    b.onLoad({ filter: /web[\\/]src[\\/](app|quick|toolbar|plate|profiles|layers|results|merge3mf)\.js$/ }, (args) => {
       const r = wrapKo(readFileSync(args.path, 'utf8'))
       return { contents: 'import { __T } from ' + JSON.stringify(T_PATH) + ';\n' + r.code, loader: 'js', resolveDir: dirname(args.path) }
     })

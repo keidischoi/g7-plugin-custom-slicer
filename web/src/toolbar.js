@@ -5,6 +5,7 @@ import { PLATES, PLATE_COLORS, lookPref, setLookPref, refreshPlates, viewOf } fr
 import { attachDrag, applyArrows } from './freedrag.js'
 import { flip, layDown, faceMode } from './orient.js'
 import { mountLayers } from './layers.js'
+import { resetMergePref, mergePref } from './merge3mf.js'
 
 const ICONS = {
   cube: '<path d="M12 2.5 20.5 7v10L12 21.5 3.5 17V7z"/><path d="M3.5 7 12 11.5 20.5 7M12 11.5v10"/>',
@@ -26,6 +27,7 @@ const ICONS = {
   film: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 5v14M17 5v14M3 9h4M3 15h4M17 9h4M17 15h4"/><path d="m10.5 9.8 3.8 2.2-3.8 2.2z" fill="currentColor"/>',
   eye: '<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
   eyeoff: '<path d="M2 12s3.6-7 10-7c2 0 3.7.7 5.1 1.6M22 12s-3.6 7-10 7c-2 0-3.7-.7-5.1-1.6"/><path d="M3 3l18 18"/>',
+  merge: '<rect x="3" y="11" width="8" height="8" rx="1.5"/><rect x="13" y="5" width="8" height="8" rx="1.5"/><path d="M11 15h2a2 2 0 0 0 2-2v-0"/>',
   trash: '<path d="M4 7h16M9 7V4.5h6V7M6.5 7l1 13h9l1-13"/><path d="M10 11v6M14 11v6"/>',
   hide: '<path d="M9 18l6-6-6-6"/>',
 }
@@ -144,7 +146,7 @@ export function mountToolbar(host, ctx) {
   tb.innerHTML = '<button type="button" class="slc-vtg" data-vt-toggle>' + ic(mini ? 'tools' : 'hide') + '<span>' + (mini ? '도구' : '숨기기') + '</span></button>' +
     '<div class="slc-vg">' + B('iso', 'cube', '비스듬히') + B('top', 'top', '위에서') + B('front', 'front', '앞에서') + B('side', 'side', '옆에서') + B('fit', 'fit', '모델에 맞추기') + B('plate', 'plate', '판 전체 보기') + '</div>' +
     '<div class="slc-vg">' + B('drag', 'move', '물체를 잡고 끌어 옮기기 (켜면 이동 화살표 숨김) · 켜기 · 끄기', pref.drag !== false) + B('auto', 'rotate', '천천히 돌리기') + B('plateshow', pref.show !== false ? 'eye' : 'eyeoff', '바닥판 보이기 · 숨기기', pref.show !== false) + B('platepick', 'sliders', '바닥판 바꾸기 (종류 · 색)') + '</div>' +
-    '<div class="slc-vg slc-preponly">' + B('clear', 'trash', '판 비우기 — 판의 물체를 모두 지움 (Ctrl+Z 로 되돌리기)') + '</div>' +
+    '<div class="slc-vg slc-preponly">' + B('clear', 'trash', '판 비우기 — 판의 물체를 모두 지움 (Ctrl+Z 로 되돌리기)') + B('mergeask', 'merge', '여러 물체 3MF 를 넣을 때 하나로 합칠지 다시 묻기') + '</div>' +
     '<div class="slc-vg">' + B('flip', 'flipv', '위아래 뒤집기 (고른 물체)') + B('lay', 'layd', '앞으로 눕히기 90° (고른 물체)') + B('face', 'face', '면으로 놓기 — 누른 뒤 고른 물체의 바닥이 될 면을 클릭') + '</div>' +
     '<div class="slc-vg slc-pvonly">' + B('sim', 'film', '출력 시뮬레이션 — 1층부터 끝까지 노즐이 움직이는 대로 재생 · 멈춤') +
       '<button type="button" data-v="spd" data-tip="' + esc('시뮬레이션 빠르기 (누를 때마다 ×1 · ×4 · ×16 · ×64)') + '" aria-label="' + esc('시뮬레이션 빠르기 (누를 때마다 ×1 · ×4 · ×16 · ×64)') + '"><span>×4</span></button></div>' +
@@ -169,6 +171,7 @@ export function mountToolbar(host, ctx) {
     else if (v === 'fit') fit('model')
     else if (v === 'plate') fit('plate')
     else if (v === 'drag') { const on = !b.classList.contains('on'); b.classList.toggle('on', on); setLookPref({ drag: on }); applyArrows(viewOf()) }
+    else if (v === 'mergeask') { const had = mergePref(); resetMergePref(); b.classList.add('on'); setTimeout(() => b.classList.remove('on'), 600); b.setAttribute('data-tip', had ? '다음 3MF 부터 다시 물어요' : '지금도 물어요 (기억한 선택 없음)') }
     else if (v === 'clear') {   // 0.1.43 뷰어의 「모두 지우기」 단추를 누름 (준비 화면 위 도구줄 · 되돌리기 됨)
       const d = root.querySelector('[data-testid="tool-delete-all"]')
       if (!d || d.disabled) { nope(b); return }

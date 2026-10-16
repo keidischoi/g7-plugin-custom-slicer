@@ -116,6 +116,12 @@ sl.dispose()
   ok(ld.includes('window.G7Slicer = {') && ld.includes('mount: function (el, opts)') && ld.includes('popup: popup') && app.includes('window.__slcApp = { version: V, mount, unmount, tick'), 'window.G7Slicer.mount · popup (출력 검사기 탭이 씀)')
   ok(app.includes('const SEND_ADMIN_ONLY = true') && app.includes("'/printers/' + p.id + '/send-file'") && app.includes("fd.append('bed_clear', '1')") && app.includes('checked: bed'), '보내기: 프린터 라운지 send-file · 베드 확인 · 관리자 시험')
   ok(app.includes('h(Viewport, {') && app.includes('h(SettingsPanel, { settings, setSettings, embedded: true })') && app.includes('onSliced') && app.includes('shortcuts: true') && app.includes('stopImmediatePropagation()') && app.includes("window.addEventListener('keydown', gate, true)"), '화면: 뷰어 + 설정 칸 · 결과 받기 · 0.1.13 탭 안에서는 슬라이서를 마지막으로 눌렀을 때만 단축키 (Delete 로 지우기)')
+  {   // 0.1.44 합치기
+    const { mergeList } = await import('../web/src/merge3mf.js')
+    const m = mergeList([{ name: 'a', objectid: '1', modelPos: new Float32Array(9).fill(1), bbox: { minX: 0, minY: 0, maxX: 5, maxY: 5 } }, { name: 'b', objectid: '2', modelPos: new Float32Array(18).fill(2), bbox: { minX: -3, minY: 2, maxX: 4, maxY: 9 } }], 'kit')
+    const bm = readSrc(new URL('../web/build.mjs', import.meta.url))
+    ok(m.length === 1 && m[0].modelPos.length === 27 && m[0].modelPos[9] === 2 && m[0].name === 'kit' && m[0].objectid === '1' && m[0].bbox.minX === -3 && m[0].bbox.maxY === 9 && bm.includes('await globalThis.__slcMerge(ne, De)'), '0.1.44 여러 물체 3MF 를 하나로 합치기 (삼각형 이어 붙임 · 범위 합침)')
+  }
   {   // 0.1.43 3MF 자리 · 판 비우기
     const { originOf } = await import('../web/src/place3mf.js')
     const o = originOf(new Float32Array([10, 20, 5, 30, 20, 5, 10, 40, 15]))
@@ -297,7 +303,7 @@ sl.dispose()
     { const KO = JSON.parse(readSrc(new URL('../web/i18n/ko.json', import.meta.url))), i18 = readSrc(new URL('../web/src/i18n.js', import.meta.url)), pol = readSrc(new URL('../web/src/polish.js', import.meta.url))
       ok(KO['Layer height'] === '레이어 높이' && KO['Line width'] === '선 너비' && Object.keys(KO).length > 1000 && i18.includes("localStorage.getItem('g7_locale')") && i18.includes('.lbl[data-en]::after') && pol.includes('if (opts.ko) loadKo()') && app.includes("ko: siteLang() === 'ko'"),
         '0.1.11 한국어 사이트 — 설정 이름 한국어 + 아래 영어 (OrcaSlicer 한국어 번역 · g7_locale)') }
-    { const miss = []; for (const f of ['app.js', 'quick.js', 'toolbar.js', 'plate.js', 'profiles.js', 'layers.js', 'results.js']) wrapKo(readSrc(new URL('../web/src/' + f, import.meta.url))).found.forEach((x) => { if (/[가-힣]/.test(x) && EN[x] == null) miss.push(f + ': ' + x.slice(0, 40)) })
+    { const miss = []; for (const f of ['app.js', 'quick.js', 'toolbar.js', 'plate.js', 'profiles.js', 'layers.js', 'results.js', 'merge3mf.js']) wrapKo(readSrc(new URL('../web/src/' + f, import.meta.url))).found.forEach((x) => { if (/[가-힣]/.test(x) && EN[x] == null) miss.push(f + ': ' + x.slice(0, 40)) })
       const w = wrapKo("const a = '판', b = { '키': 1 }, c = /'한'/.test(x) // '주석'\nconst d = `${x}한`"), ldr = readSrc(new URL('../resources/js/slicer.js', import.meta.url)), bm = readSrc(new URL('../web/build.mjs', import.meta.url))
       if (miss.length) console.log('    영어 없음:', miss)
       ok(!miss.length && w.found.length === 1 && w.code.includes("__T('판')") && w.code.includes("{ '키': 1 }") && w.code.includes("/'한'/") && ldr.includes('function __T(s)') && ldr.includes('label = __T(c.menu_label') && bm.includes('plugins: [scenePlugin, langPlugin]'),
