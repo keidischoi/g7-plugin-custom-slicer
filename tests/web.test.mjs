@@ -156,6 +156,7 @@ sl.dispose()
     ok(bs.includes('globalThis.__slcSel && globalThis.__slcSel(h, M)') && pg.includes('new T.Box3Helper(mesh.geometry.boundingBox.clone()') && pg.includes('STATE.THREE = THREE'), '0.1.49 고른 물체에 테두리 상자')
     const ap = readSrc(new URL('../web/src/app.js', import.meta.url))
     ok(bs.includes('globalThis.__slcFileOf && globalThis.__slcFileOf(ne, wt.id)') && ap.includes('const live = liveFiles(kept.current, v.map((o) => o.id))') && ap.includes("savedSig.current = ''; savePlate(slot, kept.current)"), '0.1.51 물체를 지우면 판 임시 저장에서 그 파일도 뺌')
+    ok(bs.includes("towerSettings.enable_prime_tower = __pt === true || __pt === 1 || /^(1|true)$/i.test(String(__pt ?? ''))"), '0.1.53 프라임 타워 켬 · 끔을 화면 값(기본값 끔 포함)대로 엔진에')
     const { liftColor } = await import('../web/src/plate.js')
     const dark = { r: 0.0242, g: 0.0242, b: 0.0242 }, gold = { r: 0.8, g: 0.42, b: 0.016 }
     ok(liftColor(dark) && Math.abs(dark.r - 0.1) < 1e-9 && !liftColor(gold) && gold.r === 0.8, '0.1.46 아주 어두운 물체만 화면에서 밝힘')

@@ -54,6 +54,11 @@ const scenePlugin = {
       const sk = "    skirt_loops: num('skirt_loops'),"
       if (s.split(sk).length !== 2) throw new Error('엔진 설정의 skirt_loops 자리를 못 찾음 — three-slicer 판이 바뀌었으면 build.mjs 를 맞춰 주세요')
       s = s.replace(sk, () => "    skirt_loops: settings && 'skirt_loops' in settings ? num('skirt_loops') : 0,")
+      // 0.1.53 「프라임 타워 꺼져 있는데 띠(타워)가 생김」 — 설정 칸은 OrcaSlicer 기본값(끔)을 보여 주는데, 뷰어는 저장된 설정에 키가 있을 때만 엔진에 넘겨
+      //  엔진 기본값(켬)으로 타워를 만들었음. 프로필의 "0"/"1" 글자도 !! 로 읽어 "0" 이 켬이 됐음 → 화면에 보이는 값(기본값 포함)을 참 · 거짓으로 바르게 읽어 늘 넘김
+      const pt = "    if ('enable_prime_tower' in (settings ?? {})) towerSettings.enable_prime_tower = !!settings.enable_prime_tower"
+      if (s.split(pt).length !== 2) throw new Error('엔진 설정의 enable_prime_tower 자리를 못 찾음 — three-slicer 판이 바뀌었으면 build.mjs 를 맞춰 주세요')
+      s = s.replace(pt, () => "    { const __pt = S('enable_prime_tower'); towerSettings.enable_prime_tower = __pt === true || __pt === 1 || /^(1|true)$/i.test(String(__pt ?? '')) }")
       return { contents: s, loader: 'js' }
     })
     b.onLoad({ filter: /three-slicer-viewer[\\/]dist[\\/]index\.js$/ }, (args) => {
