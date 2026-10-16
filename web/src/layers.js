@@ -10,6 +10,11 @@ export const LAYER_CSS = `
 /* 0.1.28 층 슬라이더는 3D 화면 왼쪽(벽에서 조금 띄움) · 노즐(지금 층) 띠는 위 가운데 */
 .slc-ly{position:absolute;top:18px;left:18px;bottom:46px;z-index:16;display:flex;flex-direction:column;align-items:center;gap:6px;width:46px;padding:8px 0;
   border-radius:14px;background:color-mix(in srgb,var(--_light-surface) 92%,transparent);border:1px solid var(--_light-divider);box-shadow:0 1px 2px rgba(15,23,42,.06),0 6px 18px rgba(15,23,42,.10);backdrop-filter:blur(6px);user-select:none;touch-action:none}
+/* 0.1.29 층 슬라이더는 바탕 없이(투명) — 판 · 모델을 가리지 않게. 글자 · 단추는 그림자로 어느 바탕에서도 읽힘 */
+.slc-ly{background:transparent!important;border-color:transparent!important;box-shadow:none!important;backdrop-filter:none!important}
+.slc-ly .slc-ly-n,.slc-ly button{color:var(--_light-text);text-shadow:0 0 3px var(--_light-surface),0 0 2px var(--_light-surface),0 0 1px var(--_light-surface)}
+.slc-ly .slc-ly-n small{color:var(--_light-text-muted)}
+.slc-ly-tr::before{background:rgba(148,163,184,.45)!important}
 .slc-ly button{display:grid;place-items:center;width:30px;height:24px;padding:0;border:0;border-radius:8px;background:none;color:var(--_light-text);font:700 11px system-ui,sans-serif;cursor:pointer}
 .slc-ly button:hover{background:var(--_accent-soft);color:var(--_accent-ink)}
 .slc-ly button.on{background:var(--_accent);color:#fff}
