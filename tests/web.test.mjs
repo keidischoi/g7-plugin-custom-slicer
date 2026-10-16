@@ -119,7 +119,7 @@ sl.dispose()
   {   // 0.1.23
     const bm = readSrc(new URL('../web/build.mjs', import.meta.url)), nz = readSrc(new URL('../web/src/nozzle.js', import.meta.url)), ly = readSrc(new URL('../web/src/layers.js', import.meta.url)), ap = readSrc(new URL('../web/src/app.js', import.meta.url))
     ok(bm.includes('globalThis.__slcNozzle ? globalThis.__slcNozzle(R, e)') && nz.includes('globalThis.__slcNozzle = makeNozzle') && ap.includes("import './nozzle.js'"), '0.1.23 미리 보기 노즐 — 실제 핫엔드 모양')
-    ok(ly.includes("root.querySelector('.plate-bar')") && ap.includes("root.querySelector('.slc-ly')"), '0.1.23 층 슬라이더 · 판 고르기 · 완료 띠가 겹치지 않음')
+    ok(ly.includes("pv.classList.contains('on')") && ly.includes("root.querySelector('.plate-bar')") && ap.includes("root.querySelector('.slc-ly')"), '0.1.23 층 슬라이더 · 판 고르기 · 완료 띠가 겹치지 않음')
   }
   {   // 0.1.22 층 · 노즐 슬라이더
     const ly = readSrc(new URL('../web/src/layers.js', import.meta.url)), tb = readSrc(new URL('../web/src/toolbar.js', import.meta.url))
