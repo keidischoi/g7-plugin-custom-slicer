@@ -123,6 +123,29 @@ function plateBody(THREE, top, w, d) {
   stripe.position.set(0, -d / 2 - 12.4, -5.5); top.add(stripe)
   top.userData.slcBody = { sheet, stripe }
 }
+/** 0.1.46 🌗 아주 어두운 필라멘트 물체 — 빛을 세게 해도 검은 색(반사 2~3%)은 검게만 보여 모양이 안 보였음 →
+ *  화면에서만 물체 색을 조금 밝힘(가장 어두워도 #5a5a5a 쯤 회색). 자르기 · 보내기 · 필라멘트 색은 그대로. 뷰어가 색을 다시 정하면 다음 그리기에 다시 밝힘
+ *  c: THREE.Color (선형 값) — 밝혔으면 true */
+export const DARK_MIN = 0.1
+export function liftColor(c, min = DARK_MIN) {
+  const l = 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b
+  if (!(l < min)) return false
+  const add = min - l
+  c.r += add; c.g += add; c.b += add
+  return true
+}
+/** 장면의 물체 · 칠한 색 재질만 (뷰어 물체 재질: roughness 0.6 · metalness 0.05 — 판 · 노즐 · 미리 보기 선은 건드리지 않음) */
+function liftScene(scene) {
+  scene.traverse((o) => {
+    if (!o.isMesh || !o.material) return
+    for (const m of Array.isArray(o.material) ? o.material : [o.material]) {
+      if (!m || !m.isMeshStandardMaterial || m.roughness !== 0.6 || m.metalness !== 0.05 || !m.color) continue
+      const ud = m.userData
+      if (ud.slcLift && m.color.equals(ud.slcLift)) continue
+      ud.slcLift = liftColor(m.color) ? m.color.clone() : null
+    }
+  })
+}
 /** build.mjs 가 뷰어의 판 만들기 함수에서 부름 — (THREE, 뷰어 상태, {x, z, w, d}) → 판 그림 메시 (뷰어가 판을 지울 때 같이 지움) */
 globalThis.__slcPlateHook = (THREE, view, p) => {
   try {
@@ -134,8 +157,10 @@ globalThis.__slcPlateHook = (THREE, view, p) => {
       // 0.1.45 💡 카메라 조명 — 장면의 빛은 위쪽 고정이라 검은 필라멘트 물체를 옆 · 아래에서 보면 거의 검게만 보였음 → 카메라에서 바라보는 곳으로 비추는 빛 하나
       let head = null
       try { head = new THREE.DirectionalLight(0xffffff, 0.85); head.name = 'slc-headlight'; view.scene.add(head); view.scene.add(head.target) } catch (e) {}
+      let liftAt = 0
       view.scene.onBeforeRender = function (rd, sc, cam) {
         try { if (head && cam) { head.position.copy(cam.position); if (view.orbit && view.orbit.target) head.target.position.copy(view.orbit.target); head.target.updateMatrixWorld() } } catch (e) {}
+        try { const t = performance.now(); if (t - liftAt > 250) { liftAt = t; liftScene(view.scene) } } catch (e) {}
         try {
           const below = !!cam && cam.position.y < -0.5, on = STATE.show !== false && !below
           for (const b of view.plateBeds || []) if (b.slcPlate && b.slcPlate.visible !== on) b.slcPlate.visible = on

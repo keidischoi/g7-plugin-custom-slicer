@@ -72,20 +72,58 @@ async function hook(file, list) {
     // 0.1.45 부품마다 필라멘트 — 프로젝트(Bambu · Orca)는 물체 정보의 extruder, 아니면 3MF 의 부품 색 → 임시 번호(색 차례) · 색 갈고리가 나중에 실제 칸으로 바꿈
     const meta = list[0].project && list[0].project.objectMeta
     let exts = list.map((k) => { const m = meta && meta.get && meta.get(k.objectid); const e = Number(m && m.extruder); return Number.isInteger(e) && e >= 1 ? e : 0 })
-    let parts = null
+    let cols = list.map(() => null)
     if (!exts.some((e) => e > 0)) {
-      const map = await read3mfColors(file), cols = list.map((k) => map[k.objectid] || null), uniq = [...new Set(cols.filter(Boolean))]
-      if (uniq.length > 1 || (uniq.length === 1 && cols.some((c) => !c))) {
-        exts = cols.map((c) => (c ? uniq.indexOf(c) + 1 : 0))
-        let f0 = 0; parts = list.map((k, i) => { const r = { start: f0, count: k.modelPos.length / 9, color: cols[i] }; f0 += r.count; return r })
-      } else exts = null
+      const map = await read3mfColors(file), uniq = [...new Set(list.map((k) => map[k.objectid]).filter(Boolean))]
+      cols = list.map((k) => map[k.objectid] || null)
+      if (uniq.length > 1 || (uniq.length === 1 && cols.some((c) => !c))) exts = cols.map((c) => (c ? uniq.indexOf(c) + 1 : 0))
+      else exts = null
     }
     const out = mergeList(list, String(file.name).replace(/\.3mf$/i, ''), exts)
+    // 0.1.46 부품 범위 — 칠하기만으로는 엔진(칠한 면 → 안쪽으로 나누기)이 맞물린 부품을 못 살림 (동전 글자 F · 안쪽 고리가 빠짐) →
+    //  자르기 때는 부품마다 그 필라멘트의 묶음(extruder 묶음)으로 넘김 (__slcParts) · 칠한 색은 화면에 보이는 용도로만 남김
+    let f0 = 0
+    const parts = exts ? list.map((k, i) => { const r = { start: f0, count: k.modelPos.length / 9, color: cols[i], ext: exts[i] || 0 }; f0 += r.count; return r }) : null
     globalThis.__slcLastMerge = parts ? { file, objectid: list[0].objectid, parts } : null   // colors3mf.js 의 색 갈고리가 받아 실제 필라멘트 칸으로
     return out
   } catch (e) { return list }
 }
 globalThis.__slcMerge = hook
+
+/** 0.1.46 자르기용 부품 묶음 — build.mjs 가 뷰어의 판 → STL 만들기(물체마다)에서 부름. P: { localPos, paint, parts: [{ start, count, ext, code }] }
+ *  부품을 필라멘트 차례로 다시 늘어놓고(첫 묶음이 가장 낮은 필라멘트여야 엔진이 다색으로 자름) 칠한 면 번호도 그 차례로 옮김.
+ *  합칠 때 자동으로 칠한 면(부품 필라멘트와 같은 값)은 빼서, 엔진이 칠하기로 다시 나누지 않게 함 (손으로 더 칠한 것은 그대로)
+ *  @returns {{ sig: string, runs: { at: number, ext: number }[], pos: Float32Array, paint: { color: [number, string][], supports: [number, string][] } } | null} */
+export function slicePartsOf(P) {
+  const parts = P && P.parts, lp = P && P.localPos
+  if (!Array.isArray(parts) || !parts.length || !lp) return null
+  const n = lp.length / 9
+  if (parts.reduce((a, r) => a + r.count, 0) !== n) return null   // 물체가 바뀜(나누기 등) — 원래 길로
+  let c = parts.__slc
+  if (!c || c.lp !== lp) {
+    const order = parts.map((r, i) => i).sort((a, b) => ((parts[a].ext || 1) - (parts[b].ext || 1)) || a - b)
+    const pos = new Float32Array(lp.length), at = new Int32Array(n), runs = []
+    let o = 0
+    for (const i of order) {
+      const r = parts[i], ext = r.ext || 1
+      if (!runs.length || runs[runs.length - 1].ext !== ext) runs.push({ at: o, ext })
+      for (let k = r.start * 9, e = (r.start + r.count) * 9, w = o * 9; k < e; k++, w++) pos[w] = lp[k]
+      for (let f = 0; f < r.count; f++) at[r.start + f] = o + f
+      o += r.count
+    }
+    c = { lp, pos, at, runs }
+    Object.defineProperty(parts, '__slc', { value: c, configurable: true, writable: true })
+  }
+  const { pos, at, runs } = c
+  const partOf = (f) => { for (const r of parts) if (f >= r.start && f < r.start + r.count) return r; return null }
+  const paint = { color: [], supports: [] }
+  for (const key of ['color', 'supports']) {
+    const m = P.paint && P.paint[key]
+    if (m && m.forEach) m.forEach((v, f) => { if (f < 0 || f >= n) return; if (key === 'color') { const r = partOf(f); if (r && r.code && v === r.code) return } paint[key].push([at[f], v]) })
+  }
+  return { sig: parts.map((r) => r.ext || 1).join('.'), runs, pos, paint }
+}
+globalThis.__slcParts = slicePartsOf
 
 /** 🧰 「다시 묻기」 — 기억한 선택을 지움 */
 export function resetMergePref() { setPref('') }

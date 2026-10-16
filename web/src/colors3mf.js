@@ -118,15 +118,19 @@ async function hook(file, added, v) {
       globalThis.__slcLastMerge = null
       const a = (added || []).find((x) => x.objectid === lm.objectid), rec = a && (v.objects || []).find((o) => o.id === a.id)
       const want = [...new Set(lm.parts.map((p) => p.color).filter(Boolean))]
+      const enc = (n) => (n === 1 ? '4' : n === 2 ? '8' : (n - 3).toString(16).toUpperCase() + 'C')
+      let slot = {}
       if (rec && rec.paint && want.length) {
         const have = (v.colorsRef && v.colorsRef.current) || []
         const fresh = !v.objects || v.objects.length <= (added || []).length
-        const { colors, slot } = planSlots(have, want, fresh, v.max || 16)
-        if (colors.join() !== have.join() && v.replaceAll) v.replaceAll(colors)
-        const enc = (n) => (n === 1 ? '4' : n === 2 ? '8' : (n - 3).toString(16).toUpperCase() + 'C')
+        const plan = planSlots(have, want, fresh, v.max || 16)
+        slot = plan.slot
+        if (plan.colors.join() !== have.join() && v.replaceAll) v.replaceAll(plan.colors)
         for (const p of lm.parts) { const n = p.color && slot[p.color]; if (!n) continue; const code = enc(n); for (let f = p.start; f < p.start + p.count; f++) rec.paint.color.set(f, code) }
         if (v.api.recolorObjects) v.api.recolorObjects()
       }
+      // 0.1.46 자르기용 부품 범위 — 뷰어가 판을 STL 로 만들 때 부품마다 그 필라멘트 묶음으로 넘김 (merge3mf.js slicePartsOf)
+      if (rec) rec.slcParts = lm.parts.map((p) => { const n = (p.color && slot[p.color]) || p.ext || 1; return { start: p.start, count: p.count, ext: n, code: rec.paint ? enc(n) : null } })
       return
     }
     if (!file || !/\.3mf$/i.test(file.name || '') || !added || !added.length || !v || !v.api) return
