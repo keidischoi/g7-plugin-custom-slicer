@@ -95,8 +95,10 @@ export function mountLayers(root, col) {
     const hi = q('layer-hi'), m = q('move-range'); if (!hi || !m || !sim) { stopSim(); return }
     const top = Number(hi.max) || 0
     if (sim.layer > top) { stopSim(); setVal(hi, top); sync(); return }
-    if (Number(hi.value) !== sim.layer) { setVal(hi, sim.layer); sim.wait = 2; sync(); return }
-    if (sim.wait > 0) { sim.wait--; if (!sim.wait) { setVal(m, 0); sim.t = performance.now(); sim.acc = 0 } return }
+    // 0.1.34 층을 올리는 그 순간 노즐 자리를 0 으로 — 뷰어는 층이 바뀌면 노즐 자리를 비워(=그 층 전체) 새 층이 한 번 다 보였다가
+    //  0 에서 다시 자라서, 쌓이다 뒤로 물러나는 것처럼 보였음. 같은 틱에 0 을 넣어 한 번에 그려지게 하고, 기다리는 동안에도 0 을 지킴
+    if (Number(hi.value) !== sim.layer) { setVal(hi, sim.layer); setVal(m, 0); sim.wait = 2; sim.acc = 0; sync(); return }
+    if (sim.wait > 0) { sim.wait--; if (Number(m.value) !== 0) setVal(m, 0); if (!sim.wait) { sim.t = performance.now(); sim.acc = 0 } return }
     // 시간으로 진행 — 화면 그리기가 느려 틱이 늦어도 빠르기가 맞게 (×1: 한 층 3초)
     const now = performance.now(), dt = Math.min(250, now - (sim.t || now)); sim.t = now
     const max = Number(m.max) || 0; sim.acc = (sim.acc || 0) + max * dt * spd / 3000
