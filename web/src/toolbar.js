@@ -3,6 +3,7 @@
 //  천천히 돌리기 · 바닥판 보이기 / 바닥판 바꾸기(종류 · 색) · 사진 저장 · 전체 화면 · 접기
 import { PLATES, PLATE_COLORS, lookPref, setLookPref, refreshPlates, viewOf } from './plate.js'
 import { attachDrag, applyArrows } from './freedrag.js'
+import { flip, layDown, faceMode } from './orient.js'
 
 const ICONS = {
   cube: '<path d="M12 2.5 20.5 7v10L12 21.5 3.5 17V7z"/><path d="M3.5 7 12 11.5 20.5 7M12 11.5v10"/>',
@@ -18,6 +19,9 @@ const ICONS = {
   expand: '<path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/>',
   tools: '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
   move: '<path d="M12 3v18M3 12h18"/><path d="m9 6 3-3 3 3M9 18l3 3 3-3M6 9l-3 3 3 3M18 9l3 3-3 3"/>',
+  flipv: '<path d="M12 3v18"/><path d="M5 8 2.5 12 5 16M19 8l2.5 4L19 16"/><path d="M7 6h3M7 18h3M14 6h3M14 18h3"/>',
+  layd: '<path d="M3 20h18"/><rect x="5" y="12" width="14" height="5" rx="1.2"/><path d="M9 9a5 5 0 0 1 8-2l1.5 1.5M18.5 5v3.5H15"/>',
+  face: '<path d="M3 20h18"/><path d="M7 20 12 7l5 13"/><path d="M12 3v2M7.5 15h9"/>',
   hide: '<path d="M9 18l6-6-6-6"/>',
 }
 const ic = (n) => '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + (ICONS[n] || '') + '</svg>'
@@ -29,6 +33,8 @@ export const TOOL_CSS = `
 .slc-vt>*{pointer-events:auto}
 .slc-vg{display:flex;flex-direction:column;padding:3px;border-radius:12px;background:color-mix(in srgb,var(--_light-surface) 90%,transparent);border:1px solid var(--_light-divider);box-shadow:0 1px 2px rgba(15,23,42,.06),0 4px 14px rgba(15,23,42,.08);backdrop-filter:blur(6px)}
 .slc-vg button,.slc-vtg{position:relative;display:grid;place-items:center;width:34px;height:34px;border:0;border-radius:9px;background:none;color:var(--_light-text);cursor:pointer;transition:background .15s,color .15s}
+.slc-vg button.nope{color:#ef4444;animation:slc-nope .35s}
+@keyframes slc-nope{25%{transform:translateX(-3px)}75%{transform:translateX(3px)}}
 .slc-vg button:hover,.slc-vtg:hover{background:var(--_accent-soft);color:var(--_accent-ink)}
 .slc-vg button.on{background:var(--_accent);color:var(--_on-accent)}
 .slc-vg svg,.slc-vtg svg{width:18px;height:18px}
@@ -122,6 +128,7 @@ export function mountToolbar(host, ctx) {
   tb.innerHTML = '<button type="button" class="slc-vtg" data-vt-toggle>' + ic(mini ? 'tools' : 'hide') + '<span>' + (mini ? '도구' : '숨기기') + '</span></button>' +
     '<div class="slc-vg">' + B('iso', 'cube', '비스듬히') + B('top', 'top', '위에서') + B('front', 'front', '앞에서') + B('side', 'side', '옆에서') + B('fit', 'fit', '모델에 맞추기') + B('plate', 'plate', '판 전체 보기') + '</div>' +
     '<div class="slc-vg">' + B('drag', 'move', '물체를 잡고 끌어 옮기기 (켜면 이동 화살표 숨김) · 켜기 · 끄기', pref.drag !== false) + B('auto', 'rotate', '천천히 돌리기') + B('plateshow', 'layers', '바닥판 보이기 · 숨기기', pref.show !== false) + B('platepick', 'sliders', '바닥판 바꾸기 (종류 · 색)') + '</div>' +
+    '<div class="slc-vg">' + B('flip', 'flipv', '위아래 뒤집기 (고른 물체)') + B('lay', 'layd', '앞으로 눕히기 90° (고른 물체)') + B('face', 'face', '면으로 놓기 — 누른 뒤 고른 물체의 바닥이 될 면을 클릭') + '</div>' +
     '<div class="slc-vg">' + B('shot', 'camera', '사진 저장 (PNG)') + B('full', 'expand', '전체 화면') + '</div>' + pm()
   col.appendChild(tb)
   // 판에서 마우스 · 키를 누르면 뷰어로 가지 않게 (도구를 누르다 판이 돌지 않게)
@@ -142,6 +149,12 @@ export function mountToolbar(host, ctx) {
     else if (v === 'fit') fit('model')
     else if (v === 'plate') fit('plate')
     else if (v === 'drag') { const on = !b.classList.contains('on'); b.classList.toggle('on', on); setLookPref({ drag: on }); applyArrows(viewOf()) }
+    else if (v === 'flip' || v === 'lay') { if (!(v === 'flip' ? flip : layDown)(viewOf())) nope(b) }
+    else if (v === 'face') {
+      const vw = viewOf(), on = !b.classList.contains('on')
+      if (on && !(vw && vw.transform && vw.transform.object)) { nope(b); return }
+      b.classList.toggle('on', on); faceMode(vw, on, () => b.classList.remove('on'))
+    }
     else if (v === 'auto') { const on = !b.classList.contains('on'); b.classList.toggle('on', on); spin(on) }
     else if (v === 'plateshow') { const on = !b.classList.contains('on'); b.classList.toggle('on', on); setLookPref({ show: on }); refreshPlates() }
     else if (v === 'platepick') { menu.hidden = !menu.hidden }
@@ -150,4 +163,6 @@ export function mountToolbar(host, ctx) {
   })
   return true
 }
+/** 고른 물체가 없을 때 — 단추를 잠깐 빨갛게 · 흔듦 */
+function nope(b) { b.classList.remove('nope'); void b.offsetWidth; b.classList.add('nope'); setTimeout(() => b.classList.remove('nope'), 700) }
 export function stopSpin() { spin(false) }

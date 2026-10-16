@@ -88,6 +88,19 @@ input[type=range]{accent-color:#0ea5e9}
 .slice-btn:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 18px rgba(14,165,233,.45)}
 .slice-btn:disabled{background:#cbd5e1;box-shadow:none;color:#f8fafc}
 .export-btn{border-radius:12px;font-weight:700}
+/* 0.1.19 오른쪽 칸 경고(⚠ 큰 모델 · 판 밖) · 알림(ℹ 프로젝트에서 가져온 것) — 글자만 있던 것을 둥근 상자로 */
+.slice-warn.side-warn{display:block;margin:8px 2px;padding:9px 12px;border-radius:12px;font-size:12.5px;line-height:1.55;color:#b45309;
+  border:1px solid color-mix(in srgb,currentColor 35%,transparent);background:color-mix(in srgb,currentColor 9%,transparent)}
+.slice-warn.side-warn[data-testid="slice-notice"]{color:#0369a1}
+/* 0.1.19 아래 슬라이스 띠 — 위: 자동 슬라이스 · GPU 한 줄 상자 / 아래: 슬라이스 · 내보내기 두 단추 */
+.side-bottom{display:grid;grid-template-columns:1.35fr 1fr;align-items:stretch;gap:8px;padding:10px 12px 12px}
+.side-bottom>.slice-options{grid-column:1/-1;flex-direction:row;align-items:center;justify-content:space-between;gap:10px;padding:5px 6px 5px 10px;
+  border:1px solid var(--_light-divider);border-radius:10px;background:var(--_light-subtle,rgba(127,127,127,.06))}
+.side-bottom .auto-slice,.side-bottom .gpu-accel{display:inline-flex;align-items:center;gap:6px;margin:0;font-size:12px;font-weight:600;color:var(--_light-text-muted);white-space:nowrap;cursor:pointer}
+.side-bottom .auto-slice input{width:15px;height:15px;margin:0;accent-color:#0ea5e9;cursor:pointer}
+.side-bottom .gpu-accel select{height:26px;min-width:72px;padding:0 24px 0 9px;font-size:12px}
+.side-bottom>*:not(.slice-options){min-width:0}
+.side-bottom .slice-btn,.side-bottom .export-btn{width:100%;height:40px;margin:0}
 .plate-tab,.tb-btn{border-radius:10px}
 `
 
@@ -167,4 +180,7 @@ ${on(':disabled')}{background-color:#172033;color:#64748b}
 .sc-mini:hover:not(:disabled){background:#0b3a55;border-color:#38bdf8;color:#7dd3fc}
 .slice-btn:disabled{background:#334155;color:#94a3b8}
 .side-bottom{background:#1e293b;box-shadow:0 -6px 16px rgba(0,0,0,.35)}
+.slice-warn.side-warn{color:#fcd34d}
+.slice-warn.side-warn[data-testid="slice-notice"]{color:#7dd3fc}
+.side-bottom>.slice-options{background:#172033;border-color:#2b3a52}
 `

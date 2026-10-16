@@ -16,9 +16,11 @@ function ghostFix(v) {
   let run = null   // { obj, p0, follow: [{ m, w0 }], hidden: [m] }
   const box = new Box3(), ob = new Box3(), tmp = new Vector3()
   const overlays = (sel) => v.objectsGroup.children.filter((c) => c.isMesh && c.renderOrder === PAINT_ORDER && c.visible && !sel.has(c))
-  tc.addEventListener('dragging-changed', (e) => {
+  const front = (type, fn) => { tc.addEventListener(type, fn); const L = tc._listeners && tc._listeners[type]; if (L && L[L.length - 1] === fn) { L.pop(); L.unshift(fn) } }
+  front('dragging-changed', (e) => {   // 0.1.19 뷰어 처리보다 먼저 — 뷰어가 덧칠을 다시 만들지 정하기 전에 __slcFollowPaint 를 맞춤
     const obj = tc.object
     if (e.value) {
+      globalThis.__slcFollowPaint = false
       if (!obj) return
       const sel = new Set(); obj.traverse((n) => sel.add(n))
       box.setFromObject(obj).expandByScalar(0.5)
@@ -27,11 +29,13 @@ function ghostFix(v) {
         if (!m.geometry.boundingBox) m.geometry.computeBoundingBox()
         ob.copy(m.geometry.boundingBox).applyMatrix4(m.matrixWorld)
         if (!ob.intersectsBox(box)) continue   // 다른 물체의 색 — 그대로
-        if (tc.mode === 'translate' && box.containsBox(ob)) run.follow.push({ m, w0: m.getWorldPosition(new Vector3()) })
+        if (tc.mode === 'translate' && !v.__slcRotOp && box.containsBox(ob)) run.follow.push({ m, w0: m.getWorldPosition(new Vector3()) })
         else { m.visible = false; run.hidden.push(m) }
       }
+      globalThis.__slcFollowPaint = run.follow.length > 0 && !run.hidden.length   // 덧칠을 다 따라 옮길 수 있으면 뷰어의 다시 만들기를 건너뜀
       return
     }
+    globalThis.__slcFollowPaint = false
     if (!run) return
     const r = run; run = null
     setTimeout(() => {   // 뷰어가 덧칠을 새로 만들면 옛 것은 판에서 빠짐 — 남아 있으면(안 바뀜) 되돌림
@@ -40,6 +44,39 @@ function ghostFix(v) {
       if (v.invalidate) v.invalidate()
     }, 10000)
   })
+  // 0.1.19 칠한 물체를 지워도(Delete) 덧칠이 판에 남던 것 — 물체가 빠지면, 어떤 물체와도 겹치지 않는 덧칠은 숨김
+  const g = v.objectsGroup, rm = g.remove.bind(g)
+  let tm = 0
+  g.remove = (...a) => {
+    const r = rm(...a)
+    clearTimeout(tm); tm = setTimeout(() => {
+      const bodies = g.children.filter((c) => c.isMesh && c.renderOrder !== PAINT_ORDER && c.visible).map((c) => new Box3().setFromObject(c).expandByScalar(0.5))
+      for (const m of g.children) {
+        if (!m.isMesh || m.renderOrder !== PAINT_ORDER || !m.visible) continue
+        if (!m.geometry.boundingBox) m.geometry.computeBoundingBox()
+        ob.copy(m.geometry.boundingBox).applyMatrix4(m.matrixWorld)
+        if (!bodies.some((b) => b.intersectsBox(ob))) m.visible = false
+      }
+      if (v.invalidate) v.invalidate()
+    }, 0)
+    return r
+  }
+  // 0.1.19 칠한 물체를 고르면 표시 — 뷰어는 물체 몸을 빛나게(emissive) 하는데, 칠한 물체는 덧칠이 몸을 덮어 고른 줄 몰랐음
+  //  (네모 상자도 숨겼으므로) → 고른 물체와 겹치는 덧칠도 같은 색으로 살짝 빛나게
+  let hiKey = ''
+  setInterval(() => {
+    const obj = tc.object, ov = g.children.filter((c) => c.isMesh && c.renderOrder === PAINT_ORDER && c.material && c.material.emissive)
+    const key = (obj ? obj.uuid : '') + '|' + ov.map((m) => m.uuid).join(',')
+    if (key === hiKey) return
+    hiKey = key
+    const sel = obj ? new Box3().setFromObject(obj).expandByScalar(0.5) : null
+    for (const m of ov) {
+      let on = false
+      if (sel) { if (!m.geometry.boundingBox) m.geometry.computeBoundingBox(); ob.copy(m.geometry.boundingBox).applyMatrix4(m.matrixWorld); on = sel.containsBox(ob) }
+      m.material.emissive.set(on ? 0x1d6b96 : 0x000000)
+    }
+    if (v.invalidate) v.invalidate()
+  }, 250)
   tc.addEventListener('objectChange', () => {
     if (!run || !run.follow.length) return
     const d = run.obj.getWorldPosition(tmp).sub(run.p0)
@@ -72,23 +109,22 @@ export function attachDrag(v) {
     ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1)
     ray.setFromCamera(ndc, v.camera)
   }
-  const shown = (o) => { for (let n = o; n; n = n.parent) if (n.visible === false) return false; return true }
   const send = (type, value) => { try { v.transform.dispatchEvent(value === undefined ? { type } : { type, value }) } catch (er) {} }
 
   // 뷰어의 pointerdown(물체 고르기) 다음에 돌아야 해서 같은 칸에 나중에 붙임 — 누른 물체가 이미 골라져 이동 손잡이가 붙어 있음
   el.addEventListener('pointerdown', (e) => {
     arm = null
-    if (lookPref().drag === false || e.button !== 0 || e.shiftKey || e.ctrlKey || e.metaKey || e.altKey) return
+    if (lookPref().drag === false || v.__slcFace || e.button !== 0 || e.shiftKey || e.ctrlKey || e.metaKey || e.altKey) return
     const tc = v.transform, obj = tc.object
     if (!obj || tc.dragging || tc.axis || tc.mode !== 'translate' || !v.orbit.enabled) return   // 손잡이를 잡음 · 크기 · 돌리기 · 칠하기 중
     if (v.toolpathGroup && v.toolpathGroup.visible) return   // 미리 보기(슬라이스 결과) 화면
+    // 0.1.19 광선을 다시 쏘지 않음 — 바로 앞의 뷰어 pointerdown 이 누른 곳의 물체를 골랐고(빈 곳이면 고름을 풀어 obj 가 없음),
+    //  큰 모델은 광선 한 번에 40~50ms. 끄는 높이는 물체 가운데 높이의 수평면
     aim(e)
-    // 0.1.17 고른 물체(여럿이면 묶음 안 물체)의 몸에만 광선 — 칠한 덧칠 · 다른 물체까지 보면 큰 모델에서 누를 때마다 100ms 넘게 걸림
-    const bodies = (obj.isMesh ? [obj] : obj.children.filter((c) => c.isMesh)).filter(shown)
-    const first = ray.intersectObjects(bodies, false)[0]
-    if (!first) return   // 고른 물체의 몸이 아님 (빈 곳 · 다른 물체)
-    plane.set(new Vector3(0, 1, 0), -first.point.y)
-    arm = { obj, x: e.clientX, y: e.clientY, start: first.point.clone(), pos0: obj.getWorldPosition(new Vector3()), on: false, cursor: el.style.cursor }
+    const mid = new Box3().setFromObject(obj).getCenter(new Vector3()), start = new Vector3()
+    plane.set(new Vector3(0, 1, 0), -mid.y)
+    if (!ray.ray.intersectPlane(plane, start)) return
+    arm = { obj, x: e.clientX, y: e.clientY, start, pos0: obj.getWorldPosition(new Vector3()), on: false, cursor: el.style.cursor }
     v.orbit.enabled = false   // 판이 돌지 않게 — 끌지 않고 떼면 다시 켬
     try { el.setPointerCapture(e.pointerId) } catch (er) {}
   })
