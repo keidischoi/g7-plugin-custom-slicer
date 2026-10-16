@@ -30,7 +30,7 @@ const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '
 
 /** 그림자 DOM 안 모양 — 출력 검사기 .pck-vg 와 같은 말씨 (밝게 · 어둡게는 --_light-* 변수로 따라감) */
 export const TOOL_CSS = `
-.slc-vt{position:absolute;top:58px;right:10px;z-index:15;display:flex;flex-direction:column;align-items:flex-end;gap:6px;pointer-events:none}
+.slc-vt{position:absolute;top:58px;right:8px;z-index:15;display:flex;flex-direction:column;align-items:flex-end;gap:6px;pointer-events:none}
 .slc-vt>*{pointer-events:auto}
 /* 0.1.26 겹치지 않게 — 높이가 모자라면 아래 판 고르기(1 · +)까지 내려가지 않고 왼쪽에 한 줄 더 (툴팁이 잘리지 않게 스크롤 대신 줄 바꿈) */
 .slc-vt{max-height:calc(100% - 150px);flex-wrap:wrap-reverse;align-content:flex-end;column-gap:6px}

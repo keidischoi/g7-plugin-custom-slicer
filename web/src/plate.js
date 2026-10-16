@@ -24,7 +24,8 @@ const BRANDS = [
   [/sovol|artillery|kingroon|two ?trees|tronxy/i, { plate: 'pei', accent: '#0ea5e9' }],
   [/ultimaker|makerbot|raise ?3d|snapmaker|sindoh/i, { plate: 'glass', accent: '#0ea5e9' }],
 ]
-export const PLATE_COLORS = [['', '자동'], ['#b8925a', '금색 PEI'], ['#1f2328', '검정'], ['#6b7280', '회색'], ['#eef2f7', '흰색'], ['#1e3a8a', '남색'], ['#2563eb', '파랑'], ['#047857', '초록'],
+export const DEFAULT_PLATE_COLOR = '#1c1f24'   // 0.1.27 판 기본색은 검정 계통 (판 무늬 · 제조사 글자는 그대로)
+export const PLATE_COLORS = [['', '기본 (검정)'], ['#b8925a', '금색 PEI'], ['#1f2328', '검정'], ['#6b7280', '회색'], ['#eef2f7', '흰색'], ['#1e3a8a', '남색'], ['#2563eb', '파랑'], ['#047857', '초록'],
   ['#0d9488', '민트'], ['#b91c1c', '빨강'], ['#ea580c', '주황'], ['#ca8a04', '노랑'], ['#6d28d9', '보라'], ['#db2777', '핑크'], ['#7c2d12', '갈색'], ['#cbd5e1', '은색']]
 
 const LS = 'slc-plate-look'
@@ -49,9 +50,10 @@ export function plateStyle(printer, bedType) {
   const pref = lookPref()
   if (pref.kind !== 'auto' && PLATES[pref.kind]) base.plate = pref.kind
   let look = PLATES[base.plate] || PLATES.pei
-  if (/^#[0-9a-f]{6}$/i.test(pref.color)) {
-    const light = lum(pref.color) > 0.6
-    look = { ...look, base: pref.color, edge: shade(pref.color, -22), ink: light ? 'rgba(15,23,42,.2)' : 'rgba(255,255,255,.16)', label: light ? 'rgba(15,23,42,.4)' : 'rgba(255,255,255,.45)' }
+  const color = /^#[0-9a-f]{6}$/i.test(pref.color) ? pref.color : DEFAULT_PLATE_COLOR
+  {
+    const light = lum(color) > 0.6
+    look = { ...look, base: color, edge: shade(color, -22), ink: light ? 'rgba(15,23,42,.2)' : 'rgba(255,255,255,.16)', label: light ? 'rgba(15,23,42,.4)' : 'rgba(255,255,255,.45)' }
   }
   return { ...base, look }
 }
