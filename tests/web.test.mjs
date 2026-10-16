@@ -118,7 +118,7 @@ sl.dispose()
   ok(app.includes('h(Viewport, {') && app.includes('h(SettingsPanel, { settings, setSettings, embedded: true })') && app.includes('onSliced') && app.includes('shortcuts: true') && app.includes('stopImmediatePropagation()') && app.includes("window.addEventListener('keydown', gate, true)"), '화면: 뷰어 + 설정 칸 · 결과 받기 · 0.1.13 탭 안에서는 슬라이서를 마지막으로 눌렀을 때만 단축키 (Delete 로 지우기)')
   {   // 0.1.27 판 기본색
     const pl = readSrc(new URL('../web/src/plate.js', import.meta.url)), tb = readSrc(new URL('../web/src/toolbar.js', import.meta.url))
-    ok(pl.includes("export const DEFAULT_PLATE_COLOR = '#1c1f24'") && pl.includes("['', '기본 (검정)']") && tb.includes('.slc-vt{position:absolute;top:58px;right:8px;'), '0.1.27 판 기본색 검정 · 도구는 오른쪽 벽')
+    ok(pl.includes("export const DEFAULT_PLATE_COLOR = '#1c1f24'") && pl.includes("['', '기본 (검정)']") && tb.includes('.slc-vt{position:absolute;top:58px;right:0;') && tb.includes('border-top-right-radius:0!important'), '0.1.27 판 기본색 검정 · 도구는 오른쪽 벽')
   }
   {   // 0.1.26 겹침
     const ly = readSrc(new URL('../web/src/layers.js', import.meta.url)), tb = readSrc(new URL('../web/src/toolbar.js', import.meta.url)), pc = readSrc(new URL('../web/src/polish.js', import.meta.url)), pl = readSrc(new URL('../web/src/plate.js', import.meta.url))
@@ -128,7 +128,7 @@ sl.dispose()
   {   // 0.1.23
     const bm = readSrc(new URL('../web/build.mjs', import.meta.url)), nz = readSrc(new URL('../web/src/nozzle.js', import.meta.url)), ly = readSrc(new URL('../web/src/layers.js', import.meta.url)), ap = readSrc(new URL('../web/src/app.js', import.meta.url))
     ok(bm.includes('globalThis.__slcNozzle ? globalThis.__slcNozzle(R, e)') && nz.includes('globalThis.__slcNozzle = makeNozzle') && nz.includes('if (opacity < 1) return new R.Mesh(new R.BufferGeometry(), new R.MeshBasicMaterial({ visible: false }))') && ap.includes("import './nozzle.js'"), '0.1.23 미리 보기 노즐 — 실제 핫엔드 모양')
-    ok(ly.includes("pv.classList.contains('on')") && ly.includes("root.querySelector('.plate-bar')") && ly.includes('.slc-ly{position:absolute;top:14px;left:10px;') && ly.includes('.slc-mv{position:absolute;bottom:48px;'), '0.1.23 층 슬라이더 · 판 고르기 · 완료 띠가 겹치지 않음')
+    ok(ly.includes("pv.classList.contains('on')") && ly.includes("root.querySelector('.stats-card')") && ly.includes('.slc-ly{position:absolute;top:18px;left:18px;') && ly.includes('.slc-mv{position:absolute;top:14px;left:84px;right:84px;max-width:620px;margin:0 auto;'), '0.1.23 층 슬라이더 · 판 고르기 · 완료 띠가 겹치지 않음')
   }
   {   // 0.1.22 층 · 노즐 슬라이더
     const ly = readSrc(new URL('../web/src/layers.js', import.meta.url)), tb = readSrc(new URL('../web/src/toolbar.js', import.meta.url))

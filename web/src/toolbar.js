@@ -30,11 +30,13 @@ const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '
 
 /** 그림자 DOM 안 모양 — 출력 검사기 .pck-vg 와 같은 말씨 (밝게 · 어둡게는 --_light-* 변수로 따라감) */
 export const TOOL_CSS = `
-.slc-vt{position:absolute;top:58px;right:8px;z-index:15;display:flex;flex-direction:column;align-items:flex-end;gap:6px;pointer-events:none}
+.slc-vt{position:absolute;top:58px;right:0;z-index:15;display:flex;flex-direction:column;align-items:flex-end;gap:6px;pointer-events:none}
 .slc-vt>*{pointer-events:auto}
 /* 0.1.26 겹치지 않게 — 높이가 모자라면 아래 판 고르기(1 · +)까지 내려가지 않고 왼쪽에 한 줄 더 (툴팁이 잘리지 않게 스크롤 대신 줄 바꿈) */
 .slc-vt{max-height:calc(100% - 150px);flex-wrap:wrap-reverse;align-content:flex-end;column-gap:6px}
 .slc-vt>.slc-vtg{order:-1}
+/* 0.1.28 오른쪽 벽에 딱 붙임 — 벽 쪽 모서리는 각지게 · 벽 쪽 테두리 없음 */
+.slc-vt .slc-vg,.slc-vt .slc-vtg{border-top-right-radius:0!important;border-bottom-right-radius:0!important;border-right:0!important}
 .slc-vg{display:flex;flex-direction:column;padding:3px;border-radius:12px;background:color-mix(in srgb,var(--_light-surface) 90%,transparent);border:1px solid var(--_light-divider);box-shadow:0 1px 2px rgba(15,23,42,.06),0 4px 14px rgba(15,23,42,.08);backdrop-filter:blur(6px)}
 .slc-vg button,.slc-vtg{position:relative;display:grid;place-items:center;width:34px;height:34px;border:0;border-radius:9px;background:none;color:var(--_light-text);cursor:pointer;transition:background .15s,color .15s}
 .slc-vg button.nope{color:#ef4444;animation:slc-nope .35s}
