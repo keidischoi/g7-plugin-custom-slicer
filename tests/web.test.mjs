@@ -122,6 +122,14 @@ sl.dispose()
     const bm = readSrc(new URL('../web/build.mjs', import.meta.url))
     ok(m.length === 1 && m[0].modelPos.length === 27 && m[0].modelPos[9] === 2 && m[0].name === 'kit' && m[0].objectid === '1' && m[0].bbox.minX === -3 && m[0].bbox.maxY === 9 && bm.includes('await globalThis.__slcMerge(ne, De)'), '0.1.44 여러 물체 3MF 를 하나로 합치기 (삼각형 이어 붙임 · 범위 합침)')
   }
+  {   // 0.1.45 다색 합치기 · 카메라 조명
+    const { mergeList: ml, encState } = await import('../web/src/merge3mf.js')
+    const own = { color: new Map([[0, '8']]), supports: new Map(), seam: new Map(), fuzzy: new Map() }
+    const r = ml([{ name: 'a', objectid: '1', modelPos: new Float32Array(18), paint: own }, { name: 'b', objectid: '2', modelPos: new Float32Array(27) }], 'k', [1, 3])[0]
+    const pl = readSrc(new URL('../web/src/plate.js', import.meta.url))
+    ok(encState(1) === '4' && encState(2) === '8' && encState(3) === '0C' && encState(5) === '2C' && r.paint.color.get(0) === '8' && r.paint.color.get(1) === '4' && r.paint.color.get(2) === '0C' && r.paint.color.get(4) === '0C' && r.paint.color.size === 5
+      && pl.includes("new THREE.DirectionalLight(0xffffff, 0.85)") && pl.includes('head.position.copy(cam.position)'), '0.1.45 합칠 때 부품마다 필라멘트로 칠함 · 카메라 조명')
+  }
   {   // 0.1.43 3MF 자리 · 판 비우기
     const { originOf } = await import('../web/src/place3mf.js')
     const o = originOf(new Float32Array([10, 20, 5, 30, 20, 5, 10, 40, 15]))

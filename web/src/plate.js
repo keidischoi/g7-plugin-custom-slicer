@@ -131,7 +131,11 @@ globalThis.__slcPlateHook = (THREE, view, p) => {
     if (view.scene && !view.scene.__slcBelow) {
       view.scene.__slcBelow = true
       const prev = view.scene.onBeforeRender
+      // 0.1.45 💡 카메라 조명 — 장면의 빛은 위쪽 고정이라 검은 필라멘트 물체를 옆 · 아래에서 보면 거의 검게만 보였음 → 카메라에서 바라보는 곳으로 비추는 빛 하나
+      let head = null
+      try { head = new THREE.DirectionalLight(0xffffff, 0.85); head.name = 'slc-headlight'; view.scene.add(head); view.scene.add(head.target) } catch (e) {}
       view.scene.onBeforeRender = function (rd, sc, cam) {
+        try { if (head && cam) { head.position.copy(cam.position); if (view.orbit && view.orbit.target) head.target.position.copy(view.orbit.target); head.target.updateMatrixWorld() } } catch (e) {}
         try {
           const below = !!cam && cam.position.y < -0.5, on = STATE.show !== false && !below
           for (const b of view.plateBeds || []) if (b.slcPlate && b.slcPlate.visible !== on) b.slcPlate.visible = on

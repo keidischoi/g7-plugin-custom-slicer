@@ -112,6 +112,23 @@ export function planSlots(have, want, fresh, max) {
 /** 뷰어 불러오기 갈고리 — file: 올린 파일, added: [{ objectid, id, paint }], v: { api, colorsRef, replaceAll, project, objects, max } */
 async function hook(file, added, v) {
   try {
+    // 0.1.45 하나로 합친 3MF — 부품 색마다 필라멘트 칸을 정하고, 합친 물체의 칠한 면을 그 칸 번호로 다시 씀
+    const lm = globalThis.__slcLastMerge
+    if (lm && lm.file === file && v && v.api) {
+      globalThis.__slcLastMerge = null
+      const a = (added || []).find((x) => x.objectid === lm.objectid), rec = a && (v.objects || []).find((o) => o.id === a.id)
+      const want = [...new Set(lm.parts.map((p) => p.color).filter(Boolean))]
+      if (rec && rec.paint && want.length) {
+        const have = (v.colorsRef && v.colorsRef.current) || []
+        const fresh = !v.objects || v.objects.length <= (added || []).length
+        const { colors, slot } = planSlots(have, want, fresh, v.max || 16)
+        if (colors.join() !== have.join() && v.replaceAll) v.replaceAll(colors)
+        const enc = (n) => (n === 1 ? '4' : n === 2 ? '8' : (n - 3).toString(16).toUpperCase() + 'C')
+        for (const p of lm.parts) { const n = p.color && slot[p.color]; if (!n) continue; const code = enc(n); for (let f = p.start; f < p.start + p.count; f++) rec.paint.color.set(f, code) }
+        if (v.api.recolorObjects) v.api.recolorObjects()
+      }
+      return
+    }
     if (!file || !/\.3mf$/i.test(file.name || '') || !added || !added.length || !v || !v.api) return
     const ps = v.project && v.project.settings
     if (ps && Array.isArray(ps.filament_colour) && ps.filament_colour.length) return   // Bambu · Orca 프로젝트 — 뷰어가 이미 맞춤
