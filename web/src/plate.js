@@ -127,19 +127,31 @@ function plateBody(THREE, top, w, d) {
 globalThis.__slcPlateHook = (THREE, view, p) => {
   try {
     STATE.views.add(view)
+    // 0.1.37 바닥 밑에서 볼 때는 판을 숨김 — 그리기마다 카메라가 판(높이 0)보다 아래인지 봄 (판 위로 오면 다시 보임)
+    if (view.scene && !view.scene.__slcBelow) {
+      view.scene.__slcBelow = true
+      const prev = view.scene.onBeforeRender
+      view.scene.onBeforeRender = function (rd, sc, cam) {
+        try {
+          const below = !!cam && cam.position.y < -0.5, on = STATE.show !== false && !below
+          for (const b of view.plateBeds || []) if (b.slcPlate && b.slcPlate.visible !== on) b.slcPlate.visible = on
+        } catch (e) {}
+        if (typeof prev === 'function') return prev.apply(this, arguments)
+      }
+    }
     const m = new THREE.Mesh(new THREE.ShapeGeometry(roundRect(THREE, p.w, p.d, 5), 6), new THREE.MeshStandardMaterial({ map: texOf(THREE, p.w, p.d), roughness: 0.85, metalness: 0.05, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 }))
     try { plateBody(THREE, m, p.w, p.d) } catch (e) {}
     m.rotation.x = -Math.PI / 2
     m.position.set(p.x, -0.05, p.z)
     m.renderOrder = -10
     m.userData.slcPlate = { w: p.w, d: p.d, THREE }
-    m.visible = lookPref().show !== false
+    m.visible = (STATE.show = lookPref().show !== false)
     return m
   } catch (e) { return null }
 }
 /** 깔린 판 그림을 지금 프린터 · 고른 판으로 다시 그림 · 보이기/숨기기 (숨기면 뷰어의 격자 선이 다시 보임) */
 export function refreshPlates() {
-  const show = lookPref().show !== false
+  const show = (STATE.show = lookPref().show !== false)
   for (const view of STATE.views) {
     for (const b of view.plateBeds || []) {
       const m = b.slcPlate; if (!m || !m.userData.slcPlate) continue

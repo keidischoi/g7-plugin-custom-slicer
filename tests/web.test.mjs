@@ -116,6 +116,10 @@ sl.dispose()
   ok(ld.includes('window.G7Slicer = {') && ld.includes('mount: function (el, opts)') && ld.includes('popup: popup') && app.includes('window.__slcApp = { version: V, mount, unmount, tick'), 'window.G7Slicer.mount · popup (출력 검사기 탭이 씀)')
   ok(app.includes('const SEND_ADMIN_ONLY = true') && app.includes("'/printers/' + p.id + '/send-file'") && app.includes("fd.append('bed_clear', '1')") && app.includes('checked: bed'), '보내기: 프린터 라운지 send-file · 베드 확인 · 관리자 시험')
   ok(app.includes('h(Viewport, {') && app.includes('h(SettingsPanel, { settings, setSettings, embedded: true })') && app.includes('onSliced') && app.includes('shortcuts: true') && app.includes('stopImmediatePropagation()') && app.includes("window.addEventListener('keydown', gate, true)"), '화면: 뷰어 + 설정 칸 · 결과 받기 · 0.1.13 탭 안에서는 슬라이서를 마지막으로 눌렀을 때만 단축키 (Delete 로 지우기)')
+  {   // 0.1.37 바닥 밑
+    const pl = readSrc(new URL('../web/src/plate.js', import.meta.url))
+    ok(pl.includes('view.scene.onBeforeRender = function (rd, sc, cam)') && pl.includes('cam.position.y < -0.5') && pl.includes("if (typeof prev === 'function') return prev.apply(this, arguments)"), '0.1.37 바닥 밑에서 보면 판 숨김')
+  }
   {   // 0.1.35 슬라이싱 결과 — G-code 읽기
     const { parseGcode } = await import('../web/src/results.js')
     const gc = ['M83', 'G28', ';LAYER_CHANGE', ';Z:0.2', 'G1 Z0.2', ';TYPE:Outer wall', 'G0 X10 Y10', 'G1 X20 Y10 E1.5', 'G1 X20 Y20 E1.5', 'G1 E-0.8', 'G0 X30 Y30', 'G1 E0.8', ';TYPE:Prime tower', 'G1 X35 Y30 E2',
