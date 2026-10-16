@@ -47,7 +47,8 @@ const scenePlugin = {
       if (s.split(from).length !== 2) throw new Error('엔진 설정의 brim_width 자리를 못 찾음 — three-slicer 판이 바뀌었으면 build.mjs 를 맞춰 주세요')
       // 0.1.40 「자동 브림」(auto_brim · 기본값)도 0 — OrcaSlicer 는 키가 크고 바닥이 좁을 때만 자동으로 브림을 다는데 이 엔진에는 그 판단이 없어
       //  브림 너비가 있으면 늘 브림을 만들었음 (켠 적 없는데 회색 띠). 브림이 필요하면 「바깥만」 등 종류를 직접 고르면 그 너비로 만듦
-      s = s.replace(from, () => "    brim_width: ['no_brim', 'auto_brim', ''].includes(String(S('brim_type') ?? 'auto_brim').toLowerCase()) ? 0 : num('brim_width'),")
+      // 0.1.41 브림 종류(바깥만 · 안팎 · 귀 …)를 골라도 기본 프로필의 브림 너비가 0 이라 아무것도 안 생겼음 → 너비가 0 이면 OrcaSlicer 흔한 값 5mm
+      s = s.replace(from, () => "    brim_width: ['no_brim', 'auto_brim', ''].includes(String(S('brim_type') ?? 'auto_brim').toLowerCase()) ? 0 : (num('brim_width') > 0 ? num('brim_width') : 5),")
       return { contents: s, loader: 'js' }
     })
     b.onLoad({ filter: /three-slicer-viewer[\\/]dist[\\/]index\.js$/ }, (args) => {
