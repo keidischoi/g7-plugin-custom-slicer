@@ -119,10 +119,11 @@ sl.dispose()
   {   // 0.1.29
     const ly = readSrc(new URL('../web/src/layers.js', import.meta.url))
     ok(ly.includes('.slc-ly{background:transparent!important;border-color:transparent!important;box-shadow:none!important'), '0.1.29 층 슬라이더 바탕 투명')
+    ok(ly.includes('.slc-mv{background:transparent!important') && ly.includes('class="slc-mv-tr"') && ly.includes('.slc-ly-tr{margin:10px 0}') && !ly.includes('<input type="range"'), '0.1.30 노즐 띠도 층 슬라이더 모양 · 끝 손잡이가 숫자를 안 덮음')
   }
   {   // 0.1.27 판 기본색
     const pl = readSrc(new URL('../web/src/plate.js', import.meta.url)), tb = readSrc(new URL('../web/src/toolbar.js', import.meta.url))
-    ok(pl.includes("export const DEFAULT_PLATE_COLOR = '#1c1f24'") && pl.includes("['', '기본 (검정)']") && tb.includes('.slc-vt{position:absolute;top:58px;right:0;') && tb.includes('border-top-right-radius:0!important'), '0.1.27 판 기본색 검정 · 도구는 오른쪽 벽')
+    ok(pl.includes("export const DEFAULT_PLATE_COLOR = '#1c1f24'") && pl.includes("['', '기본 (검정)']") && tb.includes('.slc-vt{position:absolute;top:58px;right:10px;') && tb.includes('.slc-vt{align-items:flex-start}'), '0.1.27 판 기본색 검정 · 도구는 오른쪽 벽')
   }
   {   // 0.1.26 겹침
     const ly = readSrc(new URL('../web/src/layers.js', import.meta.url)), tb = readSrc(new URL('../web/src/toolbar.js', import.meta.url)), pc = readSrc(new URL('../web/src/polish.js', import.meta.url)), pl = readSrc(new URL('../web/src/plate.js', import.meta.url))

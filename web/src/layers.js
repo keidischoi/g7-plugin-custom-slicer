@@ -31,7 +31,16 @@ export const LAYER_CSS = `
 .slc-mv button{display:grid;place-items:center;flex:none;width:28px;height:26px;padding:0;border:0;border-radius:8px;background:none;color:var(--_light-text);font:700 12px system-ui,sans-serif;cursor:pointer}
 .slc-mv button:hover{background:var(--_accent-soft);color:var(--_accent-ink)}
 .slc-mv button.play{background:var(--_accent);color:#fff}
-.slc-mv input{flex:1;min-width:60px;accent-color:#0ea5e9;cursor:pointer}
+/* 0.1.30 노즐 띠도 층 슬라이더와 같은 모양 — 바탕 투명 · 같은 줄 · 같은 손잡이 (가로) */
+.slc-mv{background:transparent!important;border-color:transparent!important;box-shadow:none!important;backdrop-filter:none!important}
+.slc-mv button,.slc-mv b{text-shadow:0 0 3px var(--_light-surface),0 0 2px var(--_light-surface),0 0 1px var(--_light-surface)}
+.slc-mv-tr{position:relative;flex:1;min-width:60px;height:28px;cursor:pointer;touch-action:none}
+.slc-mv-tr::before{content:"";position:absolute;top:50%;left:0;right:0;height:6px;margin-top:-3px;border-radius:3px;background:rgba(148,163,184,.45)}
+.slc-mv-fill{position:absolute;top:50%;left:0;height:6px;margin-top:-3px;border-radius:3px;background:linear-gradient(90deg,#6366f1,#0ea5e9)}
+.slc-mv-th{position:absolute;top:50%;width:14px;height:22px;margin:-11px 0 0 -7px;border-radius:7px;background:#fff;border:2px solid #0ea5e9;box-shadow:0 1px 4px rgba(15,23,42,.3);cursor:grab}
+.slc-mv-th:active{cursor:grabbing}
+/* 0.1.30 층 슬라이더 — 맨 위 · 맨 아래 손잡이가 위아래 숫자를 덮던 것: 줄 끝에 손잡이 반만큼 여백 */
+.slc-ly-tr{margin:10px 0}
 .slc-mv b{flex:none;min-width:86px;font:700 11.5px system-ui,sans-serif;color:var(--_light-text);font-variant-numeric:tabular-nums;text-align:right}
 .slc-mv b small{font-weight:600;color:var(--_light-text-muted)}
 `
@@ -57,16 +66,15 @@ export function mountLayers(root, col) {
     '<div class="slc-ly-n" data-n="lo"></div>' + btn('ly', 'down', '위 층 하나 내리기 (↓)', '▼') + btn('ly', 'one', '한 층만 보기 (L)', esc('한 층'))
   const mv = document.createElement('div'); mv.className = 'slc-mv'; mv.hidden = true
   mv.innerHTML = btn('mv', 'prev', '노즐 한 칸 뒤로', '◀') + btn('mv', 'play', '노즐 움직임 재생 · 멈춤', '▶') + btn('mv', 'next', '노즐 한 칸 앞으로', '▶|') +
-    '<input type="range" min="0" max="0" value="0" aria-label="' + esc('노즐 움직임 — 위 층에서 노즐이 어디까지 갔는지') + '"><b></b>'
+    '<div class="slc-mv-tr" role="slider" aria-label="' + esc('노즐 움직임 — 위 층에서 노즐이 어디까지 갔는지') + '"><div class="slc-mv-fill"></div><div class="slc-mv-th"></div></div><b></b>'
   col.appendChild(ly); col.appendChild(mv)
   for (const el of [ly, mv]) for (const ev of ['pointerdown', 'mousedown', 'wheel', 'click']) el.addEventListener(ev, (e) => e.stopPropagation())
 
   const q = (id) => root.querySelector('[data-testid="' + id + '"]')
   const tr = ly.querySelector('.slc-ly-tr'), fill = ly.querySelector('.slc-ly-fill'), thHi = ly.querySelector('[data-th=hi]'), thLo = ly.querySelector('[data-th=lo]')
   const nHi = ly.querySelector('[data-n=hi]'), nLo = ly.querySelector('[data-n=lo]'), one = ly.querySelector('[data-ly=one]')
-  const mr = mv.querySelector('input'), mb = mv.querySelector('b'), play = mv.querySelector('[data-mv=play]')
-  let timer = 0, mrHold = false   // mrHold: 노즐 슬라이더를 끄는 중 (값을 덮어쓰지 않음)
-  mr.addEventListener('pointerdown', () => { mrHold = true }); window.addEventListener('pointerup', () => { mrHold = false })
+  const mtr = mv.querySelector('.slc-mv-tr'), mfill = mv.querySelector('.slc-mv-fill'), mth = mv.querySelector('.slc-mv-th'), mb = mv.querySelector('b'), play = mv.querySelector('[data-mv=play]')
+  let timer = 0
   const stopPlay = () => { clearInterval(timer); timer = 0; play.classList.remove('play'); play.textContent = '▶' }
 
   const sync = () => {
@@ -91,8 +99,8 @@ export function mountLayers(root, col) {
     nHi.innerHTML = (b + 1) + '<small>/' + (max + 1) + '</small>'; nLo.textContent = String(a + 1)
     const sb = q('single-layer-btn'); one.classList.toggle('on', !!(sb && /\bon\b|active/.test(sb.className)) || (a === b && max > 0))
     if (m) {
-      if (mr.max !== m.max) mr.max = m.max
-      if (!mrHold) mr.value = m.value
+      const mmax = Number(m.max) || 0, p = mmax > 0 ? (Number(m.value) / mmax) * 100 : 100
+      mth.style.left = p + '%'; mfill.style.width = p + '%'; mtr.setAttribute('aria-valuenow', m.value); mtr.setAttribute('aria-valuemax', m.max)
       mb.innerHTML = esc('이동') + ' ' + (Number(m.value) + 1).toLocaleString() + '<small> / ' + (Number(m.max) + 1).toLocaleString() + '</small>'
     }
   }
@@ -128,7 +136,12 @@ export function mountLayers(root, col) {
   })
 
   // 노즐 움직임 — 위 층 안에서 노즐이 어디까지 갔는지 · ▶ 재생은 끝까지 가면 멈춤
-  mr.addEventListener('input', () => { const m = q('move-range'); if (m) setVal(m, mr.value); stopPlay(); sync() })
+  let mdrag = false
+  const mput = (x) => { const m = q('move-range'); if (!m) return; const r = mtr.getBoundingClientRect(); setVal(m, Math.round(Math.min(1, Math.max(0, (x - r.left) / r.width)) * (Number(m.max) || 0))); sync() }
+  mtr.addEventListener('pointerdown', (e) => { mdrag = true; stopPlay(); mput(e.clientX); try { mtr.setPointerCapture(e.pointerId) } catch (er) {} e.preventDefault() })
+  mtr.addEventListener('pointermove', (e) => { if (mdrag) mput(e.clientX) })
+  mtr.addEventListener('pointerup', () => { mdrag = false }); mtr.addEventListener('pointercancel', () => { mdrag = false })
+  mtr.addEventListener('wheel', (e) => { const m = q('move-range'); if (!m) return; e.preventDefault(); stopPlay(); setVal(m, Math.min(Number(m.max), Math.max(0, Number(m.value) + (e.deltaY < 0 ? 1 : -1) * (e.shiftKey ? 10 : 1)))); sync() }, { passive: false })
   mv.addEventListener('click', (e) => {
     const b = e.target.closest('button'); if (!b) return
     try { b.blur() } catch (er) {}
