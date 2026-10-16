@@ -24,6 +24,8 @@ const ICONS = {
   layd: '<path d="M3 20h18"/><rect x="5" y="12" width="14" height="5" rx="1.2"/><path d="M9 9a5 5 0 0 1 8-2l1.5 1.5M18.5 5v3.5H15"/>',
   face: '<path d="M3 20h18"/><path d="M7 20 12 7l5 13"/><path d="M12 3v2M7.5 15h9"/>',
   film: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 5v14M17 5v14M3 9h4M3 15h4M17 9h4M17 15h4"/><path d="m10.5 9.8 3.8 2.2-3.8 2.2z" fill="currentColor"/>',
+  eye: '<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+  eyeoff: '<path d="M2 12s3.6-7 10-7c2 0 3.7.7 5.1 1.6M22 12s-3.6 7-10 7c-2 0-3.7-.7-5.1-1.6"/><path d="M3 3l18 18"/>',
   hide: '<path d="M9 18l6-6-6-6"/>',
 }
 const ic = (n) => '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + (ICONS[n] || '') + '</svg>'
@@ -45,6 +47,9 @@ export const TOOL_CSS = `
 @keyframes slc-nope{25%{transform:translateX(-3px)}75%{transform:translateX(3px)}}
 .slc-vg button:hover,.slc-vtg:hover{background:var(--_accent-soft);color:var(--_accent-ink)}
 .slc-vg button.on{background:var(--_accent);color:var(--_on-accent)}
+/* 0.1.33 켬 · 끔이 바로 보이게 (배경이 천천히 바뀌지 않음) · 켠 단추는 마우스를 올려도 켠 색 그대로 */
+.slc-vg button{transition:color .15s}
+.slc-vg button.on:hover{background:var(--_accent);color:var(--_on-accent);filter:brightness(1.08)}
 .slc-vg svg,.slc-vtg svg{width:18px;height:18px}
 .slc-vg button:hover::after{content:attr(data-tip);position:absolute;right:calc(100% + 8px);top:50%;transform:translateY(-50%);padding:4px 8px;border-radius:7px;background:#0f172a;color:#fff;font-size:11.5px;font-weight:600;white-space:nowrap;pointer-events:none}
 .slc-vtg{width:auto;height:30px;padding:0 10px;gap:6px;display:inline-flex;border-radius:10px;background:color-mix(in srgb,var(--_light-surface) 90%,transparent);border:1px solid var(--_light-divider);font:700 12px system-ui,sans-serif}
@@ -136,7 +141,7 @@ export function mountToolbar(host, ctx) {
     '<small>판 색</small><div class="slc-pcol">' + PLATE_COLORS.map((c) => '<button type="button" data-pcolor="' + c[0] + '" title="' + esc(c[1]) + '" aria-label="' + esc(c[1]) + '"' + ((lookPref().color || '') === c[0] ? ' class="on"' : '') + ' style="--c:' + (c[0] || 'transparent') + '">' + (c[0] ? '' : 'A') + '</button>').join('') + '</div></div>'
   tb.innerHTML = '<button type="button" class="slc-vtg" data-vt-toggle>' + ic(mini ? 'tools' : 'hide') + '<span>' + (mini ? '도구' : '숨기기') + '</span></button>' +
     '<div class="slc-vg">' + B('iso', 'cube', '비스듬히') + B('top', 'top', '위에서') + B('front', 'front', '앞에서') + B('side', 'side', '옆에서') + B('fit', 'fit', '모델에 맞추기') + B('plate', 'plate', '판 전체 보기') + '</div>' +
-    '<div class="slc-vg">' + B('drag', 'move', '물체를 잡고 끌어 옮기기 (켜면 이동 화살표 숨김) · 켜기 · 끄기', pref.drag !== false) + B('auto', 'rotate', '천천히 돌리기') + B('plateshow', 'layers', '바닥판 보이기 · 숨기기', pref.show !== false) + B('platepick', 'sliders', '바닥판 바꾸기 (종류 · 색)') + '</div>' +
+    '<div class="slc-vg">' + B('drag', 'move', '물체를 잡고 끌어 옮기기 (켜면 이동 화살표 숨김) · 켜기 · 끄기', pref.drag !== false) + B('auto', 'rotate', '천천히 돌리기') + B('plateshow', pref.show !== false ? 'eye' : 'eyeoff', '바닥판 보이기 · 숨기기', pref.show !== false) + B('platepick', 'sliders', '바닥판 바꾸기 (종류 · 색)') + '</div>' +
     '<div class="slc-vg">' + B('flip', 'flipv', '위아래 뒤집기 (고른 물체)') + B('lay', 'layd', '앞으로 눕히기 90° (고른 물체)') + B('face', 'face', '면으로 놓기 — 누른 뒤 고른 물체의 바닥이 될 면을 클릭') + '</div>' +
     '<div class="slc-vg slc-pvonly">' + B('sim', 'film', '출력 시뮬레이션 — 1층부터 끝까지 노즐이 움직이는 대로 재생 · 멈춤') +
       '<button type="button" data-v="spd" data-tip="' + esc('시뮬레이션 빠르기 (누를 때마다 ×1 · ×4 · ×16 · ×64)') + '" aria-label="' + esc('시뮬레이션 빠르기 (누를 때마다 ×1 · ×4 · ×16 · ×64)') + '"><span>×4</span></button></div>' +
@@ -169,7 +174,7 @@ export function mountToolbar(host, ctx) {
     }
     else if (v === 'sim' || v === 'spd') { const S = col.__slcSim; if (S) (v === 'sim' ? S.toggle : S.speed)() }
     else if (v === 'auto') { const on = !b.classList.contains('on'); b.classList.toggle('on', on); spin(on) }
-    else if (v === 'plateshow') { const on = !b.classList.contains('on'); b.classList.toggle('on', on); setLookPref({ show: on }); refreshPlates() }
+    else if (v === 'plateshow') { const on = !b.classList.contains('on'); b.classList.toggle('on', on); b.innerHTML = ic(on ? 'eye' : 'eyeoff'); setLookPref({ show: on }); refreshPlates() }
     else if (v === 'platepick') { menu.hidden = !menu.hidden }
     else if (v === 'shot') ctx && ctx.shot && ctx.shot()
     else if (v === 'full') ctx && ctx.full && ctx.full()

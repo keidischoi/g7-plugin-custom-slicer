@@ -100,13 +100,35 @@ export function plateInfo(printer, bedType) {
 function texOf(THREE, w, d) {
   const tex = new THREE.CanvasTexture(plateCanvas(plateStyle(STATE.printer, STATE.bedType), w, d))
   if ('colorSpace' in tex && THREE.SRGBColorSpace) tex.colorSpace = THREE.SRGBColorSpace
+  tex.repeat.set(1 / w, 1 / d); tex.offset.set(0.5, 0.5)   // 0.1.33 판 모양(둥근 네모)의 mm 좌표 → 그림 0~1
   return tex
+}
+function roundRect(THREE, w, h, r) {
+  const s = new THREE.Shape(), x = -w / 2, y = -h / 2; r = Math.min(r, w / 2, h / 2)
+  s.moveTo(x + r, y); s.lineTo(x + w - r, y); s.quadraticCurveTo(x + w, y, x + w, y + r); s.lineTo(x + w, y + h - r); s.quadraticCurveTo(x + w, y + h, x + w - r, y + h)
+  s.lineTo(x + r, y + h); s.quadraticCurveTo(x, y + h, x, y + h - r); s.lineTo(x, y + r); s.quadraticCurveTo(x, y, x + r, y); return s
+}
+/** 0.1.33 판에 두께 — 출력 검사기 3D 미리 보기와 같은 판: 1.6mm 판(옆면은 판 가장자리 색) + 아래 8mm 프린터 몸 받침 + 앞쪽 색 띠.
+ *  윗면은 뷰어가 지울 때 geometry · material 을 버리므로 단일 메시로 두고, 두께 · 받침 · 띠는 그 자식 (판과 같이 보이고 숨음) */
+function plateBody(THREE, top, w, d) {
+  const st = plateStyle(STATE.printer, STATE.bedType), look = st.look
+  const none = new THREE.MeshBasicMaterial({ visible: false })
+  const sheet = new THREE.Mesh(new THREE.ExtrudeGeometry(roundRect(THREE, w, d, 5), { depth: 1.6, bevelEnabled: false, curveSegments: 6 }),
+    [none, new THREE.MeshStandardMaterial({ color: look.edge, roughness: 0.6, metalness: 0.3 })])
+  sheet.position.z = -1.6; top.add(sheet)
+  const bed = new THREE.Mesh(new THREE.ExtrudeGeometry(roundRect(THREE, w + 24, d + 24, 10), { depth: 8, bevelEnabled: false, curveSegments: 6 }),
+    new THREE.MeshStandardMaterial({ color: 0x23262d, roughness: 0.75, metalness: 0.2 }))
+  bed.position.z = -9.8; top.add(bed)
+  const stripe = new THREE.Mesh(new THREE.BoxGeometry(w * 0.5, 1.2, 2.2), new THREE.MeshStandardMaterial({ color: st.accent, emissive: st.accent, emissiveIntensity: 0.35 }))
+  stripe.position.set(0, -d / 2 - 12.4, -5.5); top.add(stripe)
+  top.userData.slcBody = { sheet, stripe }
 }
 /** build.mjs 가 뷰어의 판 만들기 함수에서 부름 — (THREE, 뷰어 상태, {x, z, w, d}) → 판 그림 메시 (뷰어가 판을 지울 때 같이 지움) */
 globalThis.__slcPlateHook = (THREE, view, p) => {
   try {
     STATE.views.add(view)
-    const m = new THREE.Mesh(new THREE.PlaneGeometry(p.w, p.d), new THREE.MeshBasicMaterial({ map: texOf(THREE, p.w, p.d), depthWrite: false, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 }))
+    const m = new THREE.Mesh(new THREE.ShapeGeometry(roundRect(THREE, p.w, p.d, 5), 6), new THREE.MeshStandardMaterial({ map: texOf(THREE, p.w, p.d), roughness: 0.85, metalness: 0.05, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 }))
+    try { plateBody(THREE, m, p.w, p.d) } catch (e) {}
     m.rotation.x = -Math.PI / 2
     m.position.set(p.x, -0.05, p.z)
     m.renderOrder = -10
@@ -123,6 +145,8 @@ export function refreshPlates() {
       const m = b.slcPlate; if (!m || !m.userData.slcPlate) continue
       const { w, d, THREE } = m.userData.slcPlate
       const old = m.material.map; m.material.map = texOf(THREE, w, d); m.material.needsUpdate = true; if (old) old.dispose()
+      const bd = m.userData.slcBody   // 0.1.33 판 옆면 · 앞 띠 색도 지금 판으로
+      if (bd) { const st = plateStyle(STATE.printer, STATE.bedType); bd.sheet.material[1].color.set(st.look.edge); bd.stripe.material.color.set(st.accent); bd.stripe.material.emissive.set(st.accent) }
       m.visible = show
       if (b.gridThin) b.gridThin.visible = !show
       if (b.gridBold) b.gridBold.visible = !show
