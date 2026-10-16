@@ -12,6 +12,7 @@ export function parseGcode(text) {
   const tools = []   // [{ model, flush, tower }] mm
   const T = (i) => tools[i] || (tools[i] = { model: 0, flush: 0, tower: 0 })
   let x = 0, y = 0, z = 0, e = 0, absE = false, absXY = true, tool = 0, toolSeen = false, changes = 0, extruded = false
+  let tminX = Infinity, tminY = Infinity
   let type = '', flush = false, wipe = false, layer = -1, markers = false, pending = true, curZ = -1e9, outerStart = false, retracted = false
   const OUTER = /^(outer wall|external perimeter|wall-outer|overhang wall)\b/
   const TOWER = /^(prime tower|wipe tower|prime-tower)\b/
@@ -63,9 +64,12 @@ export function parseGcode(text) {
       const t = T(tool); if (flush) t.flush += de; else if (TOWER.test(type)) t.tower += de; else t.model += de
       retracted = false
     }
+    if (!(hasE && de > 1e-6) && layer >= 0 && Math.hypot(nx - x, ny - y, nz - z) > 1e-6) {   // 뷰어처럼 첫 층이 생긴 뒤의 이동만
+      if (x < tminX) tminX = x; if (nx < tminX) tminX = nx; if (y < tminY) tminY = y; if (ny < tminY) tminY = ny
+    }
     x = nx; y = ny; z = nz
   }
-  const out = { tools: tools.map((t) => t || { model: 0, flush: 0, tower: 0 }), changes, layers: layer + 1, marks: {} }
+  const out = { tools: tools.map((t) => t || { model: 0, flush: 0, tower: 0 }), changes, layers: layer + 1, marks: {}, tmin: Number.isFinite(tminX) ? [tminX, tminY] : null }
   for (const k of KINDS) {   // 층 순서로 정렬 → 층마다 시작 자리 (보이는 층 범위만 그리기)
     const a = mk[k], n = a.length / 4, idx = Array.from({ length: n }, (_, i) => i).sort((p, q) => a[p * 4 + 3] - a[q * 4 + 3])
     const pos = new Float32Array(n * 3), start = new Int32Array(out.layers + 1)
@@ -203,6 +207,13 @@ export function mountResults(root, col) {
       }
       holder = H; drawn = D
     }
+    // 0.1.36 뷰어는 슬라이스 결과의 길을 「G-code 좌표 − 판 가운데」로 그림 (연 G-code 파일은 그대로) → 점이 판 밖에 찍혀 안 보였음.
+    //  같은 무리의 이동 선(LineSegments) 범위와 G-code 이동 범위를 견주어 어긋남을 구함 · 이동 선이 없으면 설정의 판 가운데
+    let dx = 0, dy = 0
+    const tl = H.children.find((c) => c.isLineSegments && c.geometry && c.geometry.attributes.position && c.geometry.attributes.position.count)
+    if (tl && D.tmin) { if (!tl.geometry.boundingBox) tl.geometry.computeBoundingBox(); dx = tl.geometry.boundingBox.min.x - D.tmin[0]; dy = tl.geometry.boundingBox.min.y - D.tmin[1] }
+    else if (SRC && SRC.sliced) { const pa = [].concat((SRC.settings || {}).printable_area || []).map((p) => (Array.isArray(p) ? p : String(p).split('x').map(Number))); if (pa.length >= 3) { const xs = pa.map((p) => +p[0]), ys = pa.map((p) => +p[1]); dx = -(Math.min(...xs) + Math.max(...xs)) / 2; dy = -(Math.min(...ys) + Math.max(...ys)) / 2 } }
+    for (const k in pts) pts[k].position.set(dx, dy, 0)
     const lo = q('layer-lo'), hi = q('layer-hi'), pref = showPref()
     const a = lo ? Number(lo.value) || 0 : 0, b = hi ? Number(hi.value) || 0 : D.layers
     for (const k in pts) {

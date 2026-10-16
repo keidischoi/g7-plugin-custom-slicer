@@ -122,7 +122,7 @@ sl.dispose()
       'T1', ';LAYER_CHANGE', ';Z:0.4', 'G1 Z0.4', ';TYPE:Outer wall', 'G0 X12 Y12', 'G1 X22 Y12 E1', ';WIPE_START', 'G1 X23 Y12 E-0.2', ';WIPE_END', '; FLUSH_START', 'G1 X40 Y40 E5', '; FLUSH_END'].join('\n')
     const d = parseGcode(gc)
     ok(d.layers === 2 && d.changes === 1 && Math.abs(d.tools[0].model - 3) < 1e-6 && Math.abs(d.tools[0].tower - 2) < 1e-6 && Math.abs(d.tools[1].model - 1) < 1e-6 && Math.abs(d.tools[1].flush - 5) < 1e-6
-      && d.marks.seam.n === 2 && d.marks.seam.pos[0] === 10 && d.marks.seam.pos[3] === 12 && d.marks.retract.n === 1 && d.marks.unretract.n === 1 && d.marks.wipe.n >= 1 && d.marks.seam.start[1] === 1,
+      && d.marks.seam.n === 2 && d.marks.seam.pos[0] === 10 && d.marks.seam.pos[3] === 12 && d.marks.retract.n === 1 && d.marks.unretract.n === 1 && d.marks.wipe.n >= 1 && d.marks.seam.start[1] === 1 && d.tmin && d.tmin[0] === 0 && d.tmin[1] === 0 && readSrc(new URL('../web/src/results.js', import.meta.url)).includes('dx = tl.geometry.boundingBox.min.x - D.tmin[0]'),
       '0.1.35 G-code → 필라멘트별 모델 · 타워 · 플러시 · 교체 · 재봉선 · 수축 · 수축 복귀 · 닦기 · 층마다 시작 자리')
   }
   {   // 0.1.33 판 두께 · 켬 표시

@@ -1,4 +1,4 @@
-/*! custom-slicer 0.1.35 — 🔪 슬라이서 화면 · AGPL-3.0-or-later · 소스: https://github.com/keidischoi/g7-plugin-custom-slicer
+/*! custom-slicer 0.1.36 — 🔪 슬라이서 화면 · AGPL-3.0-or-later · 소스: https://github.com/keidischoi/g7-plugin-custom-slicer
  *  엔진 · 화면: three-slicer (OrcaSlicer 를 WebAssembly 로 옮긴 것, AGPL) — <Viewport/>(판 배치 · 이동/회전/크기 · 칠하기 · 슬라이스 · G-code 미리 보기)
  *  + <SettingsPanel/>(OrcaSlicer 설정). 이 파일은 그 바깥 틀: 프린터 라운지의 내 프린터 · 📤 보내기 · .gcode.3mf · 다른 화면에서 넘겨받은 파일
  *  모델은 서버로 올라가지 않음 — 이 브라우저에서만 읽고 슬라이스 */
@@ -20,7 +20,7 @@ import { savePlate, loadPlate, clearPlate } from './store.js'
 import { plateInfo, sceneTheme } from './plate.js'
 import { mountToolbar, stopSpin } from './toolbar.js'
 
-const V = '0.1.35', API = '/api/plugins/custom-slicer', LOUNGE = '/api/plugins/custom-my_printer', SRC = 'https://github.com/keidischoi/g7-plugin-custom-slicer'
+const V = '0.1.36', API = '/api/plugins/custom-slicer', LOUNGE = '/api/plugins/custom-my_printer', SRC = 'https://github.com/keidischoi/g7-plugin-custom-slicer'
 const SEND_ADMIN_ONLY = true   // 「📤 내 프린터로 보내기」는 시험하는 동안 관리자에게만 (실제 프린터에서 확인되면 false 로)
 const LS_SET = 'slc-settings'
 const h = React.createElement
@@ -370,7 +370,7 @@ function App({ files, popup, compact, printer, from }) {
   }, [printerKey])
   useEffect(() => { setRes(null) }, [settings])   // 설정이 바뀌면 뷰어도 결과를 버림
   // 0.1.35 📊 슬라이싱 결과 — 필라멘트별 사용량 · 교체 · 비용 · 수축 · 닦기 · 재봉선 (G-code 를 따로 읽음)
-  useEffect(() => { setResultSource(res ? { gcode: res.gcode, settings: cur.current, seconds: res.seconds } : null) }, [res])
+  useEffect(() => { setResultSource(res ? { gcode: res.gcode, settings: cur.current, seconds: res.seconds, sliced: true } : null) }, [res])
   // 0.1.5 🧱 바닥판 — 출력 검사기와 같은 판 그림 (프린터 제조사 · 판 종류)
   useEffect(() => { plateInfo(String(settings.printer_settings_id || ''), String(settings.curr_bed_type || '')) }, [settings.printer_settings_id, settings.curr_bed_type])
   // 🎛️ 슬라이서 프로필 플러그인이 켜져 있나 (목록 하나만 물어봄)
