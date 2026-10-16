@@ -49,6 +49,11 @@ const scenePlugin = {
       //  브림 너비가 있으면 늘 브림을 만들었음 (켠 적 없는데 회색 띠). 브림이 필요하면 「바깥만」 등 종류를 직접 고르면 그 너비로 만듦
       // 0.1.41 브림 종류(바깥만 · 안팎 · 귀 …)를 골라도 기본 프로필의 브림 너비가 0 이라 아무것도 안 생겼음 → 너비가 0 이면 OrcaSlicer 흔한 값 5mm
       s = s.replace(from, () => "    brim_width: ['no_brim', 'auto_brim', ''].includes(String(S('brim_type') ?? 'auto_brim').toLowerCase()) ? 0 : (num('brim_width') > 0 ? num('brim_width') : 5),")
+      // 0.1.48 「브림을 껐는데 브림이 생김」 — 실제로는 스커트(모델에서 2mm 띄운 한 바퀴). 프로필에 스커트 루프가 없으면 엔진 기본값 1 이 들어갔음 →
+      //  프로필 · 설정에 skirt_loops 가 없을 때는 0 (Bambu 프로필과 같음). 프로필이 스커트를 정해 두었으면 그대로
+      const sk = "    skirt_loops: num('skirt_loops'),"
+      if (s.split(sk).length !== 2) throw new Error('엔진 설정의 skirt_loops 자리를 못 찾음 — three-slicer 판이 바뀌었으면 build.mjs 를 맞춰 주세요')
+      s = s.replace(sk, () => "    skirt_loops: settings && 'skirt_loops' in settings ? num('skirt_loops') : 0,")
       return { contents: s, loader: 'js' }
     })
     b.onLoad({ filter: /three-slicer-viewer[\\/]dist[\\/]index\.js$/ }, (args) => {

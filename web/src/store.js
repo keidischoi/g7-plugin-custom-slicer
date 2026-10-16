@@ -41,7 +41,8 @@ export async function loadPlate(slot) {
     })
     db.close()
     if (!v || !Array.isArray(v.list) || Date.now() - (v.at || 0) > MAX_AGE) return []
-    return v.list.map((x) => (x.blob instanceof File ? x.blob : new File([x.blob], x.name || 'model.stl', { type: x.type || '' })))
+    // 0.1.48 다시 불러온 파일 표시 — 🧩 합치기 창이 새로고침마다 다시 묻지 않게 (merge3mf.js 가 그 파일의 지난 선택을 씀)
+    return v.list.map((x) => { const f = x.blob instanceof File ? x.blob : new File([x.blob], x.name || 'model.stl', { type: x.type || '' }); try { f.__slcRestored = true } catch (e) {} return f })
   } catch (e) { return [] }
 }
 export function clearPlate(slot) { return savePlate(slot, []) }
