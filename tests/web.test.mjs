@@ -122,7 +122,7 @@ sl.dispose()
   }
   {   // 0.1.32 출력 시뮬레이션
     const ly = readSrc(new URL('../web/src/layers.js', import.meta.url))
-    ok(readSrc(new URL('../web/src/toolbar.js', import.meta.url)).includes("B('sim', 'film'") && ly.includes('col.__slcSim = { toggle: simToggle') && ly.includes('const simTick = () =>') && ly.includes('const SPEEDS = [1, 4, 16, 64]') && ly.includes('if (v >= max) sim.layer++'), '0.1.32 출력 시뮬레이션 — 1층부터 끝까지 · 빠르기')
+    ok(readSrc(new URL('../web/src/toolbar.js', import.meta.url)).includes("B('sim', 'film'") && ly.includes('col.__slcSim = { toggle: simToggle') && ly.includes('const simTick = () =>') && ly.includes('const SPEEDS = [1, 4, 16, 64]') && ly.includes('if (v >= max) sim.layer++') && ly.includes('setVal(hi, sim.layer); setVal(m, 0);'), '0.1.32 출력 시뮬레이션 — 1층부터 끝까지 · 빠르기')
   }
   {   // 0.1.31 칩 · 설정 프린터 맞춤
     const ap = readSrc(new URL('../web/src/app.js', import.meta.url))
