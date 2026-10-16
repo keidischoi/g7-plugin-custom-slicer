@@ -61,22 +61,7 @@ function ghostFix(v) {
     }, 0)
     return r
   }
-  // 0.1.19 칠한 물체를 고르면 표시 — 뷰어는 물체 몸을 빛나게(emissive) 하는데, 칠한 물체는 덧칠이 몸을 덮어 고른 줄 몰랐음
-  //  (네모 상자도 숨겼으므로) → 고른 물체와 겹치는 덧칠도 같은 색으로 살짝 빛나게
-  let hiKey = ''
-  setInterval(() => {
-    const obj = tc.object, ov = g.children.filter((c) => c.isMesh && c.renderOrder === PAINT_ORDER && c.material && c.material.emissive)
-    const key = (obj ? obj.uuid : '') + '|' + ov.map((m) => m.uuid).join(',')
-    if (key === hiKey) return
-    hiKey = key
-    const sel = obj ? new Box3().setFromObject(obj).expandByScalar(0.5) : null
-    for (const m of ov) {
-      let on = false
-      if (sel) { if (!m.geometry.boundingBox) m.geometry.computeBoundingBox(); ob.copy(m.geometry.boundingBox).applyMatrix4(m.matrixWorld); on = sel.containsBox(ob) }
-      m.material.emissive.set(on ? 0x1d6b96 : 0x000000)
-    }
-    if (v.invalidate) v.invalidate()
-  }, 250)
+  // 0.1.20 고른 물체 색 강조 없음 (0.1.19 의 덧칠 강조도 뺌 — 고르거나 올려도 원래 색 그대로)
   tc.addEventListener('objectChange', () => {
     if (!run || !run.follow.length) return
     const d = run.obj.getWorldPosition(tmp).sub(run.p0)
