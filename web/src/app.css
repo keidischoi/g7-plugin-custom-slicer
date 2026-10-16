@@ -1,4 +1,4 @@
-/* custom-slicer 0.1.20 — 🔪 슬라이서 바깥 틀 · AGPL-3.0-or-later
+/* custom-slicer 0.1.21 — 🔪 슬라이서 바깥 틀 · AGPL-3.0-or-later
  *  모양은 출력 검사기(.pck)와 같은 말씨 — 하늘색→남색 그라데이션 · 둥근 카드 · 알약 칩. 뷰어 · 설정 칸은 자기 Shadow DOM 안에서 그리므로
  *  CSS 변수(--vp-*)로만 색을 맞춤 (그림자 경계를 넘는 건 변수뿐) */
 .slc { --ink:#0f172a; --mute:#64748b; --line:#e2e8f0; --card:#fff; --bg2:#f8fafc; --soft:#ecfeff; --a:#0ea5e9; --a2:#6366f1; --bad:#dc2626; --ok:#16a34a;
@@ -176,6 +176,12 @@
 .slc[data-slc-theme=dark] .slc-dock { background:rgba(30,41,59,.96); border-color:#0e7490; }
 .slc-dsum { font-weight:700; font-size:13.5px; } .slc-dsum b { color:#0369a1; margin-right:4px; }
 .slc-dbtns { display:flex; flex-wrap:wrap; gap:6px; }
+/* 0.1.21 ✕ 닫기 */
+.slc-dock { padding-right:38px; }
+.slc-dx { position:absolute; top:7px; right:8px; display:grid; place-items:center; width:24px; height:24px; padding:0; border:0; border-radius:50%;
+  background:transparent; color:#64748b; font-size:13px; line-height:1; cursor:pointer; transition:background .15s,color .15s; }
+.slc-dx:hover { background:rgba(100,116,139,.16); color:#0f172a; }
+.slc[data-slc-theme=dark] .slc-dx { color:#94a3b8; } .slc[data-slc-theme=dark] .slc-dx:hover { background:rgba(148,163,184,.18); color:#f1f5f9; }
 .slc-dock .slc-dbtns .slc-btn { white-space:nowrap; }
 @media (max-width:900px) { .slc-dock { width:auto; min-width:0; margin:8px 0 12px; } }
 
