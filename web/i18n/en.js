@@ -17,7 +17,7 @@ export default {
   '🎨 필라멘트 칸': '🎨 Filament slots', '번 색': ' color', '필라멘트': 'Filament', '번 — ': ' — ', '외부 스풀': 'External spool', '베드를 비웠어요': 'The bed is clear',
   ' — 바닥판에 아무것도 없어요 (멀리서 출력 시작은 위험해요)': ' — nothing is on the build plate (starting a print remotely is risky)',
   '🔒 보내기는 시험하는 동안 관리자에게만 보여요.': '🔒 Sending is visible to admins only while it is being tested.',
-  '닫기': 'Close', '⏳ 올리는 중… ': '⏳ Uploading… ', '📤 보내기': '📤 Send', '내 프린터로 보내기': 'Send to my printer', '📤 내 프린터로 보내기': '📤 Send to my printer',
+  '닫기': 'Close', '닫기 — 다음 슬라이스 때 다시 나와요': 'Close — it comes back on the next slice', '⏳ 올리는 중… ': '⏳ Uploading… ', '📤 보내기': '📤 Send', '내 프린터로 보내기': 'Send to my printer', '📤 내 프린터로 보내기': '📤 Send to my printer',
   '로그인하면 받을 수 있어요.': 'Log in to download.', '프로필을 받지 못했어요 (': 'Could not get the profile (', '슬라이서 프로필': 'Slicer profiles',
   '🎛️ 슬라이서 프로필 — 회원들이 써 본 설정': '🎛️ Slicer profiles — settings members have tried', '찾기 (예: PLA · 실크 · 0.2mm)': 'Search (e.g. PLA · silk · 0.2mm)',
   '이 프린터 것만 — 누르면 모든 프린터': 'This printer only — click for all printers',

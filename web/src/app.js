@@ -1,4 +1,4 @@
-/*! custom-slicer 0.1.20 — 🔪 슬라이서 화면 · AGPL-3.0-or-later · 소스: https://github.com/keidischoi/g7-plugin-custom-slicer
+/*! custom-slicer 0.1.21 — 🔪 슬라이서 화면 · AGPL-3.0-or-later · 소스: https://github.com/keidischoi/g7-plugin-custom-slicer
  *  엔진 · 화면: three-slicer (OrcaSlicer 를 WebAssembly 로 옮긴 것, AGPL) — <Viewport/>(판 배치 · 이동/회전/크기 · 칠하기 · 슬라이스 · G-code 미리 보기)
  *  + <SettingsPanel/>(OrcaSlicer 설정). 이 파일은 그 바깥 틀: 프린터 라운지의 내 프린터 · 📤 보내기 · .gcode.3mf · 다른 화면에서 넘겨받은 파일
  *  모델은 서버로 올라가지 않음 — 이 브라우저에서만 읽고 슬라이스 */
@@ -18,7 +18,7 @@ import { savePlate, loadPlate, clearPlate } from './store.js'
 import { plateInfo, sceneTheme } from './plate.js'
 import { mountToolbar, stopSpin } from './toolbar.js'
 
-const V = '0.1.20', API = '/api/plugins/custom-slicer', LOUNGE = '/api/plugins/custom-my_printer', SRC = 'https://github.com/keidischoi/g7-plugin-custom-slicer'
+const V = '0.1.21', API = '/api/plugins/custom-slicer', LOUNGE = '/api/plugins/custom-my_printer', SRC = 'https://github.com/keidischoi/g7-plugin-custom-slicer'
 const SEND_ADMIN_ONLY = true   // 「📤 내 프린터로 보내기」는 시험하는 동안 관리자에게만 (실제 프린터에서 확인되면 false 로)
 const LS_SET = 'slc-settings'
 const h = React.createElement
@@ -287,6 +287,7 @@ function App({ files, popup, compact, printer, from }) {
   const [settings, setSettingsRaw] = useState(() => loadSaved() || {})
   const setSettings = useCallback((u) => setSettingsRaw((s) => { const n = typeof u === 'function' ? u(s) : u; save(n); return n }), [])
   const [me, setMe] = useState({}), [lounge, setLounge] = useState({ logged: false, list: [] }), [pid, setPid] = useState(0)
+  const [dockOff, setDockOff] = useState(null)   // 0.1.21 ✕ 로 닫은 슬라이스 결과 (다음 슬라이스면 다시 나옴)
   const [res, setRes] = useState(null), [err, setErr] = useState(''), [note, setNote] = useState(''), [send, setSend] = useState(false), [sent, setSent] = useState('')
   const [ready, setReady] = useState(null)   // 넘겨받은 파일 (zip 은 풀어서) — 준비되면 뷰어를 그림 (뷰어는 files 를 처음 한 번만 받음)
   const [sliceReq, setSliceReq] = useState(0), fixes = useRef([])   // 0.1.3 G-code 칸을 고친 뒤 다시 슬라이스
@@ -584,12 +585,19 @@ function App({ files, popup, compact, printer, from }) {
       const right = Math.max(12, sr.right - vp.right + 12)
       if (sr.width - left - right < 300) left = vp.left - sr.left + 12   // 자리가 좁으면 3D 칸 폭 전체 (정보 상자 위로)
       d.style.setProperty('--dl', Math.round(left) + 'px'); d.style.setProperty('--dr', Math.round(right) + 'px')
+      // 0.1.21 정보 상자와 아랫줄을 맞춤 — 띠의 바닥을 정보 상자 바닥에 (정보 상자 옆에 놓일 때만 · 스크롤해도 따라감)
+      const beside = cr && left > cr.right - sr.left
+      const dy0 = d.__dy || 0, rr = d.getBoundingClientRect()
+      const dy = beside ? Math.max(-400, Math.min(200, Math.round(dy0 + cr.bottom - rr.bottom))) : 0
+      if (dy !== dy0) { d.__dy = dy; d.style.translate = dy ? '0 ' + dy + 'px' : '' }
     }
     place()
     const t = setInterval(place, 800)   // 정보 상자는 슬라이스가 끝난 뒤 늦게 나옴 · 오른쪽 칸 접기 · 창 크기
-    window.addEventListener('resize', place)
-    return () => { clearInterval(t); window.removeEventListener('resize', place) }
-  }, [R, popup])
+    let raf = 0
+    const soon = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(place) }
+    window.addEventListener('resize', soon); window.addEventListener('scroll', soon, true)
+    return () => { clearInterval(t); cancelAnimationFrame(raf); window.removeEventListener('resize', soon); window.removeEventListener('scroll', soon, true) }
+  }, [R, popup, dockOff])
   // 0.1.13 탭(내 프린터 등) 안의 슬라이서 — 마지막으로 누른 곳이 슬라이서 안일 때만 뷰어 단축키(Delete · 화살표 · m/r/s …)를 보냄.
   //  다른 칸을 쓰는 동안에는 막아서 그 화면의 키를 뺏지 않음 (Esc · Tab 과 글 쓰는 칸은 늘 그대로)
   useEffect(() => {
@@ -620,7 +628,8 @@ function App({ files, popup, compact, printer, from }) {
     sent ? h('p', { className: 'slc-sent' }, '✅ ' + sent + ' ', h('a', { href: '/my-printer' }, '프린터 라운지에서 상태 보기 ›'), h('button', { type: 'button', onClick: () => setSent('') }, '✕')) : null,
     h('div', { className: 'slc-stage', ref: stage }, viewer),
     // 0.1.4 슬라이스 결과 띠 — 페이지 흐름에서는 위 띠가 스크롤로 사라지므로 화면 아래에 붙여 늘 보이게 (큰 창은 위 띠 그대로)
-    R && !popup ? h('div', { className: 'slc-dock', ref: dock, role: 'region', 'aria-label': '슬라이스 결과' },
+    R && !popup && dockOff !== R ? h('div', { className: 'slc-dock', ref: dock, role: 'region', 'aria-label': '슬라이스 결과' },
+      h('button', { type: 'button', className: 'slc-dx', 'aria-label': '닫기', title: '닫기 — 다음 슬라이스 때 다시 나와요', onClick: () => setDockOff(R) }, '✕'),
       h('span', { className: 'slc-dsum' }, h('b', null, '✅ 슬라이스 완료'), ' ⏱ ' + dur(R.seconds) + (R.guessed ? ' (어림)' : '') + ' · 🧵 ' + n1(R.weight) + ' g · 층 ' + R.layers.toLocaleString()),
       h('span', { className: 'slc-dbtns' },
         canSee ? h('button', { type: 'button', className: 'slc-btn pri', disabled: !canSend, title: canSend ? '프린터 라운지의 내 프린터로 보내요' : (lounge.list.length ? '지금 보낼 수 있는 프린터가 없어요 (연결 프로그램 · 관리자 설정 「출력 파일 보내기」)' : '프린터 라운지에 내 프린터를 등록하면 보낼 수 있어요'), onClick: () => setSend(true) }, '📤 프린터로 보내기', SEND_ADMIN_ONLY ? h('small', { className: 'slc-adm' }, ' 🔒') : null) : null,

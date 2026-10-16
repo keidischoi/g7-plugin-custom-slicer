@@ -116,6 +116,10 @@ sl.dispose()
   ok(ld.includes('window.G7Slicer = {') && ld.includes('mount: function (el, opts)') && ld.includes('popup: popup') && app.includes('window.__slcApp = { version: V, mount, unmount, tick'), 'window.G7Slicer.mount · popup (출력 검사기 탭이 씀)')
   ok(app.includes('const SEND_ADMIN_ONLY = true') && app.includes("'/printers/' + p.id + '/send-file'") && app.includes("fd.append('bed_clear', '1')") && app.includes('checked: bed'), '보내기: 프린터 라운지 send-file · 베드 확인 · 관리자 시험')
   ok(app.includes('h(Viewport, {') && app.includes('h(SettingsPanel, { settings, setSettings, embedded: true })') && app.includes('onSliced') && app.includes('shortcuts: true') && app.includes('stopImmediatePropagation()') && app.includes("window.addEventListener('keydown', gate, true)"), '화면: 뷰어 + 설정 칸 · 결과 받기 · 0.1.13 탭 안에서는 슬라이서를 마지막으로 눌렀을 때만 단축키 (Delete 로 지우기)')
+  {   // 0.1.21 완료 띠
+    const ap = readSrc(new URL('../web/src/app.js', import.meta.url)), cs = readSrc(new URL('../web/src/app.css', import.meta.url))
+    ok(ap.includes("className: 'slc-dx'") && ap.includes('dockOff !== R') && ap.includes('cr.bottom - rr.bottom') && cs.includes('.slc-dx {'), '0.1.21 완료 띠 ✕ 닫기 · 정보 상자와 아랫줄 맞춤')
+  }
   {   // 0.1.20 고르기 색 없음
     const bm = readSrc(new URL('../web/build.mjs', import.meta.url)), fd = readSrc(new URL('../web/src/freedrag.js', import.meta.url))
     ok(bm.includes("'h.material.emissive ? h.material.emissive.set(0) :'") && !fd.includes('emissive.set('), '0.1.20 고르거나 올려도 물체 색 그대로')
