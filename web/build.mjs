@@ -67,7 +67,7 @@ const scenePlugin = {
       let s = readFileSync(args.path, 'utf8')
       const from = 'fragColor = vec4(vColor * (0.55 + 0.45 * lambert), 1.0);'
       if (s.split(from).length !== 2) throw new Error('미리 보기 셰이더 자리를 못 찾음 — three-slicer 판이 바뀌었으면 build.mjs 를 맞춰 주세요')
-      s = s.replace(from, () => 'float lum = dot(vColor, vec3(0.2126, 0.7152, 0.0722));\n  float dark = 1.0 - smoothstep(0.12, 0.35, lum);\n  fragColor = vec4(vColor * (0.55 + 0.45 * lambert) + dark * vec3(0.03 + 0.10 * lambert), 1.0);')
+      s = s.replace(from, () => 'float lum = dot(vColor, vec3(0.2126, 0.7152, 0.0722));\n  float dark = 1.0 - smoothstep(0.12, 0.35, lum);\n  fragColor = vec4(vColor * (0.55 + 0.45 * lambert) + dark * vec3(0.045 + 0.13 * lambert), 1.0);')
       return { contents: s, loader: 'js' }
     })
     b.onLoad({ filter: /three-slicer-viewer[\\/]dist[\\/]index\.js$/ }, (args) => {
