@@ -116,9 +116,16 @@ sl.dispose()
   ok(ld.includes('window.G7Slicer = {') && ld.includes('mount: function (el, opts)') && ld.includes('popup: popup') && app.includes('window.__slcApp = { version: V, mount, unmount, tick'), 'window.G7Slicer.mount · popup (출력 검사기 탭이 씀)')
   ok(app.includes('const SEND_ADMIN_ONLY = true') && app.includes("'/printers/' + p.id + '/send-file'") && app.includes("fd.append('bed_clear', '1')") && app.includes('checked: bed'), '보내기: 프린터 라운지 send-file · 베드 확인 · 관리자 시험')
   ok(app.includes('h(Viewport, {') && app.includes('h(SettingsPanel, { settings, setSettings, embedded: true })') && app.includes('onSliced') && app.includes('shortcuts: true') && app.includes('stopImmediatePropagation()') && app.includes("window.addEventListener('keydown', gate, true)"), '화면: 뷰어 + 설정 칸 · 결과 받기 · 0.1.13 탭 안에서는 슬라이서를 마지막으로 눌렀을 때만 단축키 (Delete 로 지우기)')
+  {   // 0.1.19
+    const bm = readSrc(new URL('../web/build.mjs', import.meta.url)), fd = readSrc(new URL('../web/src/freedrag.js', import.meta.url)), or = readSrc(new URL('../web/src/orient.js', import.meta.url)), tb = readSrc(new URL('../web/src/toolbar.js', import.meta.url)), pc = readSrc(new URL('../web/src/polish.js', import.meta.url)), ap = readSrc(new URL('../web/src/app.js', import.meta.url))
+    ok(bm.includes('c.current?.size && !globalThis.__slcFollowPaint ? pe().then(') && fd.includes('globalThis.__slcFollowPaint = run.follow.length > 0 && !run.hidden.length') && fd.includes('L.unshift(fn)') && !fd.includes('ray.intersectObjects(bodies'), '0.1.19 옮길 때 뷰어의 덧칠 다시 만들기 건너뜀 · 광선 한 번')
+    ok(or.includes('export const flip') && or.includes('export const layDown') && or.includes('export function faceMode') && or.includes('setFromUnitVectors') && tb.includes("B('flip', 'flipv'") && tb.includes("B('face', 'face'"), '0.1.19 뒤집기 · 눕히기 · 면으로 놓기')
+    ok(fd.includes('g.remove = (...a) =>') && fd.includes('if (!bodies.some((b) => b.intersectsBox(ob))) m.visible = false') && fd.includes('0x1d6b96') && readSrc(new URL('../web/build.mjs', import.meta.url)).includes('a.visible = !!b && !!x;'), '0.1.19 지운 물체의 덧칠 숨김 · 고른 칠한 물체 강조 · 네모 상자는 크기 바꾸기만')
+    ok(pc.includes('.slice-warn.side-warn{display:block') && pc.includes('.side-bottom{display:grid') && ap.includes("d.style.setProperty('--dl'"), '0.1.19 경고 상자 · 슬라이스 띠 · 완료 띠 자리')
+  }
   {   // 0.1.18 잔상
     const fd = readSrc(new URL('../web/src/freedrag.js', import.meta.url))
-    ok(fd.includes('function ghostFix(v)') && fd.includes('ghostFix(v)   //') && fd.includes("tc.mode === 'translate' && box.containsBox(ob)") && fd.includes("tc.addEventListener('objectChange'"), '0.1.18 옮길 때 칠한 색 덧칠이 같이 움직임 · 섞인 것은 숨김')
+    ok(fd.includes('function ghostFix(v)') && fd.includes('ghostFix(v)   //') && fd.includes("tc.mode === 'translate' && !v.__slcRotOp && box.containsBox(ob)") && fd.includes("tc.addEventListener('objectChange'"), '0.1.18 옮길 때 칠한 색 덧칠이 같이 움직임 · 섞인 것은 숨김')
   }
   {   // 0.1.17 hover 광선 줄이기
     const bm = readSrc(new URL('../web/build.mjs', import.meta.url))

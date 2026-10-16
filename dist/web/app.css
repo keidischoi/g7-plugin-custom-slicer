@@ -1,4 +1,4 @@
-/* custom-slicer 0.1.18 — 🔪 슬라이서 바깥 틀 · AGPL-3.0-or-later
+/* custom-slicer 0.1.19 — 🔪 슬라이서 바깥 틀 · AGPL-3.0-or-later
  *  모양은 출력 검사기(.pck)와 같은 말씨 — 하늘색→남색 그라데이션 · 둥근 카드 · 알약 칩. 뷰어 · 설정 칸은 자기 Shadow DOM 안에서 그리므로
  *  CSS 변수(--vp-*)로만 색을 맞춤 (그림자 경계를 넘는 건 변수뿐) */
 .slc { --ink:#0f172a; --mute:#64748b; --line:#e2e8f0; --card:#fff; --bg2:#f8fafc; --soft:#ecfeff; --a:#0ea5e9; --a2:#6366f1; --bad:#dc2626; --ok:#16a34a;
@@ -170,12 +170,13 @@
 
 /* 0.1.4 슬라이스 결과 띠 — 화면 아래에 붙음 (오른쪽 설정 칸의 Slice 띠와 겹치지 않게 왼쪽에) */
 .slc-dock { position:sticky; bottom:12px; z-index:30; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:8px 14px;
-  width:calc(100% - 420px); min-width:min(560px,100%); margin:-74px 0 12px 60px; padding:10px 14px; border-radius:18px;
+  width:calc(100% - var(--dl,60px) - var(--dr,420px)); min-width:min(300px,100%); margin:-74px 0 12px var(--dl,60px); padding:10px 14px; border-radius:18px; box-sizing:border-box;
   background:rgba(255,255,255,.96); border:1px solid #bae6fd; box-shadow:0 10px 30px rgba(14,116,144,.22); backdrop-filter:blur(6px); animation:slc-up .25s ease-out; }
 @keyframes slc-up { from { transform:translateY(12px); opacity:0; } }
 .slc[data-slc-theme=dark] .slc-dock { background:rgba(30,41,59,.96); border-color:#0e7490; }
 .slc-dsum { font-weight:700; font-size:13.5px; } .slc-dsum b { color:#0369a1; margin-right:4px; }
 .slc-dbtns { display:flex; flex-wrap:wrap; gap:6px; }
+.slc-dock .slc-dbtns .slc-btn { white-space:nowrap; }
 @media (max-width:900px) { .slc-dock { width:auto; min-width:0; margin:8px 0 12px; } }
 
 /* 0.1.4 사이트가 어두운 테마면 슬라이서도 어둡게 — 뷰어 · 설정 칸 색 변수 (3D 판 색은 build.mjs 의 SCENE) */

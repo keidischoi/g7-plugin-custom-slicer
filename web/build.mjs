@@ -69,6 +69,11 @@ const scenePlugin = {
       const __hv = V.current.__slcHov || (V.current.__slcHov = { cost: 0, tm: 0 }), __hf = () => { const __t = performance.now(), M = Xe(); __hv.cost = performance.now() - __t; M !== fe && (fe = M, Fe(), U(), w(qe())); };
       clearTimeout(__hv.tm);
       __hv.cost > 12 ? __hv.tm = setTimeout(__hf, 90) : __hf();`],
+        // 0.1.19 🐢 끌기 시작 때 뷰어가 칠한 색을 물체에 붙은 모양으로 새로 만듦(큰 모델 0.8초 → 끄는 중 멈칫). freedrag.js 가
+        //  덧칠을 직접 따라 옮길 수 있을 때(옮기기 · 그 물체만의 덧칠)는 globalThis.__slcFollowPaint 를 켜서 건너뜀
+        // 0.1.19 고른 물체를 감싸는 네모 입체 상자는 크기 바꾸기(모서리 손잡이)일 때만 — 고르기 · 옮기기 · 돌리기에는 안 보임 (선택은 물체 색 강조로 보임)
+        ['b = S || null, a.visible = !!b;', 'b = S || null, a.visible = !!b && !!x;'],
+        ['return _.current = !0, c.current?.size ? pe().then(', 'return _.current = !0, c.current?.size && !globalThis.__slcFollowPaint ? pe().then('],
       ]
       for (const [from, to] of PAIRS) {
         if (s.split(from).length !== 2) throw new Error('뷰어 판 만들기 자리를 못 찾음 — three-slicer 판이 바뀌었으면 build.mjs 의 PAIRS 를 맞춰 주세요: ' + from.slice(0, 60))
