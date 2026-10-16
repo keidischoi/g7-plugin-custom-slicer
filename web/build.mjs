@@ -97,6 +97,7 @@ const scenePlugin = {
         ['return _.current = !0, c.current?.size ? pe().then(', 'return _.current = !0, c.current?.size && !globalThis.__slcFollowPaint ? pe().then('],
         // 0.1.46 🧩 합친 3MF 의 부품을 자를 때 — 칠하기만으로 넘기면 엔진이 맞물린 부품을 잃음(동전 글자 F · 안쪽 고리) →
         //  물체 기록에 부품 범위(slcParts)를 싣고, 판 → STL 만들기에서 부품마다 그 필라멘트 묶음으로 (web/src/merge3mf.js slicePartsOf)
+        //  0.1.47 면 차례는 그대로(칠하기 엔진이 물체 차례대로 면 번호를 셈) — 묶음 차례가 [2,1,2,1] 이어도 됨 · 첫 묶음이 2번 이상이면 첫 나눔 자리를 mm_group_split 으로
         ['paint: ye.paint, matrixWorld: ye.mesh.matrixWorld })', 'paint: ye.paint, parts: ye.slcParts, matrixWorld: ye.mesh.matrixWorld })'],
         ['d = new Set(l.map((P) => P.extruder || 1))', 'd = new Set(l.flatMap((P) => P.parts ? P.parts.map((r) => r.ext || 1) : [P.extruder || 1]))'],
         [`    const Q = P.extruder || 1;
@@ -109,7 +110,8 @@ const scenePlugin = {
     if (__sp) {
       w.push(\`\${P.id}:\${Q}:\${P.localPos.length / 9}:\${__sp.sig}\`);
       for (const pe of ["color", "supports"]) for (const [$e, ze] of __sp.paint[pe]) v[pe].facets.push(m + $e), v[pe].hex.push(ze);
-      for (const __r of __sp.runs) { const __q = __r.ext; y.length === 0 ? y.push(__q - 1) : __q - 1 !== y[y.length - 1] && (g.push(m + __r.at), y.push(__q - 1)), __q >= 2 && b === 0 && (b = m + __r.at); }
+      for (const __r of __sp.runs) { const __q = __r.ext; y.length === 0 ? y.push(__q - 1) : __q - 1 !== y[y.length - 1] && (g.push(m + __r.at), y.push(__q - 1)), __q >= 2 && b === 0 && m + __r.at > 0 && (b = m + __r.at); }
+      b === 0 && g.length && (b = g[0]);
     } else {
     if (w.push(\`\${P.id}:\${Q}:\${P.localPos.length / 9}\`), P.paint) for (const pe of ["color", "supports"])
       for (const [$e, ze] of P.paint[pe] ?? [])

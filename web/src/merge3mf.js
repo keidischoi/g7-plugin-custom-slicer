@@ -79,9 +79,11 @@ async function hook(file, list) {
       if (uniq.length > 1 || (uniq.length === 1 && cols.some((c) => !c))) exts = cols.map((c) => (c ? uniq.indexOf(c) + 1 : 0))
       else exts = null
     }
-    const out = mergeList(list, String(file.name).replace(/\.3mf$/i, ''), exts)
     // 0.1.46 부품 범위 — 칠하기만으로는 엔진(칠한 면 → 안쪽으로 나누기)이 맞물린 부품을 못 살림 (동전 글자 F · 안쪽 고리가 빠짐) →
-    //  자르기 때는 부품마다 그 필라멘트의 묶음(extruder 묶음)으로 넘김 (__slcParts) · 칠한 색은 화면에 보이는 용도로만 남김
+    //  자르기 때는 부품마다 그 필라멘트의 묶음(extruder 묶음)으로 넘김 (__slcParts)
+    // 0.1.47 자동으로 칠하지도 않음 — 칠한 면이 있으면 뷰어가 자르기 전에 그 칠하기를 엔진에 다시 넣어 결국 같은 부품을 잃었음.
+    //  부품 색은 화면에서만 부품 조각(partsTick)으로 보임 · 부품에 원래 칠해 둔 것은 그대로 이어 붙임
+    const out = mergeList(list, String(file.name).replace(/\.3mf$/i, ''), null)
     let f0 = 0
     const parts = exts ? list.map((k, i) => { const r = { start: f0, count: k.modelPos.length / 9, color: cols[i], ext: exts[i] || 0 }; f0 += r.count; return r }) : null
     globalThis.__slcLastMerge = parts ? { file, objectid: list[0].objectid, parts } : null   // colors3mf.js 의 색 갈고리가 받아 실제 필라멘트 칸으로
@@ -91,7 +93,8 @@ async function hook(file, list) {
 globalThis.__slcMerge = hook
 
 /** 0.1.46 자르기용 부품 묶음 — build.mjs 가 뷰어의 판 → STL 만들기(물체마다)에서 부름. P: { localPos, paint, parts: [{ start, count, ext, code }] }
- *  부품을 필라멘트 차례로 다시 늘어놓고(첫 묶음이 가장 낮은 필라멘트여야 엔진이 다색으로 자름) 칠한 면 번호도 그 차례로 옮김.
+ *  0.1.47 면 차례는 그대로 둠 (0.1.46 은 필라멘트 차례로 다시 늘어놓아, 뷰어의 칠하기 엔진이 칠한 면을 엉뚱한 곳에 그렸음 — 동전 테두리가 검게 · 글자가 빠져 보임).
+ *  부품을 파일 차례 그대로 묶음으로 넘김 (같은 필라멘트가 다시 나와도 됨 — 엔진이 [1,0,1,0] 같은 차례도 자름).
  *  합칠 때 자동으로 칠한 면(부품 필라멘트와 같은 값)은 빼서, 엔진이 칠하기로 다시 나누지 않게 함 (손으로 더 칠한 것은 그대로)
  *  @returns {{ sig: string, runs: { at: number, ext: number }[], pos: Float32Array, paint: { color: [number, string][], supports: [number, string][] } } | null} */
 export function slicePartsOf(P) {
@@ -99,31 +102,66 @@ export function slicePartsOf(P) {
   if (!Array.isArray(parts) || !parts.length || !lp) return null
   const n = lp.length / 9
   if (parts.reduce((a, r) => a + r.count, 0) !== n) return null   // 물체가 바뀜(나누기 등) — 원래 길로
-  let c = parts.__slc
-  if (!c || c.lp !== lp) {
-    const order = parts.map((r, i) => i).sort((a, b) => ((parts[a].ext || 1) - (parts[b].ext || 1)) || a - b)
-    const pos = new Float32Array(lp.length), at = new Int32Array(n), runs = []
-    let o = 0
-    for (const i of order) {
-      const r = parts[i], ext = r.ext || 1
-      if (!runs.length || runs[runs.length - 1].ext !== ext) runs.push({ at: o, ext })
-      for (let k = r.start * 9, e = (r.start + r.count) * 9, w = o * 9; k < e; k++, w++) pos[w] = lp[k]
-      for (let f = 0; f < r.count; f++) at[r.start + f] = o + f
-      o += r.count
-    }
-    c = { lp, pos, at, runs }
-    Object.defineProperty(parts, '__slc', { value: c, configurable: true, writable: true })
-  }
-  const { pos, at, runs } = c
+  const runs = []
+  for (const r of parts) { const ext = r.ext || 1; if (!runs.length || runs[runs.length - 1].ext !== ext) runs.push({ at: r.start, ext }) }
   const partOf = (f) => { for (const r of parts) if (f >= r.start && f < r.start + r.count) return r; return null }
   const paint = { color: [], supports: [] }
   for (const key of ['color', 'supports']) {
     const m = P.paint && P.paint[key]
-    if (m && m.forEach) m.forEach((v, f) => { if (f < 0 || f >= n) return; if (key === 'color') { const r = partOf(f); if (r && r.code && v === r.code) return } paint[key].push([at[f], v]) })
+    if (m && m.forEach) m.forEach((v, f) => { if (f < 0 || f >= n) return; if (key === 'color') { const r = partOf(f); if (r && r.code && v === r.code) return } paint[key].push([f, v]) })
   }
-  return { sig: parts.map((r) => r.ext || 1).join('.'), runs, pos, paint }
+  return { sig: parts.map((r) => r.ext || 1).join('.'), runs, pos: lp, paint }
 }
 globalThis.__slcParts = slicePartsOf
+
+/** 0.1.47 합친 물체의 부품 색을 화면에 — 부품 필라멘트마다 물체 메시에 조각(자식 메시)을 붙여 그 필라멘트 색으로 그림.
+ *  칠하기가 아니라서 자르기에 섞이지 않음. 필라멘트 색을 바꾸면 따라 바뀜 (plate.js 가 그리기마다 partsTick 을 부름) */
+const VIEW = new Set()
+export function showParts(rec) { if (rec && rec.mesh && Array.isArray(rec.slcParts)) VIEW.add(rec) }
+/** 필라멘트 번호 → 그 부품 면들의 위치 (물체 메시 기준 좌표 = localPos) */
+export function partGroups(lp, parts) {
+  const by = new Map()
+  for (const r of parts) {
+    const ext = r.ext || 1, a = by.get(ext) || []
+    a.push(r); by.set(ext, a)
+  }
+  const out = []
+  for (const [ext, rs] of by) {
+    const pos = new Float32Array(rs.reduce((a, r) => a + r.count, 0) * 9)
+    let o = 0
+    for (const r of rs) for (let k = r.start * 9, e = (r.start + r.count) * 9; k < e; k++) pos[o++] = lp[k]
+    out.push({ ext, pos })
+  }
+  return out
+}
+function partsTick(THREE) {
+  const cols = (globalThis.__slcColorsRef && globalThis.__slcColorsRef.current) || []
+  for (const rec of VIEW) {
+    const mesh = rec.mesh
+    if (!mesh || !Array.isArray(rec.slcParts)) { VIEW.delete(rec); continue }
+    if (!mesh.parent) continue
+    let st = rec.__slcView
+    if (!st || st.lp !== rec.localPos || st.parts !== rec.slcParts) {
+      if (st) for (const m of st.meshes) { mesh.remove(m); m.geometry.dispose(); m.material.dispose() }
+      st = rec.__slcView = { lp: rec.localPos, parts: rec.slcParts, meshes: [] }
+      if (rec.slcParts.reduce((a, r) => a + r.count, 0) !== rec.localPos.length / 9) continue
+      for (const g of partGroups(rec.localPos, rec.slcParts)) {
+        const geo = new THREE.BufferGeometry()
+        geo.setAttribute('position', new THREE.Float32BufferAttribute(g.pos, 3))
+        geo.computeVertexNormals()
+        const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ roughness: 0.6, metalness: 0.05, flatShading: true, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }))
+        m.userData.slcPart = g.ext; m.renderOrder = 999; m.raycast = () => {}
+        mesh.add(m); st.meshes.push(m)
+      }
+    }
+    for (const m of st.meshes) {
+      const hex = cols[m.userData.slcPart - 1] || '#9ca3af'
+      if (m.userData.slcHex !== hex) { m.userData.slcHex = hex; m.material.color.set(hex); m.material.userData.slcLift = null }
+    }
+  }
+}
+globalThis.__slcPartsTick = partsTick
+globalThis.__slcShowParts = showParts
 
 /** 🧰 「다시 묻기」 — 기억한 선택을 지움 */
 export function resetMergePref() { setPref('') }
