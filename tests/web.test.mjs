@@ -130,6 +130,21 @@ sl.dispose()
     ok(encState(1) === '4' && encState(2) === '8' && encState(3) === '0C' && encState(5) === '2C' && r.paint.color.get(0) === '8' && r.paint.color.get(1) === '4' && r.paint.color.get(2) === '0C' && r.paint.color.get(4) === '0C' && r.paint.color.size === 5
       && pl.includes("new THREE.DirectionalLight(0xffffff, 0.85)") && pl.includes('head.position.copy(cam.position)'), '0.1.45 합칠 때 부품마다 필라멘트로 칠함 · 카메라 조명')
   }
+  {   // 0.1.46 합친 부품은 자를 때 필라멘트 묶음으로 · 어두운 물체 밝히기
+    const { slicePartsOf } = await import('../web/src/merge3mf.js')
+    const lp = new Float32Array(9 * 5).map((_, i) => i)   // 면 5개: 0-1 은 2번 필라멘트 · 2-4 는 1번
+    const paint = { color: new Map([[0, '8'], [1, '0C'], [3, '4']]), supports: new Map([[4, '4']]) }
+    const P = { localPos: lp, paint, parts: [{ start: 0, count: 2, ext: 2, code: '8' }, { start: 2, count: 3, ext: 1, code: '4' }] }
+    const s = slicePartsOf(P), again = slicePartsOf(P)
+    const bm = readSrc(new URL('../web/build.mjs', import.meta.url))
+    ok(s && s.runs.length === 2 && s.runs[0].ext === 1 && s.runs[0].at === 0 && s.runs[1].ext === 2 && s.runs[1].at === 3 && s.pos[0] === 18 && s.pos[27] === 0 && s.sig === '2.1'
+      && JSON.stringify(s.paint.color) === JSON.stringify([[4, '0C']]) && JSON.stringify(s.paint.supports) === JSON.stringify([[2, '4']]) && again.pos === s.pos
+      && slicePartsOf({ localPos: lp, parts: [{ start: 0, count: 4, ext: 1 }] }) === null && slicePartsOf({ localPos: lp }) === null
+      && bm.includes('parts: ye.slcParts') && bm.includes('globalThis.__slcParts(P)') && bm.includes('he = __sp ? __sp.pos : P.localPos'), '0.1.46 합친 부품 — 필라멘트 차례로 묶음 · 자동 칠하기는 빼고 손 칠하기만')
+    const { liftColor } = await import('../web/src/plate.js')
+    const dark = { r: 0.0242, g: 0.0242, b: 0.0242 }, gold = { r: 0.8, g: 0.42, b: 0.016 }
+    ok(liftColor(dark) && Math.abs(dark.r - 0.1) < 1e-9 && !liftColor(gold) && gold.r === 0.8, '0.1.46 아주 어두운 물체만 화면에서 밝힘')
+  }
   {   // 0.1.43 3MF 자리 · 판 비우기
     const { originOf } = await import('../web/src/place3mf.js')
     const o = originOf(new Float32Array([10, 20, 5, 30, 20, 5, 10, 40, 15]))

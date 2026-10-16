@@ -95,6 +95,28 @@ const scenePlugin = {
         ['  }), r = new R.Mesh(t, n);\n  return r.renderOrder = 10, r.frustumCulled = !1, r.visible = !1, r;', '  }), r = globalThis.__slcNozzle ? globalThis.__slcNozzle(R, e) : new R.Mesh(t, n);\n  return r.renderOrder = r.renderOrder || 10, r.frustumCulled = !1, r.visible = !1, r;'],
         ['b = S || null, a.visible = !!b;', 'b = S || null, a.visible = !!b && !!x;'],
         ['return _.current = !0, c.current?.size ? pe().then(', 'return _.current = !0, c.current?.size && !globalThis.__slcFollowPaint ? pe().then('],
+        // 0.1.46 🧩 합친 3MF 의 부품을 자를 때 — 칠하기만으로 넘기면 엔진이 맞물린 부품을 잃음(동전 글자 F · 안쪽 고리) →
+        //  물체 기록에 부품 범위(slcParts)를 싣고, 판 → STL 만들기에서 부품마다 그 필라멘트 묶음으로 (web/src/merge3mf.js slicePartsOf)
+        ['paint: ye.paint, matrixWorld: ye.mesh.matrixWorld })', 'paint: ye.paint, parts: ye.slcParts, matrixWorld: ye.mesh.matrixWorld })'],
+        ['d = new Set(l.map((P) => P.extruder || 1))', 'd = new Set(l.flatMap((P) => P.parts ? P.parts.map((r) => r.ext || 1) : [P.extruder || 1]))'],
+        [`    const Q = P.extruder || 1;
+    if (w.push(\`\${P.id}:\${Q}:\${P.localPos.length / 9}\`), P.paint) for (const pe of ["color", "supports"])
+      for (const [$e, ze] of P.paint[pe] ?? [])
+        v[pe].facets.push(m + $e), v[pe].hex.push(ze);
+    y.length === 0 ? y.push(Q - 1) : Q - 1 !== y[y.length - 1] && (g.push(m), y.push(Q - 1)), Q >= 2 && b === 0 && (b = m);
+    const H = P.matrixWorld, he = P.localPos;`,
+          `    const Q = P.extruder || 1, __sp = globalThis.__slcParts ? globalThis.__slcParts(P) : null;
+    if (__sp) {
+      w.push(\`\${P.id}:\${Q}:\${P.localPos.length / 9}:\${__sp.sig}\`);
+      for (const pe of ["color", "supports"]) for (const [$e, ze] of __sp.paint[pe]) v[pe].facets.push(m + $e), v[pe].hex.push(ze);
+      for (const __r of __sp.runs) { const __q = __r.ext; y.length === 0 ? y.push(__q - 1) : __q - 1 !== y[y.length - 1] && (g.push(m + __r.at), y.push(__q - 1)), __q >= 2 && b === 0 && (b = m + __r.at); }
+    } else {
+    if (w.push(\`\${P.id}:\${Q}:\${P.localPos.length / 9}\`), P.paint) for (const pe of ["color", "supports"])
+      for (const [$e, ze] of P.paint[pe] ?? [])
+        v[pe].facets.push(m + $e), v[pe].hex.push(ze);
+    y.length === 0 ? y.push(Q - 1) : Q - 1 !== y[y.length - 1] && (g.push(m), y.push(Q - 1)), Q >= 2 && b === 0 && (b = m);
+    }
+    const H = P.matrixWorld, he = __sp ? __sp.pos : P.localPos;`],
       ]
       for (const [from, to] of PAIRS) {
         if (s.split(from).length !== 2) throw new Error('뷰어 판 만들기 자리를 못 찾음 — three-slicer 판이 바뀌었으면 build.mjs 의 PAIRS 를 맞춰 주세요: ' + from.slice(0, 60))
