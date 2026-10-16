@@ -116,6 +116,13 @@ sl.dispose()
   ok(ld.includes('window.G7Slicer = {') && ld.includes('mount: function (el, opts)') && ld.includes('popup: popup') && app.includes('window.__slcApp = { version: V, mount, unmount, tick'), 'window.G7Slicer.mount · popup (출력 검사기 탭이 씀)')
   ok(app.includes('const SEND_ADMIN_ONLY = true') && app.includes("'/printers/' + p.id + '/send-file'") && app.includes("fd.append('bed_clear', '1')") && app.includes('checked: bed'), '보내기: 프린터 라운지 send-file · 베드 확인 · 관리자 시험')
   ok(app.includes('h(Viewport, {') && app.includes('h(SettingsPanel, { settings, setSettings, embedded: true })') && app.includes('onSliced') && app.includes('shortcuts: true') && app.includes('stopImmediatePropagation()') && app.includes("window.addEventListener('keydown', gate, true)"), '화면: 뷰어 + 설정 칸 · 결과 받기 · 0.1.13 탭 안에서는 슬라이서를 마지막으로 눌렀을 때만 단축키 (Delete 로 지우기)')
+  {   // 0.1.42 한글
+    const { look } = await import('../web/src/i18n.js')
+    const { EXTRA } = await import('../web/src/i18n.js')
+    ok(EXTRA.Wall === '벽' && EXTRA['Single layer'] === '한 층만' && EXTRA['Generate support'] === '서포트 만들기' && look({}, 'T1 material') === 'T1 재료'
+      && look({}, 'Contours cut and unioned on the GPU, 1 layers on the CPU') === 'GPU 로 윤곽 계산 · CPU 로 1층'
+      && /^물체 1개 · 고름: — \| M 옮기기/.test(look({}, '1 object(s) · selected: — | M/R/S · Ctrl+click to add · Shift+drag to box-select')), '0.1.42 미리 보기 범례 · 물체 칸 · 상태 줄 한글')
+  }
   {   // 0.1.39 브림 없음
     const bm = readSrc(new URL('../web/build.mjs', import.meta.url))
     ok(bm.includes("brim_width: ['no_brim', 'auto_brim', ''].includes(String(S('brim_type') ?? 'auto_brim').toLowerCase()) ? 0 : (num('brim_width') > 0 ? num('brim_width') : 5),"), '0.1.39 브림 종류가 브림 없음이면 엔진 너비 0')

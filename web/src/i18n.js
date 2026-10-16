@@ -24,6 +24,12 @@ export const EXTRA = {
   '🖨 Printer': '🖨 프린터', '🧵 Filament': '🧵 필라멘트', '🗼 Prime tower': '🗼 프라임 타워', '⚙ Process': '⚙ 출력 설정', Motion: '움직임', 'Custom (defaults)': '직접 입력 (기본값)',
   'Prime tower': '프라임 타워', 'Ring — deterministic': '고리 — 늘 같은 모양', 'Real wipe tower — not reproducible yet': '실제 와이프 타워 — 아직 똑같이는 안 됨', 'Off — no tower': '끄기 — 타워 없음',
   'Purge into': '퍼지할 곳', 'The tower': '타워', "The model's infill": '모델 속 채우기', 'Beside the model': '모델 옆', 'Fixed coordinate': '정한 좌표', Export: '내보내기',
+  // 0.1.42 미리 보기 범례 · 보기 칸 · 물체 칸에 남아 있던 영어
+  Wall: '벽', Sparse: '내부 채우기', Solid: '꽉 채우기', Support: '서포트', Skirt: '스커트', Bridge: '브릿지', Gap: '틈 메우기', Thin: '얇은 벽', Ironing: '다림질', Raft: '래프트', Prime: '프라임 타워', Travel: '이동',
+  'layers ·': '층 ·', 'segments)': '선분)', segments: '선분',
+  'View type': '보기 종류', 'Feature type': '기능별', 'Layer Height': '층 높이', 'Line Width': '선 너비', 'Fan Speed': '팬 속도', Full: '전체', 'Single layer': '한 층만',
+  '🎚 Preview': '🎚 미리 보기', '⏱ Estimated print': '⏱ 예상 출력 시간', 'Sliced in': '슬라이스 시간', 'Other formats': '다른 형식',
+  'Generate support': '서포트 만들기', 'Default (current tool)': '기본 (이 물체의 필라멘트)', 'Interface filament': '접촉면 필라멘트', 'Show overhangs': '오버행 보기', 'Paint support': '서포트 칠하기', '📦 Objects': '📦 물체',
   'mm': 'mm', '°C': '°C', 'Supports': '서포트', 'Support painting': '서포트 칠하기', 'Seam painting': '재봉선 칠하기', 'Color painting': '색 칠하기',
 }
 
@@ -40,7 +46,12 @@ export const LANG_CSS = `
 
 const SKIP = /^(SCRIPT|STYLE|TEXTAREA|CODE|PRE)$/
 /** 숫자가 들어간 글자 — 「Custom (12)」 처럼 */
-const PATTERNS = [[/^Custom \((\d+)\)$/, '직접 입력 ($1)'], [/^(\d+) objects?$/i, '물체 $1개'], [/^Plate (\d+)$/i, '판 $1'],
+const PATTERNS = [[/^Custom \((\d+)\)$/, '직접 입력 ($1)'],
+  // 0.1.42 숫자가 든 영어 줄
+  [/^T(\d+) material$/, 'T$1 재료'],
+  [/^· ([\d,]+) layers\/s$/, '· 초당 $1층'],
+  [/^Contours cut and unioned on the GPU, ([\d,]+) layers on the CPU$/, 'GPU 로 윤곽 계산 · CPU 로 $1층'],
+  [/^(\d+) object\(s\) · selected: (.*?) \| M\/R\/S · Ctrl\+click to add · Shift\+drag to box-select(.*)$/, (m, n, sel, rest) => '물체 ' + n + '개 · 고름: ' + sel + ' | M 옮기기 · R 돌리기 · S 크기 · Ctrl+클릭 더 고르기 · Shift+끌기 상자 고르기' + rest.replace('? for shortcuts', '? 단축키')], [/^(\d+) objects?$/i, '물체 $1개'], [/^Plate (\d+)$/i, '판 $1'],
   // 0.1.13 알림 — 숫자가 든 문장 (오류 아님: 큰 모델 경고 · 프로젝트에서 가져온 것)
   [/^([⚠ℹ️\s]*)([\d,]+) triangles — slicing may take a while$/, (m, p, n) => p + '삼각형 ' + n + '개 — 모델이 커서 슬라이스가 오래 걸릴 수 있어요'],
   [/^([⚠ℹ️\s]*)Imported this project's (.+?)\.(?: Not supported by this slicer, so left out: (.+?)\.?)?$/, (m, p, got, out) => p + '이 프로젝트의 ' + koList(got, GOT) + '을(를) 가져왔어요.' + (out ? ' 이 슬라이서가 지원하지 않아 뺀 것: ' + koList(out, OUT) + '.' : '')]]
