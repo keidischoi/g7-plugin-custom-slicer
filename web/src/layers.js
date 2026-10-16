@@ -64,6 +64,12 @@ export function mountLayers(root, col) {
     const on = !!(lo && hi)
     col.classList.toggle('slc-pv', on); ly.hidden = !on; mv.hidden = !(on && m)
     if (!on) { stopPlay(); return }
+    // 0.1.23 겹치지 않게 — 아래 판 고르기(1 · +) 위에서 끝남 · 3D 칸 아래가 화면 밖이면 화면 안까지만
+    const cr = col.getBoundingClientRect(), pb = root.querySelector('.plate-bar')
+    const pr = pb && pb.offsetParent ? pb.getBoundingClientRect() : null
+    let bottom = pr && pr.right > cr.right - 120 ? Math.max(46, Math.round(cr.bottom - pr.top + 8)) : 46
+    if (cr.bottom > window.innerHeight) bottom = Math.max(bottom, Math.round(cr.bottom - window.innerHeight + 16))
+    if (ly.__b !== bottom) { ly.__b = bottom; ly.style.bottom = bottom + 'px' }
     const max = Number(hi.max) || 0, a = Number(lo.value) || 0, b = Number(hi.value) || 0
     const pos = (v) => (max > 0 ? (1 - v / max) * 100 : 100) + '%'
     thHi.style.top = pos(b); thLo.style.top = pos(a)

@@ -1,4 +1,4 @@
-/*! custom-slicer 0.1.22 — 🔪 슬라이서 화면 · AGPL-3.0-or-later · 소스: https://github.com/keidischoi/g7-plugin-custom-slicer
+/*! custom-slicer 0.1.23 — 🔪 슬라이서 화면 · AGPL-3.0-or-later · 소스: https://github.com/keidischoi/g7-plugin-custom-slicer
  *  엔진 · 화면: three-slicer (OrcaSlicer 를 WebAssembly 로 옮긴 것, AGPL) — <Viewport/>(판 배치 · 이동/회전/크기 · 칠하기 · 슬라이스 · G-code 미리 보기)
  *  + <SettingsPanel/>(OrcaSlicer 설정). 이 파일은 그 바깥 틀: 프린터 라운지의 내 프린터 · 📤 보내기 · .gcode.3mf · 다른 화면에서 넘겨받은 파일
  *  모델은 서버로 올라가지 않음 — 이 브라우저에서만 읽고 슬라이스 */
@@ -11,6 +11,7 @@ import { bambuHeader, buildGcode3mf } from './gcode3mf.js'
 import { unzipModels } from './handoff.js'
 import { siteLang } from './i18n.js'
 import './colors3mf.js'   // 0.1.14 3MF 원본 색 (뷰어 불러오기 갈고리)
+import './nozzle.js'   // 0.1.23 미리 보기 노즐 모양 (뷰어 노즐 갈고리)
 import { estimateSeconds, maxZ, toolsOf, matchPreset, hexDist, sizeOf } from './util.js'
 import { SPF, canRead, readProfile, applyProfile, profileZip, profileGuess } from './profiles.js'
 import { polish, setRule, DARK_CSS } from './polish.js'
@@ -18,7 +19,7 @@ import { savePlate, loadPlate, clearPlate } from './store.js'
 import { plateInfo, sceneTheme } from './plate.js'
 import { mountToolbar, stopSpin } from './toolbar.js'
 
-const V = '0.1.22', API = '/api/plugins/custom-slicer', LOUNGE = '/api/plugins/custom-my_printer', SRC = 'https://github.com/keidischoi/g7-plugin-custom-slicer'
+const V = '0.1.23', API = '/api/plugins/custom-slicer', LOUNGE = '/api/plugins/custom-my_printer', SRC = 'https://github.com/keidischoi/g7-plugin-custom-slicer'
 const SEND_ADMIN_ONLY = true   // 「📤 내 프린터로 보내기」는 시험하는 동안 관리자에게만 (실제 프린터에서 확인되면 false 로)
 const LS_SET = 'slc-settings'
 const h = React.createElement
@@ -582,7 +583,8 @@ function App({ files, popup, compact, printer, from }) {
       const sr = st.getBoundingClientRect(), vp = root.querySelector('.viewport-col').getBoundingClientRect(), sc = root.querySelector('.stats-card')
       const cr = sc && sc.offsetParent ? sc.getBoundingClientRect() : null
       let left = (cr ? cr.right : vp.left) - sr.left + 12
-      const right = Math.max(12, sr.right - vp.right + 12)
+      const lyb = root.querySelector('.slc-ly'), lr = lyb && !lyb.hidden ? lyb.getBoundingClientRect() : null
+      const right = Math.max(12, (lr ? sr.right - lr.left : sr.right - vp.right) + 12)   // 0.1.23 미리 보기면 층 슬라이더 왼쪽까지
       if (sr.width - left - right < 300) left = vp.left - sr.left + 12   // 자리가 좁으면 3D 칸 폭 전체 (정보 상자 위로)
       d.style.setProperty('--dl', Math.round(left) + 'px'); d.style.setProperty('--dr', Math.round(right) + 'px')
       // 0.1.21 정보 상자와 아랫줄을 맞춤 — 띠의 바닥을 정보 상자 바닥에 (정보 상자 옆에 놓일 때만 · 스크롤해도 따라감)
