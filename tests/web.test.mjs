@@ -117,6 +117,30 @@ sl.dispose()
   ok(app.includes('const SEND_ADMIN_ONLY = true') && app.includes("'/printers/' + p.id + '/send-file'") && app.includes("fd.append('bed_clear', '1')") && app.includes('checked: bed'), '보내기: 프린터 라운지 send-file · 베드 확인 · 관리자 시험')
   ok(app.includes('h(Viewport, {') && app.includes('h(SettingsPanel, { settings, setSettings, embedded: true })') && app.includes('onSliced') && app.includes('shortcuts: true') && app.includes('stopImmediatePropagation()') && app.includes("window.addEventListener('keydown', gate, true)"), '화면: 뷰어 + 설정 칸 · 결과 받기 · 0.1.13 탭 안에서는 슬라이서를 마지막으로 눌렀을 때만 단축키 (Delete 로 지우기)')
   {
+    const { modelColors, planSlots, hex6 } = await import('../web/src/colors3mf.js'), bm = readSrc(new URL('../web/build.mjs', import.meta.url))
+    const xml = '<model><resources><m:colorgroup id="2"><m:color color="#191919FF"/><m:color color="#F00"/></m:colorgroup><basematerials id="5"><base name="a" displaycolor="#00FF00"/></basematerials>'
+      + '<object id="1" pid="2" pindex="0"><mesh/></object><object id="3"><mesh><triangles><triangle v1="0" v2="1" v3="2" pid="2" p1="1"/></triangles></mesh></object>'
+      + '<object id="4" pid="5"><mesh/></object><object id="7"><mesh/></object><object id="8"><components><component objectid="1"/></components></object></resources></model>'
+    const mc = modelColors(xml)
+    ok(mc['1'] === '#191919' && mc['3'] === '#ff0000' && mc['4'] === '#00ff00' && !mc['7'] && mc['8'] === '#191919' && hex6('#abc') === '#aabbcc',
+      '0.1.14 3MF 표준 색 읽기 — colorgroup · basematerials · 삼각형 pid/p1 · 부품 · 색 없는 물체는 비움')
+    const a = planSlots(['#c9ced6', '#ffffff'], ['#191919'], true, 16), b = planSlots(['#c9ced6', '#191919'], ['#191919'], false, 16), c = planSlots(['#c9ced6'], ['#ff0000'], false, 16), d = planSlots(['#1'], ['#ff0000'], false, 1)
+    ok(a.colors.join() === '#191919,#ffffff' && a.slot['#191919'] === 1 && b.colors.length === 2 && b.slot['#191919'] === 2 && c.colors.join() === '#c9ced6,#ff0000' && c.slot['#ff0000'] === 2 && !d.slot['#ff0000'],
+      '0.1.14 필라멘트 칸 — 빈 판은 1번부터 · 같은 색은 그 칸 · 더할 때는 뒤에 붙임 · 한도면 그대로')
+    ok(bm.includes('globalThis.__slcColorHook && await globalThis.__slcColorHook(ne, Ye,'), '0.1.14 뷰어 불러오기에 색 갈고리')
+    {   // ZIP64 (Fusion 360) — 중앙 목록 위치 · 크기 · 자리가 0xffffffff 이고 ZIP64 덧붙임에 진짜 값
+      const { read3mfColors } = await import('../web/src/colors3mf.js')
+      const name = Buffer.from('3D/3dmodel.model'), data = Buffer.from(xml), parts = [], u32 = (v) => { const b = Buffer.alloc(4); b.writeUInt32LE(v); return b }, u16 = (v) => { const b = Buffer.alloc(2); b.writeUInt16LE(v); return b }, u64 = (v) => { const b = Buffer.alloc(8); b.writeBigUInt64LE(BigInt(v)); return b }
+      parts.push(u32(0x04034b50), u16(45), u16(0), u16(0), u32(0), u32(0), u32(data.length), u32(data.length), u16(name.length), u16(0), name, data)
+      const cdOff = Buffer.concat(parts).length, ex = Buffer.concat([u16(1), u16(24), u64(data.length), u64(data.length), u64(0)])
+      const cd = Buffer.concat([u32(0x02014b50), u16(45), u16(45), u16(0), u16(0), u32(0), u32(0), u32(0xffffffff), u32(0xffffffff), u16(name.length), u16(ex.length), u16(0), u16(0), u16(0), u32(0), u32(0xffffffff), name, ex])
+      const z64 = cdOff + cd.length
+      const tail = Buffer.concat([u32(0x06064b50), u64(44), u16(45), u16(45), u32(0), u32(0), u64(1), u64(1), u64(cd.length), u64(cdOff), u32(0x07064b50), u32(0), u64(z64), u32(1), u32(0x06054b50), u16(0), u16(0), u16(0xffff), u16(0xffff), u32(0xffffffff), u32(0xffffffff), u16(0)])
+      const zip = Buffer.concat([...parts, cd, tail]), got = await read3mfColors({ name: 'a.3mf', arrayBuffer: async () => zip.buffer.slice(zip.byteOffset, zip.byteOffset + zip.length) })
+      ok(got['1'] === '#191919' && got['4'] === '#00ff00', '0.1.14 ZIP64 3MF (Fusion 360) 도 색을 읽음')
+    }
+  }
+  {
     const { look } = await import('../web/src/i18n.js'), tb = readSrc(new URL('../web/src/toolbar.js', import.meta.url))
     ok(look({}, '⚠ 499,902 triangles — slicing may take a while') === '⚠ 삼각형 499,902개 — 모델이 커서 슬라이스가 오래 걸릴 수 있어요'
       && look({}, "ℹ Imported this project's 494 settings and 8 filaments and 1 plates. Not supported by this slicer, so left out: per-layer custom G-code, per-object setting overrides.") === 'ℹ 이 프로젝트의 설정 494개 · 필라멘트 8개 · 판 1개을(를) 가져왔어요. 이 슬라이서가 지원하지 않아 뺀 것: 층마다 넣는 사용자 G-code · 물체마다 다른 설정.'
