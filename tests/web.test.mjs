@@ -116,6 +116,12 @@ sl.dispose()
   ok(ld.includes('window.G7Slicer = {') && ld.includes('mount: function (el, opts)') && ld.includes('popup: popup') && app.includes('window.__slcApp = { version: V, mount, unmount, tick'), 'window.G7Slicer.mount · popup (출력 검사기 탭이 씀)')
   ok(app.includes('const SEND_ADMIN_ONLY = true') && app.includes("'/printers/' + p.id + '/send-file'") && app.includes("fd.append('bed_clear', '1')") && app.includes('checked: bed'), '보내기: 프린터 라운지 send-file · 베드 확인 · 관리자 시험')
   ok(app.includes('h(Viewport, {') && app.includes('h(SettingsPanel, { settings, setSettings, embedded: true })') && app.includes('onSliced') && app.includes('shortcuts: true') && app.includes('stopImmediatePropagation()') && app.includes("window.addEventListener('keydown', gate, true)"), '화면: 뷰어 + 설정 칸 · 결과 받기 · 0.1.13 탭 안에서는 슬라이서를 마지막으로 눌렀을 때만 단축키 (Delete 로 지우기)')
+  {   // 0.1.15 ✋ 끌어 옮기기
+    const fd = readSrc(new URL('../web/src/freedrag.js', import.meta.url)), tb = readSrc(new URL('../web/src/toolbar.js', import.meta.url)), pl = readSrc(new URL('../web/src/plate.js', import.meta.url))
+    ok(fd.includes("send('dragging-changed', true)") && fd.includes("send('dragging-changed', false)") && fd.includes("tc.mode !== 'translate'") && fd.includes('tc.axis') && fd.includes('< 4) return') && fd.includes('lookPref().drag === false')
+      && tb.includes('attachDrag(viewOf())') && tb.includes("B('drag', 'move'") && pl.includes('drag: true'),
+      '0.1.15 물체를 잡고 끌어 옮기기 — 뷰어 손잡이와 같은 알림 · 고르기(4px)는 그대로 · 손잡이 · 크기 · 돌리기 중엔 안 끼어듦 · ✋ 단추로 끔')
+  }
   {
     const { modelColors, planSlots, hex6 } = await import('../web/src/colors3mf.js'), bm = readSrc(new URL('../web/build.mjs', import.meta.url))
     const xml = '<model><resources><m:colorgroup id="2"><m:color color="#191919FF"/><m:color color="#F00"/></m:colorgroup><basematerials id="5"><base name="a" displaycolor="#00FF00"/></basematerials>'

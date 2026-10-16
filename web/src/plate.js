@@ -29,7 +29,7 @@ export const PLATE_COLORS = [['', '자동'], ['#b8925a', '금색 PEI'], ['#1f232
 
 const LS = 'slc-plate-look'
 /** 회원이 고른 판 (이 브라우저에만) — {kind: 'auto'|PLATES 키, color: '' | '#rrggbb', show: true} */
-export function lookPref() { try { return Object.assign({ kind: 'auto', color: '', show: true }, JSON.parse(localStorage.getItem(LS) || '{}')) } catch (e) { return { kind: 'auto', color: '', show: true } } }
+export function lookPref() { try { return Object.assign({ kind: 'auto', color: '', show: true, drag: true }, JSON.parse(localStorage.getItem(LS) || '{}')) } catch (e) { return { kind: 'auto', color: '', show: true, drag: true } } }
 export function setLookPref(p) { try { localStorage.setItem(LS, JSON.stringify(Object.assign(lookPref(), p))) } catch (e) {} }
 
 function lum(hex) { const n = parseInt(String(hex).slice(1), 16); return (0.299 * ((n >> 16) & 255) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) / 255 }
