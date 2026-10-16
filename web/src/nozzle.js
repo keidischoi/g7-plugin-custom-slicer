@@ -6,7 +6,9 @@
 
 /** R: three · opacity: 1 (지금 자리) / 0.28 (이 움직임의 끝 자리, 흐리게) → Mesh (자식으로 나머지 부품) */
 function makeNozzle(R, opacity) {
-  const ghost = opacity < 1
+  // 0.1.25 노즐은 하나만 — 뷰어는 이 움직임의 끝 자리에 흐린 노즐을 하나 더 그렸는데, 노즐이 둘로 보여 헷갈림 → 안 보이는 빈 것으로
+  if (opacity < 1) return new R.Mesh(new R.BufferGeometry(), new R.MeshBasicMaterial({ visible: false }))
+  const ghost = false
   const mat = (color, metal, rough) => new R.MeshStandardMaterial({ color, metalness: metal, roughness: rough, transparent: ghost, opacity, depthTest: false, depthWrite: false })
   const brass = mat(0xe8b84a, 0.3, 0.38), brassDark = mat(0xd4a23a, 0.3, 0.42), alu = mat(0xd5dae1, 0.25, 0.45), steel = mat(0x9aa3ad, 0.35, 0.4), hot = mat(0xef4444, 0.1, 0.5)   // 금속감은 낮게 — 뷰어에 주변 반사(환경 맵)가 없어 금속이 어둡게 보임
   // 원기둥은 Y 축 → Z 축(위)으로 눕힘
