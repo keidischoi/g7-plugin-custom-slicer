@@ -1,4 +1,4 @@
-/*! custom-slicer 0.1.30 — 🔪 슬라이서 화면 · AGPL-3.0-or-later · 소스: https://github.com/keidischoi/g7-plugin-custom-slicer
+/*! custom-slicer 0.1.31 — 🔪 슬라이서 화면 · AGPL-3.0-or-later · 소스: https://github.com/keidischoi/g7-plugin-custom-slicer
  *  엔진 · 화면: three-slicer (OrcaSlicer 를 WebAssembly 로 옮긴 것, AGPL) — <Viewport/>(판 배치 · 이동/회전/크기 · 칠하기 · 슬라이스 · G-code 미리 보기)
  *  + <SettingsPanel/>(OrcaSlicer 설정). 이 파일은 그 바깥 틀: 프린터 라운지의 내 프린터 · 📤 보내기 · .gcode.3mf · 다른 화면에서 넘겨받은 파일
  *  모델은 서버로 올라가지 않음 — 이 브라우저에서만 읽고 슬라이스 */
@@ -19,7 +19,7 @@ import { savePlate, loadPlate, clearPlate } from './store.js'
 import { plateInfo, sceneTheme } from './plate.js'
 import { mountToolbar, stopSpin } from './toolbar.js'
 
-const V = '0.1.30', API = '/api/plugins/custom-slicer', LOUNGE = '/api/plugins/custom-my_printer', SRC = 'https://github.com/keidischoi/g7-plugin-custom-slicer'
+const V = '0.1.31', API = '/api/plugins/custom-slicer', LOUNGE = '/api/plugins/custom-my_printer', SRC = 'https://github.com/keidischoi/g7-plugin-custom-slicer'
 const SEND_ADMIN_ONLY = true   // 「📤 내 프린터로 보내기」는 시험하는 동안 관리자에게만 (실제 프린터에서 확인되면 false 로)
 const LS_SET = 'slc-settings'
 const h = React.createElement
@@ -339,11 +339,15 @@ function App({ files, popup, compact, printer, from }) {
       setMe(m); setLounge(L)
       const want = printer ? matchPreset(printersByVendor, printer, printerTechByVendor) : null
       const same = want && L.list.find((p) => { const m = matchPreset(printersByVendor, p, printerTechByVendor); return m && m[1] === want[1] })
-      const ok = same || L.list.find((p) => p.can_send) || L.list[0]
+      // 0.1.31 위 「내 프린터」 칩과 오른쪽 프린터 설정이 어긋나던 것 (칩은 Bambu A1 인데 설정은 지난번 K1) —
+      //  저장된 설정의 프린터가 내 프린터 중에 있으면 그 칩을 고르고, 없으면 고른 칩의 프린터로 설정을 맞춤
+      const saved = String(cur.current.printer_settings_id || '')
+      const mine = !want && saved ? L.list.find((p) => { const m = matchPreset(printersByVendor, p, printerTechByVendor); return m && m[1] === saved }) : null
+      const ok = same || mine || L.list.find((p) => p.can_send) || L.list[0]
       if (!ok) return
       setPid(+ok.id)
-      if (want) return   // 부른 화면(출력 검사기)이 고른 프린터가 먼저
-      if (!cur.current.printer_settings_id) setSettings((s) => fitPrinter(s, ok).s)   // 처음 쓰면 내 프린터의 설정으로 (저장된 것이 있으면 그대로)
+      if (want || mine) return   // 부른 화면(출력 검사기)이 고른 프린터가 먼저 · 저장된 설정이 이미 그 칩의 프린터
+      setSettings((s) => { const r = fitPrinter(s, ok); return r.hit ? r.s : s })   // 칩의 프린터로 (엔진에 없는 프린터면 그대로)
     })
     return () => { on = false }
   }, [])
