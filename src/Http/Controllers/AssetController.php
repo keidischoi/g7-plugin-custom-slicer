@@ -27,9 +27,11 @@ class AssetController extends Controller
         $mtime = (int) @filemtime($path);
         $etag = '"'.substr(md5($file.'|'.$mtime.'|'.(int) @filesize($path)), 0, 20).'"';
         $hashed = (bool) preg_match('/^c-[A-Za-z0-9_-]{6,}\./', $file);   // 엔진 조각 (이름에 내용 해시)
+        // 0.1.50 이름에 판 번호가 없는 파일(worker 들)은 매번 서버에 확인 (바뀌지 않았으면 304) — 예전엔 1시간 캐시라
+        //  업데이트 뒤 브라우저가 옛 worker 를 쓰다가, 그 worker 가 부르는 옛 엔진 조각이 지워져 물체를 다시 넣을 때 「server unreachable」 오류
         $headers = [
             'Content-Type' => self::TYPES[$m[1]],
-            'Cache-Control' => $hashed || $request->query('v') ? 'public, max-age=31536000, immutable' : 'public, max-age=3600',
+            'Cache-Control' => $hashed || $request->query('v') ? 'public, max-age=31536000, immutable' : 'no-cache',
             'ETag' => $etag,
             'X-Content-Type-Options' => 'nosniff',
         ];
