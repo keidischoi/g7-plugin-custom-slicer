@@ -64,10 +64,11 @@ const scenePlugin = {
           't.scene.add(E); const __slcP = globalThis.__slcPlateHook ? globalThis.__slcPlateHook(e, t, { index: f, x: m, z: b, w: g, d: y, selected: F }) : null; __slcP && (t.scene.add(__slcP), _.visible = !__slcP.visible, N.visible = !__slcP.visible); t.plateBeds.push({ gridThin: _, gridBold: N, border: x, label: E, slcPlate: __slcP || void 0 });'],
         // 0.1.14 🎨 3MF 표준 색(colorgroup · basematerials) — 파일마다 물체를 올린 뒤 web/src/colors3mf.js 가 색을 읽어 필라멘트 칸 · 물체에 붙임
         // 0.1.43 📐 3MF 자리 — 물체마다 파일의 원래 자리(가운데 · 바닥 높이)를 기억(org)하고, 올린 뒤 원래 모양대로 판 빈자리에 (web/src/place3mf.js)
+        // 0.1.51 물체마다 어느 파일에서 왔는지 (__slcFileOf · app.js) — 물체를 지우면 판 임시 저장에서 그 파일도 뺌
         // 0.1.44 🧩 여러 물체 3MF — 올리기 전에 하나로 합칠지 물음 (web/src/merge3mf.js)
         ['const Ye = [];\n        for (const Ke of De) {', 'const Ye = [];\n        for (const Ke of (globalThis.__slcMerge ? await globalThis.__slcMerge(ne, De) : De)) {'],
         ['wt && Ke.objectid && Ye.push({ objectid: Ke.objectid, id: wt.id, paint: Ke.paint, bbox: Ke.bbox });',
-          'wt && Ke.objectid && Ye.push({ objectid: Ke.objectid, id: wt.id, paint: Ke.paint, bbox: Ke.bbox, org: globalThis.__slcOrg ? globalThis.__slcOrg(Ke.modelPos) : null });'],
+          'wt && globalThis.__slcFileOf && globalThis.__slcFileOf(ne, wt.id), wt && Ke.objectid && Ye.push({ objectid: Ke.objectid, id: wt.id, paint: Ke.paint, bbox: Ke.bbox, org: globalThis.__slcOrg ? globalThis.__slcOrg(Ke.modelPos) : null });'],
         ['De[0]?.project && we(De[0].project, Ye), ht.info(',
           'De[0]?.project && we(De[0].project, Ye), globalThis.__slcColorHook && await globalThis.__slcColorHook(ne, Ye, { api: t.current, colorsRef: e.extruderColorsRef, replaceAll: p, project: De[0]?.project, objects: n.current, max: Gt }), globalThis.__slcPlaceHook && globalThis.__slcPlaceHook(Ye, { objects: n.current, project: De[0]?.project }), ht.info('],
         // 0.1.16 🎨 칠한 색(material paint) — 뷰어는 칠한 곳을 55% 비치는 덧칠로 그려 밑의 1번 필라멘트 색과 섞여 흐릿했음 →

@@ -1,4 +1,4 @@
-/*! custom-slicer 0.1.50 — 🔪 슬라이서 화면 · AGPL-3.0-or-later · 소스: https://github.com/keidischoi/g7-plugin-custom-slicer
+/*! custom-slicer 0.1.51 — 🔪 슬라이서 화면 · AGPL-3.0-or-later · 소스: https://github.com/keidischoi/g7-plugin-custom-slicer
  *  엔진 · 화면: three-slicer (OrcaSlicer 를 WebAssembly 로 옮긴 것, AGPL) — <Viewport/>(판 배치 · 이동/회전/크기 · 칠하기 · 슬라이스 · G-code 미리 보기)
  *  + <SettingsPanel/>(OrcaSlicer 설정). 이 파일은 그 바깥 틀: 프린터 라운지의 내 프린터 · 📤 보내기 · .gcode.3mf · 다른 화면에서 넘겨받은 파일
  *  모델은 서버로 올라가지 않음 — 이 브라우저에서만 읽고 슬라이스 */
@@ -22,8 +22,17 @@ import { savePlate, loadPlate, clearPlate } from './store.js'
 import { plateInfo, sceneTheme } from './plate.js'
 import { mountToolbar, stopSpin } from './toolbar.js'
 
-const V = '0.1.50', API = '/api/plugins/custom-slicer', LOUNGE = '/api/plugins/custom-my_printer', SRC = 'https://github.com/keidischoi/g7-plugin-custom-slicer'
+const V = '0.1.51', API = '/api/plugins/custom-slicer', LOUNGE = '/api/plugins/custom-my_printer', SRC = 'https://github.com/keidischoi/g7-plugin-custom-slicer'
 const SEND_ADMIN_ONLY = true   // 「📤 내 프린터로 보내기」는 시험하는 동안 관리자에게만 (실제 프린터에서 확인되면 false 로)
+
+// 0.1.51 판 임시 저장에서 지운 물체 빼기 — 파일마다 그 파일로 올린 물체 번호 (build.mjs 가 뷰어 불러오기에서 __slcFileOf 로 알려 줌)
+const FILE_IDS = new WeakMap()
+globalThis.__slcFileOf = (file, id) => { if (!file || id == null) return; let s = FILE_IDS.get(file); if (!s) FILE_IDS.set(file, (s = new Set())); s.add(id) }
+/** 아직 판에 물체가 남은 파일만 (물체 번호를 모르는 파일은 그대로 둠) */
+export function liveFiles(files, ids, map = FILE_IDS) {
+  const live = new Set(ids)
+  return files.filter((f) => { const s = map.get(f); return !s || [...s].some((id) => live.has(id)) })
+}
 const LS_SET = 'slc-settings'
 const h = React.createElement
 const { useState, useEffect, useRef, useCallback } = React
@@ -306,8 +315,8 @@ function App({ files, popup, compact, printer, from }) {
   cur.current = settings
 
   // 0.1.4 판 임시 저장 — 새로고침해도 모델이 남게 (이 브라우저에만 · 자리마다 따로)
-  const slot = compact ? 'tab' : popup ? 'big' : 'page', kept = useRef([])
-  const keep = (list, replace) => { kept.current = replace ? list.slice() : kept.current.concat(list); savePlate(slot, kept.current) }
+  const slot = compact ? 'tab' : popup ? 'big' : 'page', kept = useRef([]), savedSig = useRef('')
+  const keep = (list, replace) => { kept.current = replace ? list.slice() : kept.current.concat(list); savedSig.current = ''; savePlate(slot, kept.current) }
   useEffect(() => {
     let on = true
     expandFiles(files).then(async (l) => {
@@ -499,7 +508,13 @@ function App({ files, popup, compact, printer, from }) {
       }
       return
     }
-    if (name === 'objects' && Array.isArray(v) && !v.length) { kept.current = []; clearPlate(slot) }
+    if (name === 'objects' && Array.isArray(v) && !v.length) { kept.current = []; savedSig.current = ''; clearPlate(slot) }
+    // 0.1.51 물체 하나를 지우면 그 파일도 임시 저장에서 뺌 (예전엔 판이 다 비어야만 지워져, 새로고침하면 지운 물체가 다시 나왔음)
+    //  kept 에는 그대로 두어 Ctrl+Z 로 되살리면 다시 저장됨
+    if (name === 'objects' && Array.isArray(v) && v.length) {
+      const live = liveFiles(kept.current, v.map((o) => o.id)), sig = live.map((f) => f.name + '|' + f.size).join('/')
+      if (sig !== savedSig.current) { savedSig.current = sig; savePlate(slot, live) }
+    }
     if (name === 'objects' && Array.isArray(v)) setObjCount(v.length)
     if (name === 'objects' && Array.isArray(v)) { names.current = v.map((o) => o.name).filter(Boolean); if (!v.length) setRes(null) }
   }, [])
