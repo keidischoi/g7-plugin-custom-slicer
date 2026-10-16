@@ -122,9 +122,12 @@ export function mountToolbar(host, ctx) {
     '<div class="slc-vg">' + B('shot', 'camera', '사진 저장 (PNG)') + B('full', 'expand', '전체 화면') + '</div>' + pm()
   col.appendChild(tb)
   // 판에서 마우스 · 키를 누르면 뷰어로 가지 않게 (도구를 누르다 판이 돌지 않게)
-  for (const ev of ['pointerdown', 'mousedown', 'wheel', 'keydown']) tb.addEventListener(ev, (e) => e.stopPropagation())
+  for (const ev of ['pointerdown', 'mousedown', 'wheel']) tb.addEventListener(ev, (e) => e.stopPropagation())
+  // 0.1.13 키는 Enter · 스페이스(단추 누르기)만 막음 — 예전엔 모든 키를 막아, 도구 단추를 누른 뒤 Delete 를 눌러도 물체가 안 지워졌음
+  tb.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') e.stopPropagation() })
   tb.addEventListener('click', (e) => {
     const b = e.target.closest('button'); if (!b) return
+    try { b.blur() } catch (er) {}   // 0.1.13 누른 뒤 손을 놓음 — 다음 키(Delete · 화살표)가 판으로 가게
     const v = b.getAttribute('data-v'), menu = tb.querySelector('.slc-pm')
     if (b.hasAttribute('data-vt-toggle')) { const m = !tb.classList.contains('min'); tb.classList.toggle('min', m); try { localStorage.setItem('slc-vt-min', m ? '1' : '0') } catch (er) {} b.innerHTML = ic(m ? 'tools' : 'hide') + '<span>' + (m ? '도구' : '숨기기') + '</span>'; return }
     if (b.hasAttribute('data-plate')) { setLookPref({ kind: b.getAttribute('data-plate') }); refreshPlates(); menu.outerHTML = pm(); tb.querySelector('.slc-pm').hidden = false; return }

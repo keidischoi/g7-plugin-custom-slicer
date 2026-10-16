@@ -40,8 +40,17 @@ export const LANG_CSS = `
 
 const SKIP = /^(SCRIPT|STYLE|TEXTAREA|CODE|PRE)$/
 /** 숫자가 들어간 글자 — 「Custom (12)」 처럼 */
-const PATTERNS = [[/^Custom \((\d+)\)$/, '직접 입력 ($1)'], [/^(\d+) objects?$/i, '물체 $1개'], [/^Plate (\d+)$/i, '판 $1']]
-const look = (d, s) => { const t = s.trim(); if (!t) return null; let k = d[t]; if (!k) for (const [re, to] of PATTERNS) if (re.test(t)) { k = t.replace(re, to); break } return k ? s.replace(t, k) : null }
+const PATTERNS = [[/^Custom \((\d+)\)$/, '직접 입력 ($1)'], [/^(\d+) objects?$/i, '물체 $1개'], [/^Plate (\d+)$/i, '판 $1'],
+  // 0.1.13 알림 — 숫자가 든 문장 (오류 아님: 큰 모델 경고 · 프로젝트에서 가져온 것)
+  [/^([⚠ℹ️\s]*)([\d,]+) triangles — slicing may take a while$/, (m, p, n) => p + '삼각형 ' + n + '개 — 모델이 커서 슬라이스가 오래 걸릴 수 있어요'],
+  [/^([⚠ℹ️\s]*)Imported this project's (.+?)\.(?: Not supported by this slicer, so left out: (.+?)\.?)?$/, (m, p, got, out) => p + '이 프로젝트의 ' + koList(got, GOT) + '을(를) 가져왔어요.' + (out ? ' 이 슬라이서가 지원하지 않아 뺀 것: ' + koList(out, OUT) + '.' : '')]]
+const GOT = [[/^(\d+) settings$/, '설정 $1개'], [/^(\d+) filaments$/, '필라멘트 $1개'], [/^(\d+) plates$/, '판 $1개'], [/^(\d+) plate override\(s\)$/, '판별 설정 $1개'], [/^geometry$/, '모델']]
+const OUT = [[/^per-layer custom G-code$/, '층마다 넣는 사용자 G-code'], [/^per-object setting overrides$/, '물체마다 다른 설정'], [/^(\d+) object\(s\) on plates past this viewer's limit$/, "판 수 한도(9)를 넘은 판의 물체 $1개"]]
+/** 「a and b and c」 · 「a, b」 → 한국어 (모르는 것은 영어 그대로) */
+function koList(s, table) {
+  return String(s).split(/ and |, /).map((x) => { x = x.trim(); for (const [re, to] of table) if (re.test(x)) return x.replace(re, to); return x }).join(' · ')
+}
+export const look = (d, s) => { const t = s.trim(); if (!t) return null; let k = d[t]; if (!k) for (const [re, to] of PATTERNS) if (re.test(t)) { k = t.replace(re, to); break } return k ? s.replace(t, k) : null }
 
 /** 마디 하나(그 아래 모두)를 번역 — 영어 원문은 마디에 기억해 두어 다시 바뀌면(React) 또 번역 */
 function trNode(d, n) {
