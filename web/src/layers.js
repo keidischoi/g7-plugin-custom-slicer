@@ -1,13 +1,14 @@
 // custom-slicer — 🎚️ 미리 보기 층 · 노즐 움직임 슬라이더 (Bambu Studio 처럼 3D 화면 위) · AGPL-3.0-or-later
 //  뷰어(three-slicer-viewer)의 층 범위(layer-lo · layer-hi) · 노즐 움직임(move-range) 슬라이더는 오른쪽 설정 칸 맨 아래에 있어서
-//  찾기 어려웠음. 0.1.22 3D 화면 오른쪽에 세로 층 슬라이더(손잡이 두 개: 아래 층 · 위 층), 위쪽에 노즐 움직임 슬라이더(▶ 재생 · 한 칸씩)를 둠.
+//  찾기 어려웠음. 0.1.22 3D 화면에 세로 층 슬라이더(손잡이 두 개: 아래 층 · 위 층) · 노즐 움직임 슬라이더(▶ 재생 · 한 칸씩)를 둠.
+//  0.1.27 자리: 층 슬라이더는 왼쪽, 노즐(지금 층) 띠는 아래, 🧰 도구는 오른쪽 벽.
 //  뷰어의 원래 슬라이더 값을 바꿔서 움직이므로 보이는 모양 · 단축키(↑↓ · L · T)는 뷰어 그대로.
 
 export const LAYER_CSS = `
 /* 0.1.26 hidden 이 진짜로 숨기게 — 아래 display:flex 가 hidden 을 이겨서 준비 화면에서도 보였음 */
 .slc-ly[hidden],.slc-mv[hidden]{display:none!important}
-.slc-pv .slc-vt{right:64px}
-.slc-ly{position:absolute;top:58px;right:10px;bottom:46px;z-index:16;display:flex;flex-direction:column;align-items:center;gap:6px;width:46px;padding:8px 0;
+/* 0.1.27 층 슬라이더는 3D 화면 왼쪽 · 노즐(지금 층) 띠는 아래 · 🧰 도구는 오른쪽 벽에 그대로 */
+.slc-ly{position:absolute;top:14px;left:10px;bottom:46px;z-index:16;display:flex;flex-direction:column;align-items:center;gap:6px;width:46px;padding:8px 0;
   border-radius:14px;background:color-mix(in srgb,var(--_light-surface) 92%,transparent);border:1px solid var(--_light-divider);box-shadow:0 1px 2px rgba(15,23,42,.06),0 6px 18px rgba(15,23,42,.10);backdrop-filter:blur(6px);user-select:none;touch-action:none}
 .slc-ly button{display:grid;place-items:center;width:30px;height:24px;padding:0;border:0;border-radius:8px;background:none;color:var(--_light-text);font:700 11px system-ui,sans-serif;cursor:pointer}
 .slc-ly button:hover{background:var(--_accent-soft);color:var(--_accent-ink)}
@@ -20,7 +21,7 @@ export const LAYER_CSS = `
 .slc-ly-th{position:absolute;left:50%;width:22px;height:14px;margin:-7px 0 0 -11px;border-radius:7px;background:#fff;border:2px solid #0ea5e9;box-shadow:0 1px 4px rgba(15,23,42,.3);cursor:grab}
 .slc-ly-th.lo{border-color:#6366f1}
 .slc-ly-th:active{cursor:grabbing}
-.slc-mv{position:absolute;top:12px;left:50%;z-index:16;transform:translateX(-50%);display:flex;align-items:center;gap:6px;width:min(560px,calc(100% - 150px));padding:6px 10px;
+.slc-mv{position:absolute;bottom:48px;left:66px;right:66px;z-index:16;display:flex;align-items:center;gap:6px;padding:6px 10px;
   border-radius:14px;background:color-mix(in srgb,var(--_light-surface) 92%,transparent);border:1px solid var(--_light-divider);box-shadow:0 1px 2px rgba(15,23,42,.06),0 6px 18px rgba(15,23,42,.10);backdrop-filter:blur(6px)}
 .slc-mv button{display:grid;place-items:center;flex:none;width:28px;height:26px;padding:0;border:0;border-radius:8px;background:none;color:var(--_light-text);font:700 12px system-ui,sans-serif;cursor:pointer}
 .slc-mv button:hover{background:var(--_accent-soft);color:var(--_accent-ink)}
@@ -72,12 +73,24 @@ export function mountLayers(root, col) {
     const on = !!(lo && hi) && !!(pv && pv.classList.contains('on')) && paths
     col.classList.toggle('slc-pv', on); ly.hidden = !on; mv.hidden = !(on && m)
     if (!on) { stopPlay(); return }
-    // 0.1.23 겹치지 않게 — 아래 판 고르기(1 · +) 위에서 끝남 · 3D 칸 아래가 화면 밖이면 화면 안까지만
-    const cr = col.getBoundingClientRect(), pb = root.querySelector('.plate-bar')
-    const pr = pb && pb.offsetParent ? pb.getBoundingClientRect() : null
-    let bottom = pr && pr.right > cr.right - 120 ? Math.max(46, Math.round(cr.bottom - pr.top + 8)) : 46
-    if (cr.bottom > window.innerHeight) bottom = Math.max(bottom, Math.round(cr.bottom - window.innerHeight + 16))
-    if (ly.__b !== bottom) { ly.__b = bottom; ly.style.bottom = bottom + 'px' }
+    // 0.1.27 자리 — 노즐 띠: 아래 안내 줄 위, 왼쪽 「슬라이스 정보」 상자와 오른쪽 판 고르기(1 · +) 사이 (좁으면 정보 상자 위로) ·
+    //  슬라이스 완료 띠(페이지 쪽)와 겹치면 그 위로 / 층 슬라이더: 왼쪽, 정보 상자 · 노즐 띠 위에서 끝남 · 3D 칸 아래가 화면 밖이면 화면 안까지만
+    const cr = col.getBoundingClientRect(), vis = (e) => (e && e.offsetParent && !e.hidden ? e.getBoundingClientRect() : null)
+    const sr = vis(root.querySelector('.stats-card')), pr = vis(root.querySelector('.plate-bar'))
+    const offscreen = Math.max(0, Math.round(cr.bottom - window.innerHeight))
+    let mL = (sr ? Math.round(sr.right - cr.left) : 10) + 8, mR = (pr && pr.left > cr.left + cr.width / 2 ? Math.round(cr.right - pr.left) : 10) + 8, mB = 48 + offscreen
+    const vt = vis(col.querySelector('.slc-vt'))   // 🧰 도구 줄이 띠 높이까지 내려와 있으면 그 왼쪽에서 끝남
+    if (vt && vt.bottom > cr.bottom - mB - 44) mR = Math.max(mR, Math.round(cr.right - vt.left) + 8)
+    if (cr.width - mL - mR < 280) { mL = 66; mR = vt && vt.bottom > cr.bottom - (sr ? cr.bottom - sr.top : 48) - 52 ? Math.round(cr.right - vt.left) + 8 : 10; mB = (sr ? Math.round(cr.bottom - sr.top) : 48) + 8 + (sr ? 0 : offscreen) }
+    mB = Math.max(mB, 48 + offscreen)   // 3D 칸 아래가 화면 밖이면 보이는 곳까지 올림
+    const dk = document.querySelector('.slc-dock'), dr = dk ? dk.getBoundingClientRect() : null
+    if (dr && dr.height && dr.top < cr.bottom - mB && dr.bottom > cr.bottom - mB - 44 && dr.left < cr.right - mR && dr.right > cr.left + mL) mB = Math.round(cr.bottom - dr.top) + 8
+    if (mv.__p !== mL + ',' + mR + ',' + mB) { mv.__p = mL + ',' + mR + ',' + mB; mv.style.left = mL + 'px'; mv.style.right = mR + 'px'; mv.style.bottom = mB + 'px' }
+    let lyB = Math.max(46 + offscreen, m ? mB + 52 : 0)
+    if (sr) lyB = Math.max(lyB, Math.round(cr.bottom - sr.top) + 8)
+    if (m && mL > 60 && sr) lyB = Math.max(lyB, Math.round(cr.bottom - sr.top) + 8)
+    if (mL === 66) lyB = Math.max(46 + offscreen, sr ? Math.round(cr.bottom - sr.top) + 8 : 0)
+    if (ly.__b !== lyB) { ly.__b = lyB; ly.style.bottom = lyB + 'px' }
     const max = Number(hi.max) || 0, a = Number(lo.value) || 0, b = Number(hi.value) || 0
     const pos = (v) => (max > 0 ? (1 - v / max) * 100 : 100) + '%'
     thHi.style.top = pos(b); thLo.style.top = pos(a)
