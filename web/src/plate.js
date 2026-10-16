@@ -124,10 +124,10 @@ function plateBody(THREE, top, w, d) {
   top.userData.slcBody = { sheet, stripe }
 }
 /** 0.1.46 🌗 아주 어두운 필라멘트 물체 — 빛을 세게 해도 검은 색(반사 2~3%)은 검게만 보여 모양이 안 보였음.
- *  0.1.54 색을 회색으로 밝히던 것을 그만둠 (「원래는 완전 검은색」) → 색은 필라멘트 그대로 두고, 어두운 물체만 조금 매끈하게(roughness 0.4 — 0.22 는 「광이 너무 많이」) 해
+ *  0.1.54 색을 회색으로 밝히던 것을 그만둠 (「원래는 완전 검은색」) → 색은 필라멘트 그대로 두고, 어두운 물체만 조금 매끈하게(roughness 0.5 — 0.22 · 0.4 는 「광이 너무 많이」) 해
  *  카메라 조명이 모서리 · 단에 반짝임으로 비쳐 모양이 보이게. 자르기 · 보내기 · 필라멘트 색은 그대로
  *  c: THREE.Color (선형 값) — 어두우면 true */
-export const DARK_MIN = 0.06, DARK_GLOSS = 0.4, BASE_ROUGH = 0.6
+export const DARK_MIN = 0.06, DARK_GLOSS = 0.5, BASE_ROUGH = 0.6
 export function isDark(c, min = DARK_MIN) { return 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b < min }
 /** 장면의 물체 · 칠한 색 재질만 (뷰어 물체 재질: roughness 0.6 · metalness 0.05 — 판 · 노즐 · 미리 보기 선은 건드리지 않음) */
 function liftScene(scene) {
