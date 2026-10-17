@@ -1,4 +1,4 @@
-/* custom-slicer 0.1.56 — 🔪 슬라이서 바깥 틀 · AGPL-3.0-or-later
+/* custom-slicer 0.1.57 — 🔪 슬라이서 바깥 틀 · AGPL-3.0-or-later
  *  모양은 출력 검사기(.pck)와 같은 말씨 — 하늘색→남색 그라데이션 · 둥근 카드 · 알약 칩. 뷰어 · 설정 칸은 자기 Shadow DOM 안에서 그리므로
  *  CSS 변수(--vp-*)로만 색을 맞춤 (그림자 경계를 넘는 건 변수뿐) */
 .slc { --ink:#0f172a; --mute:#64748b; --line:#e2e8f0; --card:#fff; --bg2:#f8fafc; --soft:#ecfeff; --a:#0ea5e9; --a2:#6366f1; --bad:#dc2626; --ok:#16a34a;
@@ -92,7 +92,12 @@
 .slc-qpop { position:fixed; inset:0; z-index:99990; background:rgba(15,23,42,.55); display:flex; align-items:center; justify-content:center; padding:16px; }
 .slc-qbox { width:min(580px,100%); max-height:calc(100vh - 32px); overflow:auto; overflow-x:hidden; background:#fff; color:#0f172a; border-radius:22px; box-shadow:0 24px 60px rgba(15,23,42,.35); padding:16px 18px 18px; font-size:14px; line-height:1.55; }
 .slc-qhd { display:flex; align-items:center; justify-content:space-between; gap:10px; margin:0 0 12px; font-weight:900; font-size:16px; letter-spacing:-.02em; }
-.slc-qhd button { border:0; background:#f1f5f9; color:inherit; font-size:16px; line-height:1; cursor:pointer; padding:7px 10px; border-radius:10px; }
+.slc-qhd button { border:0; background:#f1f5f9; color:#334155; font-size:16px; line-height:1; cursor:pointer; padding:7px 10px; border-radius:10px; transition:background .15s,color .15s; }
+.slc-qhd button:hover { background:#e2e8f0; color:#0f172a; }
+.slc-qhd button:focus-visible { outline:2px solid #3b82f6; outline-offset:2px; }
+/* 0.1.57 어두운 화면에서 닫기(×)가 흰 바탕에 흰 글씨로 안 보이던 것 */
+html.dark .slc-qhd button, .slc[data-slc-theme=dark] .slc-qhd button { background:rgba(148,163,184,.18); color:#e2e8f0; }
+html.dark .slc-qhd button:hover, .slc[data-slc-theme=dark] .slc-qhd button:hover { background:rgba(148,163,184,.32); color:#fff; }
 .slc-qwait { margin:auto; padding:28px 12px; text-align:center; font-weight:700; color:#64748b; }
 .slc-perr { margin:auto; padding:28px 12px; text-align:center; font-weight:700; color:#dc2626; }
 .slc-q-wrap { display:grid; gap:10px; min-width:0; }
