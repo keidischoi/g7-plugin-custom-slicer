@@ -1,4 +1,4 @@
-/*! custom-slicer 0.1.57 — 🔪 슬라이서 화면 · AGPL-3.0-or-later · 소스: https://github.com/keidischoi/g7-plugin-custom-slicer
+/*! custom-slicer 0.1.58 — 🔪 슬라이서 화면 · AGPL-3.0-or-later · 소스: https://github.com/keidischoi/g7-plugin-custom-slicer
  *  엔진 · 화면: three-slicer (OrcaSlicer 를 WebAssembly 로 옮긴 것, AGPL) — <Viewport/>(판 배치 · 이동/회전/크기 · 칠하기 · 슬라이스 · G-code 미리 보기)
  *  + <SettingsPanel/>(OrcaSlicer 설정). 이 파일은 그 바깥 틀: 프린터 라운지의 내 프린터 · 📤 보내기 · .gcode.3mf · 다른 화면에서 넘겨받은 파일
  *  모델은 서버로 올라가지 않음 — 이 브라우저에서만 읽고 슬라이스 */
@@ -22,7 +22,7 @@ import { savePlate, loadPlate, clearPlate } from './store.js'
 import { plateInfo, sceneTheme } from './plate.js'
 import { mountToolbar, stopSpin } from './toolbar.js'
 
-const V = '0.1.57', API = '/api/plugins/custom-slicer', LOUNGE = '/api/plugins/custom-my_printer', SRC = 'https://github.com/keidischoi/g7-plugin-custom-slicer'
+const V = '0.1.58', API = '/api/plugins/custom-slicer', LOUNGE = '/api/plugins/custom-my_printer', SRC = 'https://github.com/keidischoi/g7-plugin-custom-slicer'
 const SEND_ADMIN_ONLY = true   // 「📤 내 프린터로 보내기」는 시험하는 동안 관리자에게만 (실제 프린터에서 확인되면 false 로)
 
 // 0.1.51 판 임시 저장에서 지운 물체 빼기 — 파일마다 그 파일로 올린 물체 번호 (build.mjs 가 뷰어 불러오기에서 __slcFileOf 로 알려 줌)
@@ -231,20 +231,27 @@ function ProfileDialog({ settings, lounge, pid, onClose, onApply, onUpload, canU
   const lp = lounge.list.find((x) => +x.id === +pid)
   const base = String(settings.printer_settings_id || '').replace(/\s*\d+(\.\d+)?\s*nozzle\s*$/i, '')
   const [q, setQ] = useState(''), [who, setWho] = useState(lp ? lp.model || lp.name : base.replace(/^Bambu Lab /, ''))
-  const [items, setItems] = useState(null), [busy, setBusy] = useState(0), [err, setErr] = useState(''), [wide, setWide] = useState(false)
+  const fil = lp && lp.default_filament_spec, [fk, setFk] = useState(fil ? fil.key : '')   // 0.1.58 🧵 프린터 라운지의 기본 필라멘트(카탈로그)로 먼저
+  const [items, setItems] = useState(null), [busy, setBusy] = useState(0), [err, setErr] = useState(''), [wide, setWide] = useState(false), [filWide, setFilWide] = useState(false)
   const timer = useRef(0)
   useEffect(() => {
     let on = true; setItems(null)
-    const p = new URLSearchParams({ per: '24', sort: 'popular' }); if (who) p.set('printer', who); if (q) p.set('q', q)
+    const p = new URLSearchParams({ per: '24', sort: 'popular' }); if (who) p.set('printer', who); if (q) p.set('q', q); if (fk) p.set('filament', fk)
     const get = (qs) => fetch(SPF + '/profiles?' + qs, { headers: headers(), credentials: 'same-origin' }).then((r) => r.json()).then((j) => (j && j.data && j.data.items) || [], () => [])
+    const wider = (l) => {   // 이 프린터 것이 없으면 모든 프린터
+      if (l.length || !who) { setWide(false); setItems(l); return }
+      const p2 = new URLSearchParams(p); p2.delete('printer'); p2.delete('filament')
+      get(p2).then((l2) => { if (on) { setWide(true); setItems(l2) } })
+    }
     get(p).then((l) => {
       if (!on) return
-      if (l.length || !who) { setWide(false); setItems(l); return }
-      const p2 = new URLSearchParams(p); p2.delete('printer')   // 이 프린터 것이 없으면 모든 프린터
-      get(p2).then((l2) => { if (on) { setWide(true); setItems(l2) } })
+      setFilWide(false)
+      if (l.length || !fk) { wider(l); return }
+      const p1 = new URLSearchParams(p); p1.delete('filament')   // 0.1.58 그 필라멘트 것이 없으면 이 프린터의 다른 필라멘트
+      get(p1).then((l1) => { if (!on) return; setFilWide(!!l1.length); wider(l1) })
     })
     return () => { on = false }
-  }, [who, q])
+  }, [who, q, fk])
   const use = async (it) => {
     setBusy(it.id); setErr('')
     try {
@@ -260,8 +267,10 @@ function ProfileDialog({ settings, lounge, pid, onClose, onApply, onUpload, canU
       h('h3', null, '🎛️ 슬라이서 프로필 — 회원들이 써 본 설정'),
       h('div', { className: 'slc-pfind' },
         h('input', { type: 'search', placeholder: '찾기 (예: PLA · 실크 · 0.2mm)', onInput: (e) => { clearTimeout(timer.current); const v = e.target.value.trim(); timer.current = setTimeout(() => setQ(v), 300) } }),
-        who ? h('button', { type: 'button', className: 'slc-chip on', title: '이 프린터 것만 — 누르면 모든 프린터', onClick: () => setWho('') }, '🖨️ ' + who + ' ✕') : null),
+        who ? h('button', { type: 'button', className: 'slc-chip on', title: '이 프린터 것만 — 누르면 모든 프린터', onClick: () => setWho('') }, '🖨️ ' + who + ' ✕') : null,
+        fil ? h('button', { type: 'button', className: 'slc-chip' + (fk ? ' on' : ''), title: fk ? '프린터 라운지의 기본 필라멘트 것 먼저 — 누르면 모든 필라멘트' : '누르면 기본 필라멘트 것 먼저', onClick: () => setFk(fk ? '' : fil.key) }, '🧵 ' + fil.label + (fk ? ' ✕' : '')) : null),
       err ? h('p', { className: 'slc-dmsg bad' }, '⚠️ ' + err) : null,
+      filWide && !wide && items && items.length ? h('p', { className: 'slc-hint' }, '「' + (fil ? fil.label : '') + '」 프로필이 아직 없어 이 프린터의 다른 필라멘트 프로필을 보여요.') : null,
       wide && items && items.length ? h('p', { className: 'slc-hint' }, '「' + who + '」 프로필이 아직 없어 모든 프린터의 인기 프로필을 보여요 — 프린터가 다르면 오른쪽 프린터 칸 값은 그대로 두고 품질 · 필라멘트만 참고하세요.') : null,
       items === null ? h('p', { className: 'slc-hint' }, '불러오는 중…')
         : !items.length ? h('p', { className: 'slc-hint' }, '맞는 프로필이 없어요. ', h('a', { href: '/slicer-profiles', target: '_blank', rel: 'noopener' }, '슬라이서 프로필 둘러보기 ›'))
@@ -359,10 +368,11 @@ function App({ files, popup, compact, printer, from }) {
       //  저장된 설정의 프린터가 내 프린터 중에 있으면 그 칩을 고르고, 없으면 고른 칩의 프린터로 설정을 맞춤
       const saved = String(cur.current.printer_settings_id || '')
       const mine = !want && saved ? L.list.find((p) => { const m = matchPreset(printersByVendor, p, printerTechByVendor); return m && m[1] === saved }) : null
-      const ok = same || mine || L.list.find((p) => p.can_send) || L.list[0]
+      const qp = +new URLSearchParams(location.search).get('printer') || 0, byQ = qp ? L.list.find((p) => +p.id === qp) : null   // 0.1.58 프린터 라운지 ⚙ 「🔪 슬라이서에서 쓰기」
+      const ok = byQ || same || mine || L.list.find((p) => p.can_send) || L.list[0]
       if (!ok) return
       setPid(+ok.id)
-      if (want || mine) return   // 부른 화면(출력 검사기)이 고른 프린터가 먼저 · 저장된 설정이 이미 그 칩의 프린터
+      if ((want || mine) && !byQ) return   // 부른 화면(출력 검사기)이 고른 프린터가 먼저 · 저장된 설정이 이미 그 칩의 프린터
       setSettings((s) => { const r = fitPrinter(s, ok); return r.hit ? r.s : s })   // 칩의 프린터로 (엔진에 없는 프린터면 그대로)
     })
     return () => { on = false }

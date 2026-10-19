@@ -207,7 +207,8 @@ sl.dispose()
   }
   {   // 0.1.31 칩 · 설정 프린터 맞춤
     const ap = readSrc(new URL('../web/src/app.js', import.meta.url))
-    ok(ap.includes('const ok = same || mine || L.list.find((p) => p.can_send) || L.list[0]') && ap.includes('if (want || mine) return') && ap.includes("const r = fitPrinter(s, ok); return r.hit ? r.s : s"), '0.1.31 열 때 내 프린터 칩과 설정 프린터가 같게')
+    ok(ap.includes('const ok = byQ || same || mine || L.list.find((p) => p.can_send) || L.list[0]') && ap.includes('if ((want || mine) && !byQ) return') && ap.includes("const r = fitPrinter(s, ok); return r.hit ? r.s : s"), '0.1.31 열 때 내 프린터 칩과 설정 프린터가 같게')
+    ok(ap.includes("if (fk) p.set('filament', fk)") && ap.includes('lp.default_filament_spec') && ap.includes("p1.delete('filament')") && ap.includes("get('printer')"), '0.1.58 🧵 프로필 고르기 — 기본 필라멘트 먼저 · 없으면 이 프린터 · ?printer= 로 칩')
   }
   {   // 0.1.29
     const ly = readSrc(new URL('../web/src/layers.js', import.meta.url))
