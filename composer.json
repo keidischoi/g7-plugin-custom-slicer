@@ -2,7 +2,7 @@
     "name": "plugins/custom-slicer",
     "description": "G7 슬라이서 — 회원 브라우저에서 도는 전체 슬라이서 (판 배치 · 설정 · 미리 보기 · 내 프린터로 보내기, three-slicer · AGPL)",
     "type": "library",
-    "version": "0.1.57",
+    "version": "0.1.58",
     "license": "AGPL-3.0-or-later",
     "autoload": {
         "psr-4": {

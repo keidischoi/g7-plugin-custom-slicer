@@ -22,6 +22,7 @@ export default {
   '🎛️ 슬라이서 프로필 — 회원들이 써 본 설정': '🎛️ Slicer profiles — settings members have tried', '찾기 (예: PLA · 실크 · 0.2mm)': 'Search (e.g. PLA · silk · 0.2mm)',
   '이 프린터 것만 — 누르면 모든 프린터': 'This printer only — click for all printers',
   '」 프로필이 아직 없어 모든 프린터의 인기 프로필을 보여요 — 프린터가 다르면 오른쪽 프린터 칸 값은 그대로 두고 품질 · 필라멘트만 참고하세요.': '” has no profiles yet, so popular profiles for all printers are shown — if the printer differs, keep the printer settings on the right and use only the quality and filament parts.',
+  '프린터 라운지의 기본 필라멘트 것 먼저 — 누르면 모든 필라멘트': 'Your Printer Lounge default filament first — tap for all filaments', '누르면 기본 필라멘트 것 먼저': 'Tap to show your default filament first', '」 프로필이 아직 없어 이 프린터의 다른 필라멘트 프로필을 보여요.': '」 has no profiles yet — showing this printer\'s other filaments.',
   '불러오는 중…': 'Loading…', '맞는 프로필이 없어요. ': 'No matching profiles. ', '슬라이서 프로필 둘러보기 ›': 'Browse slicer profiles ›', 'mm 노즐': 'mm nozzle', 'mm 층': 'mm layer', '적용': 'Apply',
   '이 꼴(': 'This format (', ')은 여기서 못 읽어요 — 그 슬라이서에서 쓰세요': ') cannot be read here — use it in that slicer', '보기 ↗': 'View ↗',
   'Bambu Studio · OrcaSlicer 프로필(.json · .3mf · .orca_*)은 바로 적용돼요. 프로젝트 3MF 는 설정만 가져와요 (모델은 판에 올리지 않음).': 'Bambu Studio · OrcaSlicer profiles (.json · .3mf · .orca_*) apply directly. Project 3MF files bring only the settings (models are not placed on the plate).',
