@@ -75,6 +75,8 @@ const scenePlugin = {
       const PAIRS = [
         // 0.1.74 🎨 칠한 큰 모델 — 색을 나누는 동안(8색 50만 삼각형 ≈ 90초) 진행 소식이 없어 60초 감시가 끊고 재시도까지 실패했음 → 15분으로
         ['const X = 6e4, ee = 3e5;', 'const X = 9e5, ee = 9e5;'],
+        // 0.1.75 🎨 엔진이 모르는 자리 글자가 든 G-code 줄을 슬라이스 전에 뺌 (web/src/util.js cleanGcodeParams)
+        ['async function He(L, ke, ge = Ne, de = null) {\n', 'async function He(L, ke, ge = Ne, de = null) {\n    ke = globalThis.__slcCleanGcode ? globalThis.__slcCleanGcode(ke) : ke;\n'],
         // 0% 는 아직 준비 중 — 멈춘 것처럼 보이지 않게 (글자는 web/src/app.js __slcPrep)
         ['n ? `Slicing… ${Math.round(r * 100)}%` : a > 1 ? "Slice ▾" : "Slice"', 'n ? (r > 0 ? `Slicing… ${Math.round(r * 100)}%` : globalThis.__slcPrep || "Preparing…") : a > 1 ? "Slice ▾" : "Slice"'],
         ['[f.gridThin, f.gridBold, f.border, f.label, f.slaFill, f.slaEdge]', '[f.gridThin, f.gridBold, f.border, f.label, f.slaFill, f.slaEdge, f.slcPlate]'],
