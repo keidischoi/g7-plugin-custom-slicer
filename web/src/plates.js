@@ -17,7 +17,7 @@ const ic = (k) => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" st
 
 export const PLATE_CSS = `
 .plate-add,.plate-del{display:none!important}
-.slc-pbw{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:2}
+.slc-pbw{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:20}
 .slc-pv .slc-pbw{display:none}
 .slc-pb{position:absolute;left:0;top:0;width:32px;height:32px;margin:-16px 0 0 -16px;display:grid;place-items:center;padding:0;border:0;border-radius:0 10px 10px 0;background:var(--slc-pb,#1a1d22);color:var(--slc-pbi,#d7dce3);cursor:pointer;pointer-events:auto;transition:background .12s}
 .slc-pb svg{width:19px;height:19px}
@@ -25,6 +25,12 @@ export const PLATE_CSS = `
 .slc-pb.on{color:var(--_accent,#0ea5e9)}
 .slc-pb[hidden]{display:none}
 .slc-pb.nope{background:#ef4444}
+.slc-pn{position:absolute;left:0;top:0;display:flex;align-items:center;gap:6px;height:18px;transform-origin:0 0;color:var(--_accent,#0ea5e9);font:800 16px/18px system-ui,sans-serif;white-space:nowrap;pointer-events:none}
+.slc-pn[hidden]{display:none}
+.slc-pn.no{opacity:.45}
+.slc-pn button{display:grid;place-items:center;width:18px;height:18px;padding:0;border:0;background:none;color:inherit;cursor:pointer;pointer-events:auto}
+.slc-pn svg{width:15px;height:15px}
+.slc-pni{position:absolute;width:180px;height:30px;padding:0 8px;border:1px solid var(--_accent,#0ea5e9);border-radius:8px;background:#0f172a;color:#fff;font-size:14px;pointer-events:auto}
 .slc-pbmsg{position:absolute;left:50%;top:14px;translate:-50% 0;max-width:80%;padding:7px 12px;border-radius:10px;background:rgba(15,23,42,.9);color:#fff;font-size:13px;pointer-events:none}
 `
 
@@ -68,7 +74,7 @@ function moveAll(v, api, list) {
 export function mountPlates(root, col) {
   if (!col || col.querySelector('.slc-pbw')) return
   const wrap = document.createElement('div'); wrap.className = 'slc-pbw'; col.appendChild(wrap)
-  const locks = new Set(), pool = []
+  const locks = new Set(), names = new Map(), pool = []
   let tm = 0
   const say = (t) => {
     let m = wrap.querySelector('.slc-pbmsg'); if (!m) { m = document.createElement('div'); m.className = 'slc-pbmsg'; wrap.appendChild(m) }
@@ -102,7 +108,21 @@ export function mountPlates(root, col) {
     // 뷰어는 마지막 판만 지움 — 뒤 판의 물체를 한 칸씩 당긴 뒤 마지막 판을 지움
     if (later.length) moveAll(v, A, later.map((o) => ({ id: o.id, mesh: o.mesh, dx: beds[o.plate - 1].x - beds[o.plate].x, dz: beds[o.plate - 1].z - beds[o.plate].z })))
     const next = new Set(); for (const k of locks) next.add(k > i ? k - 1 : k); locks.clear(); next.forEach((k) => locks.add(k))
+    const nx = new Map(); for (const [k, t] of names) if (k !== i) nx.set(k > i ? k - 1 : k, t); names.clear(); nx.forEach((t, k) => names.set(k, t))
     const pd = root.querySelector('[data-testid="plate-del"]'); if (pd) pd.click()
+  }
+
+  // 0.1.63 판 이름 — 연필을 누르면 그 자리에 입력 칸 · Enter 또는 칸 밖을 누르면 저장 · Esc 취소
+  const nameEdit = (i, nb) => {
+    const r = nb.getBoundingClientRect(), c = col.getBoundingClientRect(), t = document.createElement('input')
+    let done = false
+    const end = (ok) => { if (done) return; done = true; if (ok) { const v = t.value.trim(); if (v) names.set(i, v); else names.delete(i) } t.remove() }
+    t.className = 'slc-pni'; t.maxLength = 30; t.value = names.get(i) || ''; t.placeholder = '판 이름'
+    t.style.left = Math.max(4, Math.min(r.left - c.left, c.width - 190)) + 'px'; t.style.top = Math.max(4, r.top - c.top) + 'px'
+    wrap.appendChild(t); t.focus(); t.select()
+    t.onblur = () => end(true)
+    for (const ev of ['pointerdown', 'mousedown']) t.addEventListener(ev, (e) => e.stopPropagation())
+    t.onkeydown = (e) => { e.stopPropagation(); if (e.key === 'Enter') end(true); if (e.key === 'Escape') end(false) }
   }
 
   const make = (i) => {
@@ -113,6 +133,10 @@ export function mountPlates(root, col) {
     s[1].onclick = () => arrange(i, s[1])
     s[2].onclick = () => { if (locks.has(i)) locks.delete(i); else locks.add(i) }
     s[3].onclick = () => remove(i, s[3])
+    const nb = document.createElement('div'); nb.className = 'slc-pn'; nb.hidden = true; nb.innerHTML = '<span></span><button type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20l1-4L16 5l3 3L8 19z"/></svg></button>'
+    const pen = nb.lastChild; pen.title = '판 이름 고치기'; pen.setAttribute('aria-label', '판 이름 고치기'); wrap.appendChild(nb); s.nb = nb
+    for (const ev of ['pointerdown', 'mousedown']) pen.addEventListener(ev, (e) => e.stopPropagation())
+    pen.onclick = () => nameEdit(i, nb)
     return s
   }
 
@@ -137,16 +161,22 @@ export function mountPlates(root, col) {
     }
     pool.forEach((s, i) => {
       const b = i < n ? v.plateBeds[i] : null
-      if (!b || !b.border) { for (const x of s) x.hidden = true; return }
+      if (!b || !b.border) { for (const x of s) x.hidden = true; s.nb.hidden = true; return }
       const bed = bedOf(b), mm = Math.max(14, Math.min(bed.w, bed.d) * 0.09), half = mm / 2
       s.forEach((x, k) => {
         const px = bed.x + bed.w / 2 + half, pz = bed.z - bed.d / 2 + mm * (0.9 + k * 1.15)   // 판 몸체에 틈 없이 붙은 탭
         const o = scr(v, r, c, px, pz), ax = scr(v, r, c, px + half, pz), az = scr(v, r, c, px, pz + half)
         const m = [(ax[0] - o[0]) / (BTN / 2), (ax[1] - o[1]) / (BTN / 2), (az[0] - o[0]) / (BTN / 2), (az[1] - o[1]) / (BTN / 2)]
-        const big = Math.hypot(m[0], m[1]) * BTN >= 16 && Math.hypot(m[2], m[3]) * BTN >= 12
+        const big = Math.hypot(m[0], m[1]) * BTN >= 8 && Math.hypot(m[2], m[3]) * BTN >= 6
         x.hidden = !big || o[2] > 1 || o[0] < 0 || o[1] < 0 || o[0] > c.width || o[1] > c.height
         if (!x.hidden) x.style.transform = 'matrix(' + m.map((t) => t.toFixed(4)).join(',') + ',' + o[0].toFixed(1) + ',' + o[1].toFixed(1) + ')'
       })
+      const ns = 0.42, nx = bed.x - bed.w / 2, nz = bed.z - bed.d / 2 - 5 - 18 * ns, n0 = scr(v, r, c, nx, nz), n1 = scr(v, r, c, nx + 16 * ns, nz), n2 = scr(v, r, c, nx, nz + 16 * ns)
+      s.nb.hidden = n0[2] > 1 || n0[0] < -150 || n0[1] < -30 || n0[0] > c.width || n0[1] > c.height
+      if (!s.nb.hidden) {
+        s.nb.style.transform = 'matrix(' + [(n1[0] - n0[0]) / 16, (n1[1] - n0[1]) / 16, (n2[0] - n0[0]) / 16, (n2[1] - n0[1]) / 16].map((t) => t.toFixed(4)).join(',') + ',' + n0[0].toFixed(1) + ',' + n0[1].toFixed(1) + ')'
+        const nm = names.get(i) || '', nt = nm || '판 이름'; if (s.nb.firstChild.textContent !== nt) s.nb.firstChild.textContent = nt; s.nb.classList.toggle('no', !nm)
+      }
       const lk = locks.has(i), lb = s[2]
       if (lb.classList.contains('on') !== lk) { lb.classList.toggle('on', lk); lb.innerHTML = ic(lk ? 'lock' : 'unlock') }
     })
