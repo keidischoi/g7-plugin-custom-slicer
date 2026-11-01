@@ -73,6 +73,17 @@ function moveAll(v, api, list) {
   api.clearSelection(); if (v.invalidate) v.invalidate()
 }
 
+/** 판 모두가 보이게 — 보는 방향은 그대로, 거리만 칸 크기에 맞춤 */
+function fitBeds(v, c) {
+  if (!v.orbit || !v.plateBeds.length) return
+  const d = v.camera.position.clone().sub(v.orbit.target); if (d.lengthSq() < 1) return
+  let x0 = 1e9, x1 = -1e9, z0 = 1e9, z1 = -1e9
+  for (const b of v.plateBeds) { const s = bedOf(b); x0 = Math.min(x0, s.x - s.w / 2); x1 = Math.max(x1, s.x + s.w / 2); z0 = Math.min(z0, s.z - s.d / 2); z1 = Math.max(z1, s.z + s.d / 2) }
+  d.normalize(); v.orbit.target.set((x0 + x1) / 2, 0, (z0 + z1) / 2)
+  v.camera.position.copy(v.orbit.target).addScaledVector(d, Math.max(x1 - x0, z1 - z0) * 1.9 / Math.min(1, c.width / c.height))
+  v.orbit.update(); v.invalidate && v.invalidate()
+}
+
 export function mountPlates(root, col) {
   if (!col || col.querySelector('.slc-pbw')) return
   const wrap = document.createElement('div'); wrap.className = 'slc-pbw'; col.appendChild(wrap)
@@ -144,7 +155,7 @@ export function mountPlates(root, col) {
 
   // 판 바닥의 단추 자리를 화면으로 — 판과 같은 기울기로 눕힘 (mm 크기라 확대하면 같이 커짐)
   const p = new Vector3(), scr = (v, r, c, x, z) => { p.set(x, 0, z).project(v.camera); return [(p.x + 1) / 2 * r.width + r.left - c.left, (1 - p.y) / 2 * r.height + r.top - c.top, p.z] }
-  let frame = 0
+  let frame = 0, refit = 0
   const tick = () => {
     if (!col.isConnected) return
     requestAnimationFrame(tick)
@@ -152,12 +163,12 @@ export function mountPlates(root, col) {
     const r = v.renderer.domElement.getBoundingClientRect(), c = col.getBoundingClientRect(), n = v.plateBeds.length
     v.camera.updateMatrixWorld()
     while (pool.length < n) pool.push(make(pool.length))
-    // 0.1.64 처음 열 때 판 전체가 보이게 — 뷰어의 기본 시점은 넓은 화면 기준이라 칸이 좁으면 판 가장자리 · 단추가 화면 밖으로 나감
-    if (v.__slcFit !== true && v.orbit && n === 1 && c.width > 200 && frame > 20) {
-      v.__slcFit = true
-      const bed = bedOf(v.plateBeds[0]), d = v.camera.position.clone().sub(v.orbit.target)
-      if (d.lengthSq() > 1) { d.normalize(); v.orbit.target.set(bed.x, 0, bed.z); v.camera.position.set(bed.x, 0, bed.z).addScaledVector(d, Math.max(bed.w, bed.d) * 1.9 / Math.min(1, c.width / c.height)); v.orbit.update(); v.invalidate && v.invalidate() }
-    }
+    // 0.1.64 처음 열 때 · 0.1.67 빈 판에 모델을 넣을 때 판 전체가 보이게 — 뷰어는 모델로 바짝 다가가서 판 옆 단추가 화면 밖으로 나감
+    const cnt = v.objectsGroup ? v.objectsGroup.children.length : 0
+    if (!v.__slcFit && frame > 20 && c.width > 200) { v.__slcFit = true; fitBeds(v, c) }
+    if (v.__slcN === 0 && cnt > 0) refit = frame + 40
+    v.__slcN = cnt
+    if (refit && frame >= refit) { refit = 0; fitBeds(v, c) }
     // 단추 색 = 판 몸체 색 (판 종류 · 색을 바꾸면 따라감) — 프레임마다 볼 필요 없어 가끔만
     if (!(frame++ % 30)) {
       const hex = String(plateLook().base)
