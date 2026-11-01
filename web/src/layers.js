@@ -109,6 +109,15 @@ export function mountLayers(root, col) {
     if (v >= max) sim.layer++
   }
 
+  /** 0.1.69 미리 보기에서도 길이 없는 판의 물체는 그대로 — 뷰어는 물체 묶음을 통째로 숨김 */
+  const others = (on) => {
+    const v = viewOf(), api = globalThis.__vpApi ? globalThis.__vpApi() : null, g = v && v.objectsGroup, beds = (v && v.plateBeds) || []; if (!g || !api) return
+    if (!on || beds.length < 2) { g.children.forEach((c) => { if (c.__slcHid) { c.__slcHid = false; c.visible = true } }); return }
+    const tp = v.toolpathGroup.children.map((c) => beds.findIndex((b) => Math.abs(b.border.position.x - c.position.x) < 1 && Math.abs(b.border.position.z - c.position.z) < 1))
+    g.visible = true
+    g.children.forEach((c) => { let hide = true; try { if (c.isMesh) hide = tp.includes(api.plateOfObject({ mesh: c })) } catch (e) {} if (hide && c.visible) { c.visible = false; c.__slcHid = true } else if (!hide && c.__slcHid) { c.__slcHid = false; c.visible = true } })
+    if (v.invalidate) v.invalidate()
+  }
   const res = mountResults(root, col)   // 0.1.35 📊 슬라이싱 결과 · 3D 표시 (미리 보기에서만)
   const sync = () => {
     try { res.update() } catch (e) {}
@@ -118,7 +127,7 @@ export function mountLayers(root, col) {
     // 0.1.26 두 번 확인 — 미리 보기 탭이 켜져 있고 · 3D 화면이 실제로 길(툴패스)을 보이고 있을 때만 (준비 화면에서는 늘 숨김)
     const vw = viewOf(), paths = !vw || !vw.toolpathGroup || vw.toolpathGroup.visible
     const on = !!(lo && hi) && !!(pv && pv.classList.contains('on')) && paths
-    col.classList.toggle('slc-pv', on); ly.hidden = !on; mv.hidden = !(on && m)
+    col.classList.toggle('slc-pv', on); ly.hidden = !on; mv.hidden = !(on && m); others(on)
     if (!on) { stopPlay(); return }
     // 0.1.28 자리 — 노즐 띠는 위 가운데(CSS) / 층 슬라이더는 왼쪽 「슬라이스 정보」 상자 위에서 끝남 · 3D 칸 아래가 화면 밖이면 화면 안까지만
     const cr = col.getBoundingClientRect(), vis = (e) => (e && e.offsetParent && !e.hidden ? e.getBoundingClientRect() : null)
