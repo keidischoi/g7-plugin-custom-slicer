@@ -112,21 +112,19 @@ export function mountPlates(root, col) {
     const v = viewOf(), A = api(), n = v ? v.plateBeds.length : 0; if (!A) return
     if (n <= 1) { nope(b, '판이 하나뿐이라 지울 수 없어요.'); return }
     if (locks.has(i)) { nope(b, '잠긴 판이에요 — 자물쇠를 풀면 지울 수 있어요.'); return }
-    // 0.1.72 판만 지우고 물체는 가장 가까운 안 잠긴 판으로 옮김 — 안 들어가면 지우지 않음
+    // 0.1.73 판만 지우고 물체는 다른 판에 넣지 않고 옆 판 뒤쪽 밖에 둠
     const all = objects(v, A), mine = all.filter((o) => o.plate === i), later = all.filter((o) => o.plate > i), beds = v.plateBeds.map(bedOf)
-    let to = -1; for (let d = 1; d < n && to < 0 && mine.length; d++) { if (i - d >= 0 && !locks.has(i - d)) to = i - d; else if (i + d < n && !locks.has(i + d)) to = i + d }
-    if (mine.length && to < 0) { nope(b, '다른 판이 모두 잠겨 있어 물체를 옮길 수 없어요.'); return }
-    const size = (o) => { const x = new Box3().setFromObject(o.mesh, true); return { w: x.max.x - x.min.x, d: x.max.z - x.min.z } }, there = all.filter((o) => o.plate === to)
-    if (mine.length && there.length && !packPlate(there.concat(mine).map(size), beds[to].w - MARGIN * 2, beds[to].d - MARGIN * 2, GAP)) { nope(b, '옆 판에 물체가 다 안 들어가요 — 물체를 먼저 옮겨 주세요.'); return }
-    const fin = to > i ? to - 1 : to   // 지운 뒤 번호
+    const fin = i > 0 ? i - 1 : 0   // 지운 뒤 번호
     A.clearSelection()
     // 뷰어는 마지막 판만 지움 — 뒤 판의 물체를 한 칸씩 당긴 뒤 마지막 판을 지움
-    const go = mine.map((o) => ({ id: o.id, mesh: o.mesh, dx: beds[fin].x - beds[i].x, dz: beds[fin].z - beds[i].z })).concat(later.map((o) => ({ id: o.id, mesh: o.mesh, dx: beds[o.plate - 1].x - beds[o.plate].x, dz: beds[o.plate - 1].z - beds[o.plate].z })))
+    let ox = beds[fin].x - beds[fin].w / 2
+    for (const o of all) { const x = new Box3().setFromObject(o.mesh, true); if (x.max.z <= beds[fin].z - beds[fin].d / 2) ox = Math.max(ox, x.max.x + GAP) }   // 먼저 밖에 둔 물체 옆으로
+    const go = mine.map((o) => { const x = new Box3().setFromObject(o.mesh, true), w = x.max.x - x.min.x, d = x.max.z - x.min.z, it = { id: o.id, mesh: o.mesh, dx: ox + w / 2 - (x.min.x + x.max.x) / 2, dz: beds[fin].z - beds[fin].d / 2 - d / 2 - GAP - (x.min.z + x.max.z) / 2 }; ox += w + GAP; return it }).concat(later.map((o) => ({ id: o.id, mesh: o.mesh, dx: beds[o.plate - 1].x - beds[o.plate].x, dz: beds[o.plate - 1].z - beds[o.plate].z })))
     if (go.length) moveAll(v, A, go)
     const next = new Set(); for (const k of locks) next.add(k > i ? k - 1 : k); locks.clear(); next.forEach((k) => locks.add(k))
     const nx = new Map(); for (const [k, t] of names) if (k !== i) nx.set(k > i ? k - 1 : k, t); names.clear(); nx.forEach((t, k) => names.set(k, t))
     const pd = root.querySelector('[data-testid="plate-del"]'); if (pd) pd.click()
-    if (mine.length) { await new Promise((r) => setTimeout(r, 120)); if (there.length) arrange(fin, b); say('판을 지우고 물체는 판 ' + (fin + 1) + ' 로 옮겼어요.') }
+    if (mine.length) say('판을 지우고 물체는 판 밖에 두었어요.')
   }
 
   // 0.1.63 판 이름 — 연필을 누르면 그 자리에 입력 칸 · Enter 또는 칸 밖을 누르면 저장 · Esc 취소
