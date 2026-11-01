@@ -91,6 +91,8 @@ export function plateCanvas(st, W, D) {
 
 /* ───────── 뷰어에 판을 깖 ───────── */
 const STATE = { printer: '', bedType: '', views: new Set() }
+/** 지금 깔린 판의 모양 (0.1.62 판 옆 단추 색) */
+export const plateLook = () => plateStyle(STATE.printer, STATE.bedType).look
 /** 앱이 지금 프린터 · 판 종류를 알려 줌 → 깔린 판을 다시 그림 */
 export function plateInfo(printer, bedType) {
   if (printer === STATE.printer && bedType === STATE.bedType) return

@@ -110,4 +110,26 @@ export function sizeOf(p) {
   return m ? [+m[1], +m[2], +m[3] || 0] : null
 }
 
+/** 0.1.62 판 자동 정렬 — 큰 것부터 줄 맞춰 놓음. 칸: {w, d} · 판 W×D · 틈 gap → 입력 순서대로 판 가운데 기준 {x, z} · 안 들어가면 null */
+export function packPlate(items, W, D, gap) {
+  const order = items.map((o, i) => i).sort((a, b) => items[b].d - items[a].d || items[b].w - items[a].w)
+  const rows = []
+  for (const i of order) {
+    const o = items[i]
+    if (o.w > W || o.d > D) return null
+    let row = rows.find((r) => r.w + gap + o.w <= W)
+    if (!row) { row = { w: -gap, d: 0, items: [] }; rows.push(row) }
+    row.items.push(i); row.w += gap + o.w; row.d = Math.max(row.d, o.d)
+  }
+  const total = rows.reduce((t, r) => t + r.d, 0) + gap * (rows.length - 1)
+  if (total > D) return null
+  const out = []; let z = -total / 2
+  for (const r of rows) {
+    let x = -r.w / 2
+    for (const i of r.items) { out[i] = { x: x + items[i].w / 2, z: z + r.d / 2 }; x += items[i].w + gap }
+    z += r.d + gap
+  }
+  return out
+}
+
 export { scalar }

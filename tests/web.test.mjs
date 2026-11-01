@@ -4,7 +4,7 @@ import { createHash } from 'node:crypto'
 import { crc32 as zcrc } from 'node:zlib'
 import { buildGcode3mf, bambuHeader, md5hex, crc32 } from '../web/src/gcode3mf.js'
 import { unzipModels } from '../web/src/handoff.js'
-import { maxZ, toolsOf, matchPreset, estimateSeconds, sizeOf } from '../web/src/util.js'
+import { maxZ, toolsOf, matchPreset, estimateSeconds, sizeOf, packPlate } from '../web/src/util.js'
 import { bump } from '../web/src/stepper.js'
 import { wrapKo } from '../web/i18n/wrap.mjs'
 import EN from '../web/i18n/en.js'
@@ -15,6 +15,15 @@ import { readFileSync } from 'node:fs'
 const readSrc = (u) => readFileSync(u, 'utf8').split(String.fromCharCode(13)).join('')
 let pass = 0, fail = 0
 const ok = (c, m) => { c ? pass++ : fail++; console.log((c ? '  ok   ' : '  FAIL ') + m) }
+
+// 0.1.62 판 자동 정렬
+{
+  const items = [{ w: 40, d: 40 }, { w: 100, d: 60 }, { w: 30, d: 20 }, { w: 80, d: 80 }], P = packPlate(items, 250, 250, 5)
+  const hit = (a, b) => Math.abs(P[a].x - P[b].x) < (items[a].w + items[b].w) / 2 + 4.99 && Math.abs(P[a].z - P[b].z) < (items[a].d + items[b].d) / 2 + 4.99
+  let clash = false; for (let a = 0; a < 4; a++) for (let b = a + 1; b < 4; b++) if (hit(a, b)) clash = true
+  ok(P && !clash && P.every((p, i) => Math.abs(p.x) + items[i].w / 2 <= 125 && Math.abs(p.z) + items[i].d / 2 <= 125), '판 정렬 — 겹침 없이 판 안')
+  ok(packPlate([{ w: 300, d: 10 }], 250, 250, 5) === null && packPlate([{ w: 200, d: 200 }, { w: 200, d: 200 }], 250, 250, 5) === null, '판 정렬 — 안 들어가면 null')
+}
 
 // md5 · crc32 — node 와 같은 값
 for (const s of ['', 'a', 'abc', 'x'.repeat(1000), '한글 G1 X10 Y20\n'.repeat(500)]) {
@@ -345,7 +354,7 @@ sl.dispose()
     { const KO = JSON.parse(readSrc(new URL('../web/i18n/ko.json', import.meta.url))), i18 = readSrc(new URL('../web/src/i18n.js', import.meta.url)), pol = readSrc(new URL('../web/src/polish.js', import.meta.url))
       ok(KO['Layer height'] === '레이어 높이' && KO['Line width'] === '선 너비' && Object.keys(KO).length > 1000 && i18.includes("localStorage.getItem('g7_locale')") && i18.includes('.lbl[data-en]::after') && pol.includes('if (opts.ko) loadKo()') && app.includes("ko: siteLang() === 'ko'"),
         '0.1.11 한국어 사이트 — 설정 이름 한국어 + 아래 영어 (OrcaSlicer 한국어 번역 · g7_locale)') }
-    { const miss = []; for (const f of ['app.js', 'quick.js', 'toolbar.js', 'plate.js', 'profiles.js', 'layers.js', 'results.js', 'merge3mf.js']) wrapKo(readSrc(new URL('../web/src/' + f, import.meta.url))).found.forEach((x) => { if (/[가-힣]/.test(x) && EN[x] == null) miss.push(f + ': ' + x.slice(0, 40)) })
+    { const miss = []; for (const f of ['app.js', 'quick.js', 'toolbar.js', 'plate.js', 'plates.js', 'profiles.js', 'layers.js', 'results.js', 'merge3mf.js']) wrapKo(readSrc(new URL('../web/src/' + f, import.meta.url))).found.forEach((x) => { if (/[가-힣]/.test(x) && EN[x] == null) miss.push(f + ': ' + x.slice(0, 40)) })
       const w = wrapKo("const a = '판', b = { '키': 1 }, c = /'한'/.test(x) // '주석'\nconst d = `${x}한`"), ldr = readSrc(new URL('../resources/js/slicer.js', import.meta.url)), bm = readSrc(new URL('../web/build.mjs', import.meta.url))
       if (miss.length) console.log('    영어 없음:', miss)
       ok(!miss.length && w.found.length === 1 && w.code.includes("__T('판')") && w.code.includes("{ '키': 1 }") && w.code.includes("/'한'/") && ldr.includes('function __T(s)') && ldr.includes('label = __T(c.menu_label') && bm.includes('plugins: [scenePlugin, langPlugin]'),
