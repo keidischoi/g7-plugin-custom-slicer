@@ -166,7 +166,7 @@ export function mountPlates(root, col) {
     // 0.1.64 처음 열 때 · 0.1.67 빈 판에 모델을 넣을 때 판 전체가 보이게 — 뷰어는 모델로 바짝 다가가서 판 옆 단추가 화면 밖으로 나감
     const cnt = v.objectsGroup ? v.objectsGroup.children.length : 0
     if (!v.__slcFit && frame > 20 && c.width > 200) { v.__slcFit = true; fitBeds(v, c) }
-    if (v.__slcN === 0 && cnt > 0) refit = frame + 40
+    if (!v.__slcN && cnt > 0) refit = frame + 40   // 지난 작업이 복원돼도 같게
     v.__slcN = cnt
     if (refit && frame >= refit) { refit = 0; fitBeds(v, c) }
     // 단추 색 = 판 몸체 색 (판 종류 · 색을 바꾸면 따라감) — 프레임마다 볼 필요 없어 가끔만
