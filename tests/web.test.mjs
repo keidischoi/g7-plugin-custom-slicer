@@ -23,7 +23,9 @@ const ok = (c, m) => { c ? pass++ : fail++; console.log((c ? '  ok   ' : '  FAIL
   let clash = false; for (let a = 0; a < 4; a++) for (let b = a + 1; b < 4; b++) if (hit(a, b)) clash = true
   ok(P && !clash && P.every((p, i) => Math.abs(p.x) + items[i].w / 2 <= 125 && Math.abs(p.z) + items[i].d / 2 <= 125), '판 정렬 — 겹침 없이 판 안')
   { const P0 = { change_filament_gcode: 'G2 Z{z_after_toolchange + 0.4}\nG1 X{wipe_tower_outer_wall_x - prime_tower_width*wipe_tower_random_num} Y{wipe_tower_outer_wall_y+0.1} F30000\nG1 Z{z_after_toolchange} F600', layer_height: 0.2 }, c = cleanGcodeParams(P0), same = { machine_start_gcode: 'G28\nG1 X{wipe_tower_x}' }
-    ok(c.change_filament_gcode === 'G2 Z{z_after_toolchange + 0.4}\nG1 Z{z_after_toolchange} F600' && c.layer_height === 0.2 && P0.change_filament_gcode.includes('outer_wall') && cleanGcodeParams(same) === same, '엔진이 모르는 G-code 줄만 뺌 · 원본은 그대로') }
+    ok(c.change_filament_gcode === 'G2 Z{z_after_toolchange + 0.4}\nG1 Z{z_after_toolchange} F600' && c.layer_height === 0.2 && P0.change_filament_gcode.includes('outer_wall') && cleanGcodeParams(same) === same, '엔진이 모르는 G-code 줄만 뺌 · 원본은 그대로')
+    const P1 = { layer_height: 0.2, placeholder_config: JSON.stringify({ change_filament_gcode: ['A\nG1 X{wipe_tower_random_num}\nB'], $plate_number: 1 }) }, inner = JSON.parse(cleanGcodeParams(P1).placeholder_config)
+    ok(inner.change_filament_gcode[0] === 'A\nB' && inner.$plate_number === 1 && P1.placeholder_config.includes('random_num'), 'placeholder_config 안의 G-code 도 뺌') }
   ok(packPlate([{ w: 300, d: 10 }], 250, 250, 5) === null && packPlate([{ w: 200, d: 200 }, { w: 200, d: 200 }], 250, 250, 5) === null, '판 정렬 — 안 들어가면 null')
 }
 

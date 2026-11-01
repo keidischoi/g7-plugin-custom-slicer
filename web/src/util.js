@@ -143,6 +143,9 @@ export function cleanGcodeParams(p) {
     const v = p[k], n = typeof v === 'string' ? cleanLines(v) : Array.isArray(v) ? v.map((x) => typeof x === 'string' ? cleanLines(x) : x) : v
     if (JSON.stringify(n) !== JSON.stringify(v)) { if (out === p) out = { ...p }; out[k] = n }
   }
+  // 0.1.76 change_filament_gcode 같은 틀은 평범한 칸이 아니라 placeholder_config (JSON 글자 하나) 안에 들어감
+  const c = p.placeholder_config
+  if (typeof c === 'string' && UNKNOWN_GCODE_VARS.test(c)) { if (out === p) out = { ...p }; out.placeholder_config = JSON.stringify(cleanGcodeParams(JSON.parse(c))) }
   return out
 }
 
