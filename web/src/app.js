@@ -10,6 +10,7 @@ import { printersByVendor, printerSettings, printerKeys, printerDefaultBedType, 
 import { bambuHeader, buildGcode3mf } from './gcode3mf.js'
 import { unzipModels } from './handoff.js'
 import { siteLang } from './i18n.js'
+globalThis.__slcPrep = '준비 중… 큰 모델은 몇 분'   // 0.1.74 슬라이스 단추 0% 글자
 import './colors3mf.js'   // 0.1.14 3MF 원본 색 (뷰어 불러오기 갈고리)
 import './nozzle.js'   // 0.1.23 미리 보기 노즐 모양 (뷰어 노즐 갈고리)
 import { setResultSource } from './results.js'   // 0.1.35 📊 슬라이싱 결과

@@ -7,7 +7,7 @@ export default {
 
   
 
-  '판을 지우고 물체는 판 밖에 두었어요.': 'Plate removed. Objects were placed outside the plate.',
+  '준비 중… 큰 모델은 몇 분': 'Preparing… large models take minutes', '판을 지우고 물체는 판 밖에 두었어요.': 'Plate removed. Objects were placed outside the plate.',
 
   
 
