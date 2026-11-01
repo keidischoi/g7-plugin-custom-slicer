@@ -73,6 +73,10 @@ const scenePlugin = {
     b.onLoad({ filter: /three-slicer-viewer[\\/]dist[\\/]index\.js$/ }, (args) => {
       let s = readFileSync(args.path, 'utf8')
       const PAIRS = [
+        // 0.1.74 🎨 칠한 큰 모델 — 색을 나누는 동안(8색 50만 삼각형 ≈ 90초) 진행 소식이 없어 60초 감시가 끊고 재시도까지 실패했음 → 15분으로
+        ['const X = 6e4, ee = 3e5;', 'const X = 9e5, ee = 9e5;'],
+        // 0% 는 아직 준비 중 — 멈춘 것처럼 보이지 않게 (글자는 web/src/app.js __slcPrep)
+        ['n ? `Slicing… ${Math.round(r * 100)}%` : a > 1 ? "Slice ▾" : "Slice"', 'n ? (r > 0 ? `Slicing… ${Math.round(r * 100)}%` : globalThis.__slcPrep || "Preparing…") : a > 1 ? "Slice ▾" : "Slice"'],
         ['[f.gridThin, f.gridBold, f.border, f.label, f.slaFill, f.slaEdge]', '[f.gridThin, f.gridBold, f.border, f.label, f.slaFill, f.slaEdge, f.slcPlate]'],
         ['t.scene.add(E), t.plateBeds.push({ gridThin: _, gridBold: N, border: x, label: E });',
           't.scene.add(E); const __slcP = globalThis.__slcPlateHook ? globalThis.__slcPlateHook(e, t, { index: f, x: m, z: b, w: g, d: y, selected: F }) : null; __slcP && (t.scene.add(__slcP), _.visible = !__slcP.visible, N.visible = !__slcP.visible); t.plateBeds.push({ gridThin: _, gridBold: N, border: x, label: E, slcPlate: __slcP || void 0 });'],
