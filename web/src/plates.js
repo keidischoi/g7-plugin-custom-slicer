@@ -155,6 +155,26 @@ export function mountPlates(root, col) {
 
   // 판 바닥의 단추 자리를 화면으로 — 판과 같은 기울기로 눕힘 (mm 크기라 확대하면 같이 커짐)
   const p = new Vector3(), scr = (v, r, c, x, z) => { p.set(x, 0, z).project(v.camera); return [(p.x + 1) / 2 * r.width + r.left - c.left, (1 - p.y) / 2 * r.height + r.top - c.top, p.z] }
+  // 0.1.71 탭은 판 바닥에 누워 있으므로 화면에서 물체 윤곽 안에 들면 물체 뒤 — 3D 위에 얹은 칸이라 가려지지 않아 숨김
+  const hullOf = (a) => {
+    a.sort((p, q) => p[0] - q[0] || p[1] - q[1]); const o = [], cr = (O, A, B) => (A[0] - O[0]) * (B[1] - O[1]) - (A[1] - O[1]) * (B[0] - O[0])
+    for (const t of a) { while (o.length > 1 && cr(o[o.length - 2], o[o.length - 1], t) <= 0) o.pop(); o.push(t) }
+    for (let i = a.length - 2, t = o.length + 1; i >= 0; i--) { while (o.length >= t && cr(o[o.length - 2], o[o.length - 1], a[i]) <= 0) o.pop(); o.push(a[i]) }
+    o.pop(); return o
+  }
+  const inHull = (h, x, y) => h.length > 2 && h.every((A, i) => { const B = h[(i + 1) % h.length]; return (B[0] - A[0]) * (y - A[1]) - (B[1] - A[1]) * (x - A[0]) >= 0 })
+  const q = new Vector3(), cov = { ck: '', hs: [] }, covered = (x, y) => cov.hs.some((h) => inHull(h, x, y))
+  const cover = (v, r, c) => {
+    const ms = v.objectsGroup ? v.objectsGroup.children.filter((m) => m.isMesh && m.visible && m.renderOrder !== PAINT_ORDER && m.geometry && m.geometry.attributes.position) : []
+    const ck = v.camera.matrixWorld.elements.join() + v.camera.projectionMatrix.elements.join() + r.width + ',' + r.height + ms.map((m) => m.matrixWorld.elements.join()).join()
+    if (ck === cov.ck) return; cov.ck = ck
+    const at = () => { q.project(v.camera); return [(q.x + 1) / 2 * r.width + r.left - c.left, (1 - q.y) / 2 * r.height + r.top - c.top] }
+    cov.hs = ms.map((m) => {
+      const a = m.geometry.attributes.position, st = Math.max(1, Math.floor(a.count / 500)), o = []
+      for (let j = 0; j < a.count; j += st) { q.fromBufferAttribute(a, j).applyMatrix4(m.matrixWorld); const x = q.x, z = q.z; o.push(at()); q.set(x, 0, z); o.push(at()) }
+      return hullOf(o)
+    })
+  }
   let frame = 0, refit = 0
   const tick = () => {
     if (!col.isConnected) return
@@ -163,6 +183,7 @@ export function mountPlates(root, col) {
     const r = v.renderer.domElement.getBoundingClientRect(), c = col.getBoundingClientRect(), n = v.plateBeds.length
     v.camera.updateMatrixWorld()
     while (pool.length < n) pool.push(make(pool.length))
+    cover(v, r, c)
     // 0.1.64 처음 열 때 · 0.1.67 빈 판에 모델을 넣을 때 판 전체가 보이게 — 뷰어는 모델로 바짝 다가가서 판 옆 단추가 화면 밖으로 나감
     const cnt = v.objectsGroup ? v.objectsGroup.children.length : 0
     if (!v.__slcFit && frame > 20 && c.width > 200) { v.__slcFit = true; fitBeds(v, c) }
@@ -187,7 +208,8 @@ export function mountPlates(root, col) {
         const o = scr(v, r, c, px, pz), ax = scr(v, r, c, px + half, pz), az = scr(v, r, c, px, pz + half)
         const m = [(ax[0] - o[0]) / (BTN / 2), (ax[1] - o[1]) / (BTN / 2), (az[0] - o[0]) / (BTN / 2), (az[1] - o[1]) / (BTN / 2)]
         const big = Math.hypot(m[0], m[1]) * BTN >= 8 && Math.hypot(m[2], m[3]) * BTN >= 6
-        x.hidden = !big || o[2] > 1 || o[0] < 0 || o[1] < 0 || o[0] > c.width || o[1] > c.height
+        const ux = ax[0] - o[0], uy = ax[1] - o[1], vx = az[0] - o[0], vy = az[1] - o[1], hid = covered(o[0], o[1]) || covered(o[0] + ux + vx, o[1] + uy + vy) || covered(o[0] + ux - vx, o[1] + uy - vy) || covered(o[0] - ux + vx, o[1] - uy + vy) || covered(o[0] - ux - vx, o[1] - uy - vy)
+        x.hidden = !big || hid || o[2] > 1 || o[0] < 0 || o[1] < 0 || o[0] > c.width || o[1] > c.height
         if (!x.hidden) x.style.transform = 'matrix(' + m.map((t) => t.toFixed(4)).join(',') + ',' + o[0].toFixed(1) + ',' + o[1].toFixed(1) + ')'
       })
       const ns = 0.7, nx = bed.x - bed.w / 2, nz = bed.z - bed.d / 2 - 5 - 18 * ns, n0 = scr(v, r, c, nx, nz), n1 = scr(v, r, c, nx + 16 * ns, nz), n2 = scr(v, r, c, nx, nz + 16 * ns)
