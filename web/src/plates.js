@@ -30,6 +30,8 @@ export const PLATE_CSS = `
 .slc-pn.no{opacity:.45}
 .slc-pn button{display:grid;place-items:center;width:18px;height:18px;padding:0;border:0;background:none;color:inherit;cursor:pointer;pointer-events:auto}
 .slc-pn svg{width:15px;height:15px}
+.slc-pn button{position:relative}
+.slc-pn button::after{content:"";position:absolute;inset:-22px -8px}
 .slc-pni{position:absolute;width:180px;height:30px;padding:0 8px;border:1px solid var(--_accent,#0ea5e9);border-radius:8px;background:#0f172a;color:#fff;font-size:14px;pointer-events:auto}
 .slc-pbmsg{position:absolute;left:50%;top:14px;translate:-50% 0;max-width:80%;padding:7px 12px;border-radius:10px;background:rgba(15,23,42,.9);color:#fff;font-size:13px;pointer-events:none}
 `
