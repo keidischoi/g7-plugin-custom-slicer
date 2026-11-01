@@ -1,4 +1,4 @@
-/*! custom-slicer 0.1.60 — 🔪 슬라이서 불러오기 (전역) · AGPL-3.0-or-later
+/*! custom-slicer 0.1.61 — 🔪 슬라이서 불러오기 (전역) · AGPL-3.0-or-later
  *  - 슬라이서 화면(data-slc-app) · 다른 화면의 큰 창 · window.G7Slicer.mount 를 부를 때만 앱 · 엔진을 받음
  *  - 헤더 메뉴 「슬라이서」
  *  - 다른 확장의 받기 단추(data-wsl-send) 옆 「🖨️ 프린터로 보내기」 — 웹 슬라이서(custom-web_slicer)와 같은 작은 팝업을 이 플러그인이 맡음 (「↗ 자세히」로 큰 슬라이서)
@@ -10,7 +10,7 @@
   function __T(s) { var l = ''; try { l = localStorage.getItem('g7_locale') || ''; } catch (e) {} l = l || document.documentElement.getAttribute('lang') || navigator.language || 'ko'; if (/^ko/i.test(l)) return s; var t = EN_T.hasOwnProperty(s) ? EN_T[s] : s; return t.replace(/「/g, '“').replace(/」/g, '”'); }
   if (window.__slcLoader) return;
   window.__slcLoader = true;
-  var API = '/api/plugins/custom-slicer', V = '0.1.60', loading = null;
+  var API = '/api/plugins/custom-slicer', V = '0.1.61', loading = null;
   function css() {
     if (document.getElementById('slc-css')) return;
     var l = document.createElement('link'); l.id = 'slc-css'; l.rel = 'stylesheet'; l.href = API + '/assets/app.css?v=' + V; document.head.appendChild(l);
@@ -52,7 +52,7 @@
   function resin(host) {
     if (!document.getElementById('pck-css')) { var l = document.createElement('link'); l.id = 'pck-css'; l.rel = 'stylesheet'; l.href = PCK + '/assets/print-check.css?v=' + V; document.head.appendChild(l); }
     if (window.PCResinMount) { window.PCResinMount(host); return; }
-    host.innerHTML = '<p class="slc-perr">' + __T('레진 슬라이스 불러오는 중…') + '</p>';
+    host.innerHTML = '<p class="slc-perr" style="color:inherit;font-weight:400">' + __T('레진 슬라이스 불러오는 중…') + '</p>';
     var s = document.createElement('script'); s.src = PCK + '/assets/print-check-resin.js?v=' + V;
     s.onload = function () { if (window.PCResinMount) window.PCResinMount(host); else host.innerHTML = '<p class="slc-perr">⚠️ ' + __T('출력 검사기를 최신으로 올려 주세요.') + '</p>'; };
     s.onerror = function () { resinOn = false; host.innerHTML = '<p class="slc-perr">⚠️ ' + __T('레진 슬라이스는 출력 검사기 플러그인이 켜져 있어야 해요.') + '</p>'; };
