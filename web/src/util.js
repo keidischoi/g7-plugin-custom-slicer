@@ -132,4 +132,18 @@ export function packPlate(items, W, D, gap) {
   return out
 }
 
+/** 0.1.75 🎨 프린터 프로필 G-code 에서 엔진이 모르는 자리 글자가 든 줄을 뺌 — 크리얼리티 K1 CFS 필라멘트 교체의 프라임 타워 이동 줄:
+ *  엔진은 슬라이스 맨 끝에서야 이 글자로 오류를 내서, 칠한 큰 모델은 몇 분을 버리고 처음부터 다시 돌았음 */
+const UNKNOWN_GCODE_VARS = /\b(wipe_tower_outer_wall_[xy]|wipe_tower_random_num)\b/
+const cleanLines = (t) => t.split('\n').filter((l) => !UNKNOWN_GCODE_VARS.test(l)).join('\n')
+export function cleanGcodeParams(p) {
+  let out = p
+  for (const k of Object.keys(p)) {
+    if (!/gcode$/.test(k)) continue
+    const v = p[k], n = typeof v === 'string' ? cleanLines(v) : Array.isArray(v) ? v.map((x) => typeof x === 'string' ? cleanLines(x) : x) : v
+    if (JSON.stringify(n) !== JSON.stringify(v)) { if (out === p) out = { ...p }; out[k] = n }
+  }
+  return out
+}
+
 export { scalar }
