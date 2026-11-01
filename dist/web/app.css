@@ -1,4 +1,4 @@
-/* custom-slicer 0.1.59 — 🔪 슬라이서 바깥 틀 · AGPL-3.0-or-later
+/* custom-slicer 0.1.60 — 🔪 슬라이서 바깥 틀 · AGPL-3.0-or-later
  *  모양은 출력 검사기(.pck)와 같은 말씨 — 하늘색→남색 그라데이션 · 둥근 카드 · 알약 칩. 뷰어 · 설정 칸은 자기 Shadow DOM 안에서 그리므로
  *  CSS 변수(--vp-*)로만 색을 맞춤 (그림자 경계를 넘는 건 변수뿐) */
 .slc { --ink:#0f172a; --mute:#64748b; --line:#e2e8f0; --card:#fff; --bg2:#f8fafc; --soft:#ecfeff; --a:#0ea5e9; --a2:#6366f1; --bad:#dc2626; --ok:#16a34a;
@@ -221,7 +221,7 @@ html.dark .slc-qhd button:hover, .slc[data-slc-theme=dark] .slc-qhd button:hover
 .slc-spfbody { flex:1; min-height:0; overflow:auto; padding:6px 10px 16px; scrollbar-width:none; } .slc-spfbody::-webkit-scrollbar { display:none; }
 .slc-spfbody .spf { max-width:none; }
 
-/* 0.1.59 🧵 필라멘트 / 🧪 레진 탭 */
+/* 0.1.59 🧵 FDM / 🧪 레진 탭 */
 .slc-modes { display: flex; gap: 6px; max-width: 1320px; margin: 12px auto 8px; padding: 0 16px; }
 .slc-modes button { padding: 8px 16px; border: 1px solid rgba(148, 163, 184, .4); border-radius: 12px; background: transparent; color: inherit; font-weight: 800; cursor: pointer; }
 .slc-modes button.on { background: #0ea5e9; border-color: #0ea5e9; color: #fff; }
