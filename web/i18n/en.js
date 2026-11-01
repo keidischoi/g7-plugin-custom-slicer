@@ -1,6 +1,12 @@
 // 영어 사이트용 — 빌드가 한글 글자를 __T('…') 로 감싸고, 영어면 여기서 찾아 바꿈 (없으면 한글 그대로)
 // 키는 소스의 한글 글자 그대로 (조각 문자열도 — 앞뒤 빈칸까지 같게)
 export default {
+  '잠긴 판이에요 — 자물쇠를 풀면 정렬할 수 있어요.': 'This plate is locked — unlock it to arrange.', '이 판에 물체가 없어요.': 'This plate has no objects.',
+  '물체가 판에 다 안 들어가요 — 다른 판으로 옮기거나 크기를 줄여 주세요.': 'The objects do not fit on the plate — move some to another plate or scale them down.',
+  '판이 하나뿐이라 지울 수 없어요.': 'There is only one plate, so it cannot be deleted.', '잠긴 판이에요 — 자물쇠를 풀면 지울 수 있어요.': 'This plate is locked — unlock it to delete.',
+  '판 ': 'Delete plate ', ' 과 물체 ': ' and ', '개를 지울까요?': ' object(s)?', '판 추가': 'Add plate', '이 판 자동 정렬': 'Auto-arrange this plate',
+  '판 잠금 — 잠그면 정렬 · 지우기를 하지 않아요': 'Lock plate — a locked plate is not arranged or deleted', '이 판 지우기': 'Delete this plate', '판은 9개까지예요.': 'Up to 9 plates.',
+
   '시간': 'h', '분': 'm', '보냈어요.': 'Sent.',
   '파일이 너무 커요 — 서버의 올리기 한도를 넘었어요.': 'The file is too big — it is over the server upload limit.',
   '로그인이 필요해요.': 'Please log in.', '보내지 못했어요 (': 'Could not send (', '연결이 끊겼어요 — 다시 해 주세요.': 'The connection dropped — please try again.',

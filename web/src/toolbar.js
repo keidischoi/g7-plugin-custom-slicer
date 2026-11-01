@@ -6,6 +6,7 @@ import { attachDrag, applyArrows } from './freedrag.js'
 import { flip, layDown, faceMode } from './orient.js'
 import { mountLayers } from './layers.js'
 import { resetMergePref, mergePref } from './merge3mf.js'
+import { mountPlates, PLATE_CSS } from './plates.js'
 
 const ICONS = {
   cube: '<path d="M12 2.5 20.5 7v10L12 21.5 3.5 17V7z"/><path d="M3.5 7 12 11.5 20.5 7M12 11.5v10"/>',
@@ -133,9 +134,10 @@ export function mountToolbar(host, ctx) {
   walk(host)
   if (!root) return false
   try { attachDrag(viewOf()) } catch (e) {}   // 0.1.15 ✋ 물체 몸을 잡고 끌어 옮기기 (뷰어마다 한 번)
-  if (!root.querySelector('style[data-slc-tool]')) { const st = document.createElement('style'); st.setAttribute('data-slc-tool', '1'); st.textContent = TOOL_CSS; root.appendChild(st) }
+  if (!root.querySelector('style[data-slc-tool]')) { const st = document.createElement('style'); st.setAttribute('data-slc-tool', '1'); st.textContent = TOOL_CSS + PLATE_CSS; root.appendChild(st) }
   const col = root.querySelector('.viewport-col')
   try { mountLayers(root, col) } catch (e) {}   // 0.1.22 미리 보기 층 · 노즐 슬라이더
+  try { mountPlates(root, col) } catch (e) {}   // 0.1.62 판 옆 단추
   if (!col || col.querySelector('.slc-vt')) return true
   const pref = lookPref()
   let mini = false; try { mini = localStorage.getItem('slc-vt-min') === '1' } catch (e) {}
