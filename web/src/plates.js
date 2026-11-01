@@ -183,7 +183,7 @@ export function mountPlates(root, col) {
       s.nb.hidden = n0[2] > 1 || n0[0] < -150 || n0[1] < -30 || n0[0] > c.width || n0[1] > c.height
       if (!s.nb.hidden) {
         s.nb.style.transform = 'matrix(' + [(n1[0] - n0[0]) / 16, (n1[1] - n0[1]) / 16, (n2[0] - n0[0]) / 16, (n2[1] - n0[1]) / 16].map((t) => t.toFixed(4)).join(',') + ',' + n0[0].toFixed(1) + ',' + n0[1].toFixed(1) + ')'
-        const nm = names.get(i) || '', nt = nm || '판 이름'; if (s.nb.firstChild.textContent !== nt) s.nb.firstChild.textContent = nt; s.nb.classList.toggle('no', !nm)
+        const nm = names.get(i) || ''; if (s.nb.firstChild.textContent !== nm) s.nb.firstChild.textContent = nm; s.nb.classList.toggle('no', !nm)
       }
       const lk = locks.has(i), lb = s[2]
       if (lb.classList.contains('on') !== lk) { lb.classList.toggle('on', lk); lb.innerHTML = ic(lk ? 'lock' : 'unlock') }
