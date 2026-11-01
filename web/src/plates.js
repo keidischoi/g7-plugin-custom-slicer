@@ -150,6 +150,12 @@ export function mountPlates(root, col) {
     const r = v.renderer.domElement.getBoundingClientRect(), c = col.getBoundingClientRect(), n = v.plateBeds.length
     v.camera.updateMatrixWorld()
     while (pool.length < n) pool.push(make(pool.length))
+    // 0.1.64 처음 열 때 판 전체가 보이게 — 뷰어의 기본 시점은 넓은 화면 기준이라 칸이 좁으면 판 가장자리 · 단추가 화면 밖으로 나감
+    if (v.__slcFit !== true && v.orbit && n === 1 && c.width > 200 && frame > 20) {
+      v.__slcFit = true
+      const bed = bedOf(v.plateBeds[0]), d = v.camera.position.clone().sub(v.orbit.target)
+      if (d.lengthSq() > 1) { d.normalize(); v.orbit.target.set(bed.x, 0, bed.z); v.camera.position.set(bed.x, 0, bed.z).addScaledVector(d, Math.max(bed.w, bed.d) * 1.9 / Math.min(1, c.width / c.height)); v.orbit.update(); v.invalidate && v.invalidate() }
+    }
     // 단추 색 = 판 몸체 색 (판 종류 · 색을 바꾸면 따라감) — 프레임마다 볼 필요 없어 가끔만
     if (!(frame++ % 30)) {
       const hex = String(plateLook().base)
@@ -171,7 +177,7 @@ export function mountPlates(root, col) {
         x.hidden = !big || o[2] > 1 || o[0] < 0 || o[1] < 0 || o[0] > c.width || o[1] > c.height
         if (!x.hidden) x.style.transform = 'matrix(' + m.map((t) => t.toFixed(4)).join(',') + ',' + o[0].toFixed(1) + ',' + o[1].toFixed(1) + ')'
       })
-      const ns = 0.42, nx = bed.x - bed.w / 2, nz = bed.z - bed.d / 2 - 5 - 18 * ns, n0 = scr(v, r, c, nx, nz), n1 = scr(v, r, c, nx + 16 * ns, nz), n2 = scr(v, r, c, nx, nz + 16 * ns)
+      const ns = 0.7, nx = bed.x - bed.w / 2, nz = bed.z - bed.d / 2 - 5 - 18 * ns, n0 = scr(v, r, c, nx, nz), n1 = scr(v, r, c, nx + 16 * ns, nz), n2 = scr(v, r, c, nx, nz + 16 * ns)
       s.nb.hidden = n0[2] > 1 || n0[0] < -150 || n0[1] < -30 || n0[0] > c.width || n0[1] > c.height
       if (!s.nb.hidden) {
         s.nb.style.transform = 'matrix(' + [(n1[0] - n0[0]) / 16, (n1[1] - n0[1]) / 16, (n2[0] - n0[0]) / 16, (n2[1] - n0[1]) / 16].map((t) => t.toFixed(4)).join(',') + ',' + n0[0].toFixed(1) + ',' + n0[1].toFixed(1) + ')'
