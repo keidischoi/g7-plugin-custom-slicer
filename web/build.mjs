@@ -185,6 +185,9 @@ await build({
   logLevel: 'warning', charset: 'utf8',
 })
 cpSync(join(root, 'web/src/app.css'), join(out, 'app.css'))
+// 0.1.78 🧵 멀티스레드 코어 — 묶음 조각이 곁에서 wasm 을 읽고, 스레드 워커는 원본 글루를 새로 부름 (없으면 조용히 단일 스레드)
+//  실제로 쓰이려면 페이지에 COOP/COEP 헤더가 있어야 함 — 사이트는 아직 안 켬
+for (const x of ['slicer_core.mt.js', 'slicer_core.mt.wasm']) cpSync(join(root, 'node_modules/three-slicer/engine/src', x), join(out, x))
 cpSync(join(root, 'node_modules/three-slicer/LICENSE.txt'), join(out, 'three-slicer-LICENSE.txt'))
 cpSync(join(root, 'node_modules/three-slicer/THIRD-PARTY-NOTICES.md'), join(out, 'three-slicer-NOTICES.txt'))
 const files = readdirSync(out).map((f) => [f, statSync(join(out, f)).size])

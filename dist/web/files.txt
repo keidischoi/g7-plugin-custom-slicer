@@ -23,5 +23,7 @@ sl1_encode.worker.js	407
 sla_reconstruct.worker.js	787
 sla_slice.worker.js	2162
 slicer.worker.js	84666
+slicer_core.mt.js	107109
+slicer_core.mt.wasm	5982075
 three-slicer-LICENSE.txt	34520
 three-slicer-NOTICES.txt	2858
