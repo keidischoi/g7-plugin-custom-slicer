@@ -118,4 +118,5 @@ export default {
   '이 슬라이서 설정 파일(.': 'This slicer settings file (.', ')은 읽을 수 없어요 — Bambu Studio · OrcaSlicer 프로필만 바로 적용돼요.': ') cannot be read — only Bambu Studio · OrcaSlicer profiles apply directly.',
   '프로필 파일을 읽지 못했어요 (JSON 이 아니에요).': 'Could not read the profile file (not JSON).', '프로젝트 설정(project_settings.config)을 읽지 못했어요.': 'Could not read the project settings (project_settings.config).',
   '이 묶음 안에서 슬라이서 설정을 찾지 못했어요.': 'No slicer settings found in this bundle.', '올릴 설정을 만들지 못했어요.': 'Could not build the settings to post.',
+  'ZIP 파일이 아니에요': 'Not a ZIP file',
 }
