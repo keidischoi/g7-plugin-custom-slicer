@@ -160,6 +160,9 @@ html.dark .slc-qhd button:hover, .slc[data-slc-theme=dark] .slc-qhd button:hover
 .slc-pmain { flex:1; min-width:0; display:flex; flex-direction:column; gap:3px; } .slc-pmain b { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; } .slc-pmain small { color:#64748b; }
 .slc-ptags { display:flex; flex-wrap:wrap; gap:4px; } .slc-ptags i { font-style:normal; font-size:11px; font-weight:700; padding:2px 8px; border-radius:99px; background:#f1f5f9; color:#475569; }
 .slc-ptags i.ok { background:#ecfdf5; color:#047857; }
+/* 0.1.82 🧵 카탈로그 필라멘트 사진 */
+.slc-pimg { width:44px; height:44px; flex:0 0 44px; border-radius:10px; object-fit:cover; background:#f1f5f9; }
+.slc[data-slc-theme=dark] .slc-pcard { background:#111c33; border-color:#334155; } .slc[data-slc-theme=dark] .slc-ptags i { background:#1e293b; color:#cbd5e1; } .slc[data-slc-theme=dark] .slc-pimg { background:#1e293b; }
 .slc-dlg a.slc-btn { text-decoration:none; }
 @media (max-width:640px) { .slc { padding:8px 8px 0; } .slc-hero { padding:16px; border-radius:18px; } .slc-hero h1 { font-size:21px; } .slc-badge { display:none; }
   .slc--page .slc-stage { height:calc(100vh - 170px); } .slc-pop { padding:0; } .slc-pop-box { border-radius:0; } .slc-sum { white-space:normal; } }

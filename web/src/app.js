@@ -1,4 +1,4 @@
-/*! custom-slicer 0.1.81 — 🔪 슬라이서 화면 · AGPL-3.0-or-later · 소스: https://github.com/keidischoi/g7-plugin-custom-slicer
+/*! custom-slicer 0.1.82 — 🔪 슬라이서 화면 · AGPL-3.0-or-later · 소스: https://github.com/keidischoi/g7-plugin-custom-slicer
  *  엔진 · 화면: three-slicer (OrcaSlicer 를 WebAssembly 로 옮긴 것, AGPL) — <Viewport/>(판 배치 · 이동/회전/크기 · 칠하기 · 슬라이스 · G-code 미리 보기)
  *  + <SettingsPanel/>(OrcaSlicer 설정). 이 파일은 그 바깥 틀: 프린터 라운지의 내 프린터 · 📤 보내기 · .gcode.3mf · 다른 화면에서 넘겨받은 파일
  *  모델은 서버로 올라가지 않음 — 이 브라우저에서만 읽고 슬라이스 */
@@ -6,7 +6,8 @@ import React from 'react'
 import { createRoot } from 'react-dom/client'
 import Viewport from 'three-slicer/viewer'
 import SettingsPanel from 'three-slicer/components'
-import { printersByVendor, printerSettings, printerKeys, printerDefaultBedType, printerTechByVendor } from 'three-slicer/settings'
+import { printersByVendor, printerSettings, printerKeys, printerDefaultBedType, printerTechByVendor, filamentPresets } from 'three-slicer/settings'
+import { CAT, catalogFilaments, catalogFilament, bestPreset, applyCatalog, slotCount } from './catfil.js'   // 0.1.82 🧵 카탈로그 필라멘트
 import { bambuHeader, buildGcode3mf } from './gcode3mf.js'
 import { unzipModels } from './handoff.js'
 import { siteLang } from './i18n.js'
@@ -25,7 +26,7 @@ import { savePlate, loadPlate, clearPlate } from './store.js'
 import { plateInfo, sceneTheme } from './plate.js'
 import { mountToolbar, stopSpin } from './toolbar.js'
 
-const V = '0.1.81', API = '/api/plugins/custom-slicer', LOUNGE = '/api/plugins/custom-my_printer', SRC = 'https://github.com/keidischoi/g7-plugin-custom-slicer'
+const V = '0.1.82', API = '/api/plugins/custom-slicer', LOUNGE = '/api/plugins/custom-my_printer', SRC = 'https://github.com/keidischoi/g7-plugin-custom-slicer'
 const SEND_ADMIN_ONLY = true   // 「📤 내 프린터로 보내기」는 시험하는 동안 관리자에게만 (실제 프린터에서 확인되면 false 로)
 
 // 0.1.51 판 임시 저장에서 지운 물체 빼기 — 파일마다 그 파일로 올린 물체 번호 (build.mjs 가 뷰어 불러오기에서 __slcFileOf 로 알려 줌)
@@ -291,6 +292,38 @@ function ProfileDialog({ settings, lounge, pid, onClose, onApply, onUpload, canU
       h('div', { className: 'slc-acts' }, onUpload ? h('button', { type: 'button', className: 'slc-btn pri', onClick: onUpload, disabled: !canUpload, title: !canUpload ? '판에 모델을 먼저 올려 주세요 — 모델 없이 만든 설정은 올릴 수 없어요' : '지금 슬라이서 설정 · 판 사진을 채운 「프로필 올리기」 작성 화면으로 가요 — 확인하고 올리세요' }, '⬆️ 지금 설정으로 프로필 쓰기') : null, h('a', { className: 'slc-btn', href: '/slicer-profiles', target: '_blank', rel: 'noopener' }, '슬라이서 프로필 ↗'), h('button', { type: 'button', className: 'slc-btn', onClick: onClose }, '닫기'))))
 }
 
+/* ───────── 0.1.82 🧵 카탈로그 필라멘트 고르기 (custom-catalog) → 필라멘트 칸 T1 · T2 … ───────── */
+function CatFilDialog({ settings, onClose, onApply }) {
+  const n = slotCount(settings), [slot, setSlot] = useState(0), [q, setQ] = useState(''), [items, setItems] = useState(null), [busy, setBusy] = useState(''), [err, setErr] = useState('')
+  const timer = useRef(0)
+  useEffect(() => { let on = true; setItems(null); catalogFilaments(q).then((d) => { if (on) setItems(d.items) }, (e) => { if (on) { setItems([]); setErr(e.message) } }); return () => { on = false } }, [q])
+  const use = async (it) => {
+    setBusy(it.key); setErr('')
+    try {
+      const cat = await catalogFilament(it.key), fp = await filamentPresets(), printer = String(settings.printer_settings_id || '')
+      const p = bestPreset(printer ? fp.listFor(printer) : [], cat) || bestPreset(fp.all(), cat)
+      const r = applyCatalog(settings, slot, n, p ? p.name : '', p ? fp.settingsFor(p.name) : null, cat)
+      onApply(r.s, '🧵 T' + (slot + 1) + ' ← 「' + cat.brand + ' ' + cat.title + '」' + (p ? ' (엔진 설정 「' + p.name + '」' : ' (엔진 설정 없음') + (r.nozzle ? ' · 노즐 ' + r.nozzle + '°C' : '') + (r.bed != null ? ' · 베드 ' + r.bed + '°C' : '') + ')')
+    } catch (e) { setErr((e && e.message) || String(e)); setBusy('') }
+  }
+  return h('div', { className: 'slc-modal', onClick: (e) => { if (e.target === e.currentTarget && !busy) onClose() } },
+    h('div', { className: 'slc-dlg slc-dlg--wide', role: 'dialog', 'aria-modal': 'true', 'aria-label': '카탈로그 필라멘트' },
+      h('h3', null, '🧵 카탈로그 필라멘트 — 골라서 필라멘트 칸에 넣기'),
+      h('div', { className: 'slc-pfind' },
+        h('input', { type: 'search', placeholder: '찾기 (예: PLA · 폴리메이커 · PETG)', onInput: (e) => { clearTimeout(timer.current); const v = e.target.value.trim(); timer.current = setTimeout(() => setQ(v), 300) } }),
+        n > 1 ? Array.from({ length: n }, (_, i) => h('button', { key: i, type: 'button', className: 'slc-chip' + (i === slot ? ' on' : ''), title: '이 칸(T' + (i + 1) + ')에 넣어요', onClick: () => setSlot(i) }, 'T' + (i + 1))) : null),
+      err ? h('p', { className: 'slc-dmsg bad' }, '⚠️ ' + err) : null,
+      items === null ? h('p', { className: 'slc-hint' }, '불러오는 중…')
+        : !items.length ? h('p', { className: 'slc-hint' }, '맞는 필라멘트가 없어요. ', h('a', { href: '/catalog?tab=filament', target: '_blank', rel: 'noopener' }, '카탈로그 둘러보기 ›'))
+          : h('div', { className: 'slc-plist' }, items.map((it) => h('div', { key: it.key, className: 'slc-pcard' },
+            it.image ? h('img', { className: 'slc-pimg', src: it.image, alt: '', loading: 'lazy' }) : null,
+            h('div', { className: 'slc-pmain' }, h('b', null, it.brand + ' ' + it.title),
+              h('span', { className: 'slc-ptags' }, (it.chips || []).map((c, i) => h('i', { key: i }, c)))),
+            h('button', { type: 'button', className: 'slc-btn pri', disabled: !!busy, onClick: () => use(it) }, busy === it.key ? '⏳' : (n > 1 ? 'T' + (slot + 1) + ' 에 넣기' : '넣기'))))),
+      h('p', { className: 'slc-hint' }, '엔진의 같은 회사 · 같은 재료 설정을 넣고, 노즐 · 베드 온도와 직경은 카탈로그 값(최저~최고의 가운데)으로 바꿔요. 다른 칸 · 품질 설정은 그대로예요.'),
+      h('div', { className: 'slc-acts' }, h('button', { type: 'button', className: 'slc-btn', onClick: onClose, disabled: !!busy }, '닫기'))))
+}
+
 /* ───────── 0.1.8 「프로필 올리기」 작성 폼 팝업 (슬라이서 프로필 0.2.2+ 가 그 안에 그림) ───────── */
 function SpfFormPop({ onClose, onDone }) {
   const box = useRef(null)
@@ -322,6 +355,7 @@ function App({ files, popup, compact, printer, from }) {
   useEffect(() => { if (hasCloud) return; let n = 0; const t = setInterval(() => { if (window.G7Cloud && window.G7Cloud.pick) { setHasCloud(true); clearInterval(t) } else if (++n > 40) clearInterval(t) }, 250); return () => clearInterval(t) }, [])
   const [objCount, setObjCount] = useState(0)   // 0.1.8 판에 올린 모델 수 (0 이면 프로필 쓰기를 막음)
   const [spfPop, setSpfPop] = useState(false), [spfDone, setSpfDone] = useState(0)   // 0.1.8 「프로필 올리기」 작성 폼 팝업 · 올린 프로필 번호
+  const [cat, setCat] = useState(false), [catDlg, setCatDlg] = useState(false)   // 0.1.82 🧵 카탈로그 모듈이 켜져 있나 · 고르기 창
   const [spf, setSpf] = useState(false), [prof, setProf] = useState(false), [applied, setApplied] = useState('')
   const [size, setSize] = useState(() => (popup && popup.current ? popup.current() : ''))
   const stage = useRef(null), names = useRef([]), cur = useRef(settings), dock = useRef(null)
@@ -398,6 +432,7 @@ function App({ files, popup, compact, printer, from }) {
   useEffect(() => { setResultSource(res ? { gcode: res.gcode, settings: cur.current, seconds: res.seconds, sliced: true } : null) }, [res])
   // 0.1.5 🧱 바닥판 — 출력 검사기와 같은 판 그림 (프린터 제조사 · 판 종류)
   useEffect(() => { plateInfo(String(settings.printer_settings_id || ''), String(settings.curr_bed_type || '')) }, [settings.printer_settings_id, settings.curr_bed_type])
+  useEffect(() => { fetch(CAT + '/meta', { credentials: 'same-origin' }).then((r) => setCat(r.ok), () => setCat(false)) }, [])   // 0.1.82 🧵 카탈로그 모듈
   // 🎛️ 슬라이서 프로필 플러그인이 켜져 있나 (목록 하나만 물어봄)
   useEffect(() => { fetch(SPF + '/profiles?per=6&lite=1', { headers: headers(), credentials: 'same-origin' }).then((r) => setSpf(r.ok), () => setSpf(false)) }, [])
   // 뷰어 · 설정 칸(그림자 DOM) 안 입력칸 · 숫자칸 · 카드를 출력 검사기 말씨로 다듬음
@@ -596,6 +631,7 @@ function App({ files, popup, compact, printer, from }) {
         ? h('div', { className: 'slc-chips' }, lounge.list.map((p) => h('button', { key: p.id, type: 'button', className: 'slc-chip' + (+p.id === pid ? ' on' : ''), title: '이 프린터의 설정으로 바꿔요', onClick: () => pickLounge(p) }, '🖨️ ' + p.name, p.can_send ? h('em', null, ' 📤') : null)))
         : h('span', { className: 'slc-hint' }, lounge.logged ? ['프린터 라운지에 내 프린터를 등록하면 바로 고르고 보낼 수 있어요. ', h('a', { key: 'a', href: '/my-printer' }, '프린터 라운지 ›')] : '로그인하면 프린터 라운지의 내 프린터로 바로 보낼 수 있어요.'),
       cloud() ? h('button', { type: 'button', className: 'slc-btn', title: '내 웹저장소(구글 드라이브 · 원드라이브 · 드롭박스)의 STL · 3MF · OBJ 를 판에 올려요', onClick: cloudOpen }, '☁️ 내 저장소에서') : null,
+      cat ? h('button', { type: 'button', className: 'slc-btn', title: '카탈로그의 필라멘트를 골라 필라멘트 칸(T1 · T2 …)에 넣어요 — 온도 · 직경은 카탈로그 값', onClick: () => setCatDlg(true) }, '🧵 카탈로그 필라멘트') : null,
       spf ? h('button', { type: 'button', className: 'slc-btn', title: '회원들이 올린 프린터 × 필라멘트 설정을 골라 바로 적용해요 (🎛️ 슬라이서 프로필)', onClick: () => setProf(true) }, '🎛️ 슬라이서 프로필') : null,
       applied ? h('span', { className: 'slc-from', title: applied }, '🎛️ ' + applied) : null),
     h('div', { className: 'slc-bar-r' },
@@ -684,6 +720,7 @@ function App({ files, popup, compact, printer, from }) {
       h('p', null, '설정 이름은 한국어 · 그 아래 작은 글씨는 OrcaSlicer 영어 이름이에요. 결과는 Bambu Studio · OrcaSlicer 와 조금 다를 수 있으니 처음 쓰는 프린터는 첫 층을 지켜봐 주세요.'),
       h('p', null, '이 슬라이서는 ', h('b', null, 'AGPL-3.0'), ' 오픈소스예요 — ', h('a', { href: SRC, target: '_blank', rel: 'noopener' }, '소스 보기'), ' · 엔진 ', h('a', { href: 'https://github.com/kimgh06/Three_Slicer', target: '_blank', rel: 'noopener' }, 'three-slicer'), ' (OrcaSlicer 를 브라우저로 옮긴 것) · © three-slicer · OrcaSlicer 기여자 · 보증 없음')),
     spfPop ? h(SpfFormPop, { onClose: () => setSpfPop(false), onDone: (id, msg) => { setSpfPop(false); setNote('🎛️ ' + msg + ' — 다른 회원이 「잘 됐어요」로 평가할 수 있어요.'); setSpfDone(id) } }) : null,
+    catDlg ? h(CatFilDialog, { settings, onClose: () => setCatDlg(false), onApply: (s2, msg) => { setSettings(s2); setCatDlg(false); setNote(msg) } }) : null,
     prof ? h(ProfileDialog, { canUpload: objCount > 0, onUpload: lounge.logged ? () => { setProf(false); share() } : null, settings, lounge, pid, onClose: () => setProf(false), onApply: (title, parts) => { setSettings((s) => applyProfile(s, parts)); setApplied(title); setProf(false); setNote('🎛️ 「' + title + '」 설정을 적용했어요 — 오른쪽 칸에서 확인하고 「Slice」를 누르세요.') } }) : null,
     send && R ? h(SendDialog, { R, lounge, pid0: pid, popup, onShare: spf && lounge.logged ? () => share() : null, onClose: () => setSend(false), onSent: (p) => setSent('「' + p.name + '」 로 보냈어요 — 연결 프로그램이 30초쯤 안에 받아 출력을 시작해요.') }) : null)
 }
