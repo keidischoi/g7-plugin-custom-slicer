@@ -19,6 +19,7 @@ c-URKDJGF5.js	1256
 c-ZKCAC4DU.js	27018
 parse_3mf.worker.js	1843
 quick.js	47355
+resin.js	180529
 sl1_encode.worker.js	407
 sla_reconstruct.worker.js	787
 sla_slice.worker.js	2162

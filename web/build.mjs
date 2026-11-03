@@ -185,6 +185,8 @@ await build({
   logLevel: 'warning', charset: 'utf8',
 })
 cpSync(join(root, 'web/src/app.css'), join(out, 'app.css'))
+// 0.1.84 🧪 레진 슬라이스 (출력 검사기에서 옮겨 옴) — 묶지 않고 그대로 (원본은 .cjs — 이 저장소는 ESM 이라 node 시험이 require 하게): 화면 · 계산이 한 파일, 계산은 같은 파일을 Web Worker 로
+cpSync(join(root, 'web/resin/resin.cjs'), join(out, 'resin.js'))
 // 0.1.78 🧵 멀티스레드 코어 — 묶음 조각이 곁에서 wasm 을 읽고, 스레드 워커는 원본 글루를 새로 부름 (없으면 조용히 단일 스레드)
 //  실제로 쓰이려면 페이지에 COOP/COEP 헤더가 있어야 함 — 사이트는 아직 안 켬
 for (const x of ['slicer_core.mt.js', 'slicer_core.mt.wasm']) cpSync(join(root, 'node_modules/three-slicer/engine/src', x), join(out, x))
