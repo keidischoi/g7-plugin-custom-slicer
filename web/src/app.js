@@ -1,4 +1,4 @@
-/*! custom-slicer 0.1.80 — 🔪 슬라이서 화면 · AGPL-3.0-or-later · 소스: https://github.com/keidischoi/g7-plugin-custom-slicer
+/*! custom-slicer 0.1.81 — 🔪 슬라이서 화면 · AGPL-3.0-or-later · 소스: https://github.com/keidischoi/g7-plugin-custom-slicer
  *  엔진 · 화면: three-slicer (OrcaSlicer 를 WebAssembly 로 옮긴 것, AGPL) — <Viewport/>(판 배치 · 이동/회전/크기 · 칠하기 · 슬라이스 · G-code 미리 보기)
  *  + <SettingsPanel/>(OrcaSlicer 설정). 이 파일은 그 바깥 틀: 프린터 라운지의 내 프린터 · 📤 보내기 · .gcode.3mf · 다른 화면에서 넘겨받은 파일
  *  모델은 서버로 올라가지 않음 — 이 브라우저에서만 읽고 슬라이스 */
@@ -25,7 +25,7 @@ import { savePlate, loadPlate, clearPlate } from './store.js'
 import { plateInfo, sceneTheme } from './plate.js'
 import { mountToolbar, stopSpin } from './toolbar.js'
 
-const V = '0.1.80', API = '/api/plugins/custom-slicer', LOUNGE = '/api/plugins/custom-my_printer', SRC = 'https://github.com/keidischoi/g7-plugin-custom-slicer'
+const V = '0.1.81', API = '/api/plugins/custom-slicer', LOUNGE = '/api/plugins/custom-my_printer', SRC = 'https://github.com/keidischoi/g7-plugin-custom-slicer'
 const SEND_ADMIN_ONLY = true   // 「📤 내 프린터로 보내기」는 시험하는 동안 관리자에게만 (실제 프린터에서 확인되면 false 로)
 
 // 0.1.51 판 임시 저장에서 지운 물체 빼기 — 파일마다 그 파일로 올린 물체 번호 (build.mjs 가 뷰어 불러오기에서 __slcFileOf 로 알려 줌)
@@ -39,6 +39,7 @@ export function liveFiles(files, ids, map = FILE_IDS) {
 const LS_SET = 'slc-settings'
 const h = React.createElement
 const { useState, useEffect, useRef, useCallback } = React
+const NO_PLATE = Object.freeze({})   // 0.1.81 뷰어의 plateSettings 기본값({})은 그릴 때마다 새 것 → 자동 슬라이스가 끝없이 다시 돎 · 늘 같은 것을 넘김
 
 /* ───────── 작은 도구 ───────── */
 const n1 = (v) => (Math.round(v * 10) / 10).toLocaleString()
@@ -607,7 +608,7 @@ function App({ files, popup, compact, printer, from }) {
       popup ? h('button', { type: 'button', className: 'slc-x', 'aria-label': '닫기', onClick: popup.close }, '✕') : null))
 
   const viewer = ready ? h(Viewport, {
-    settings, setSettings, files: ready.length ? ready : undefined, onSliced, onEvent, sliceRequest: sliceReq,
+    settings, setSettings, plateSettings: NO_PLATE, files: ready.length ? ready : undefined, onSliced, onEvent, sliceRequest: sliceReq,
     onExport: (file, filename) => { try { const C = cloud(); if (C && typeof C.offer === 'function') C.offer(file, filename) } catch (e) {} return false },
     processPanel: h(SettingsPanel, { settings, setSettings, embedded: true }),
     features: { versionBadge: false, shortcuts: true, logs: false },   // 0.1.13 탭 안(compact)도 단축키 — 아래 keyGate 가 슬라이서를 쓰는 중일 때만 보냄
