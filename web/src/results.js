@@ -202,9 +202,9 @@ export function mountResults(root, col) {
       for (const k of ['retract', 'unretract', 'wipe', 'seam']) {
         const m = D.marks[k]; if (!m || !m.n) continue
         const g = new BufferGeometry(); g.setAttribute('position', new BufferAttribute(m.pos, 3))
-        const mat = new PointsMaterial({ color: COLORS[k], size: k === 'seam' ? 7 : 6, sizeAttenuation: false, map: dotTex(), transparent: true, alphaTest: 0.4, depthTest: true })
+        const mat = new PointsMaterial({ color: COLORS[k], size: k === 'seam' ? 0.75 : 0.65, sizeAttenuation: true, map: dotTex(), transparent: true, alphaTest: 0.4, depthTest: true })
         // 0.1.38 점은 압출 선의 가운데(관 안)에 있어 맨 위 층 말고는 벽에 가려 안 보였음 → 화면 쪽으로 0.6mm 당겨 그림 (앞을 가리는 벽에는 그대로 가려짐)
-        mat.onBeforeCompile = (sh) => { sh.vertexShader = sh.vertexShader.replace('#include <project_vertex>', '#include <project_vertex>\n\tmvPosition.xyz -= normalize(mvPosition.xyz) * 0.6;\n\tgl_Position = projectionMatrix * mvPosition;') }
+        mat.onBeforeCompile = (sh) => { sh.vertexShader = sh.vertexShader.replace('#include <project_vertex>', '#include <project_vertex>\n\tmvPosition.xyz -= normalize(mvPosition.xyz) * 0.6;\n\tgl_Position = projectionMatrix * mvPosition;').replace('#include <fog_vertex>', '#include <fog_vertex>'+String.fromCharCode(10)+'gl_PointSize = clamp(gl_PointSize, 1.5, 9.0);') }   // 0.1.82 점 크기는 mm (모델과 같이 커지고 작아짐 · 줌아웃하면 재봉선이 모델을 덮던 것) · 1.5~9px 사이
         const p = new Points(g, mat)
         p.frustumCulled = false; p.renderOrder = 20; p.userData.k = k; H.add(p); pts[k] = p
       }

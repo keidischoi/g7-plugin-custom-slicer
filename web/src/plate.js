@@ -185,6 +185,7 @@ globalThis.__slcPlateHook = (THREE, view, p) => {
           const below = !!cam && cam.position.y < -0.5, on = STATE.show !== false && !below
           for (const b of view.plateBeds || []) if (b.slcPlate && b.slcPlate.visible !== on) b.slcPlate.visible = on
         } catch (e) {}
+        try { focusLook(view) } catch (e) {}   // 0.1.82 고른 판 테두리(사각 줄) 대신 앞 색 띠로 — 포커스면 판 색 · 아니면 붉은색
         if (typeof prev === 'function') return prev.apply(this, arguments)
       }
     }
@@ -198,6 +199,29 @@ globalThis.__slcPlateHook = (THREE, view, p) => {
     return m
   } catch (e) { return null }
 }
+/** 0.1.82 뷰어는 고른 판 둘레를 강조색 굵은 선(사각 줄)으로 그림 → 보통 테두리 색으로 두고,
+ *  대신 앞 색 띠: 슬라이서(뷰어 · 설정 칸)에 포커스가 있고 고른 판이면 판 색(제조사 강조색), 아니면 붉은색 */
+const OFF_RED = '#dc2626'
+function focusLook(view) {
+  const cv = view.renderer && view.renderer.domElement, root = cv && cv.getRootNode ? cv.getRootNode() : null
+  const focused = !!(root && root.activeElement) && document.hasFocus()
+  const dark = document.documentElement.classList.contains('dark'), line = SCENE_LIVE[dark ? 'dark' : 'light'].border
+  let st = null
+  for (const b of view.plateBeds || []) {
+    const bm = b.border && b.border.material, sel = !!(bm && bm.linewidth === 2)
+    if (sel && '#' + bm.color.getHexString() !== line) bm.color.set(line)
+    const bd = b.slcPlate && b.slcPlate.userData.slcBody; if (!bd) continue
+    const want = focused && sel ? 'on' : 'off'
+    if (bd.look === want) continue
+    st = st || plateStyle(STATE.printer, STATE.bedType)
+    const c = want === 'on' ? st.accent : OFF_RED
+    bd.stripe.material.color.set(c); bd.stripe.material.emissive.set(c); bd.look = want
+  }
+}
+try {   // 포커스가 바뀌면 다시 그림 (뷰어는 필요할 때만 그림)
+  const redraw = () => { for (const v of STATE.views) { try { v.invalidate && v.invalidate() } catch (e) {} } }
+  addEventListener('focusin', redraw, true); addEventListener('focusout', () => setTimeout(redraw, 0), true); addEventListener('blur', redraw); addEventListener('focus', redraw)
+} catch (e) {}
 /** 깔린 판 그림을 지금 프린터 · 고른 판으로 다시 그림 · 보이기/숨기기 (숨기면 뷰어의 격자 선이 다시 보임) */
 export function refreshPlates() {
   const show = (STATE.show = lookPref().show !== false)
@@ -207,7 +231,7 @@ export function refreshPlates() {
       const { w, d, THREE } = m.userData.slcPlate
       const old = m.material.map; m.material.map = texOf(THREE, w, d); m.material.needsUpdate = true; if (old) old.dispose()
       const bd = m.userData.slcBody   // 0.1.33 판 옆면 · 앞 띠 색도 지금 판으로
-      if (bd) { const st = plateStyle(STATE.printer, STATE.bedType); bd.sheet.material[1].color.set(st.look.edge); bd.stripe.material.color.set(st.accent); bd.stripe.material.emissive.set(st.accent) }
+      if (bd) { const st = plateStyle(STATE.printer, STATE.bedType); bd.sheet.material[1].color.set(st.look.edge); bd.look = '' }   // 0.1.82 띠 색은 focusLook 이 (포커스 · 고른 판)
       m.visible = show
       if (b.gridThin) b.gridThin.visible = !show
       if (b.gridBold) b.gridBold.visible = !show
