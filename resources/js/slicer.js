@@ -1,4 +1,4 @@
-/*! custom-slicer 0.1.83 — 🔪 슬라이서 불러오기 (전역) · AGPL-3.0-or-later
+/*! custom-slicer 0.1.84 — 🔪 슬라이서 불러오기 (전역) · AGPL-3.0-or-later
  *  - 슬라이서 화면(data-slc-app) · 다른 화면의 큰 창 · window.G7Slicer.mount 를 부를 때만 앱 · 엔진을 받음
  *  - 헤더 메뉴 「슬라이서」
  *  - 다른 확장의 받기 단추(data-wsl-send) 옆 「🖨️ 프린터로 보내기」 — 웹 슬라이서(custom-web_slicer)와 같은 작은 팝업을 이 플러그인이 맡음 (「↗ 자세히」로 큰 슬라이서)
@@ -6,11 +6,11 @@
 (function () {
   'use strict';
   // 0.1.11 사이트 언어 — 영어 사이트(g7_locale · <html lang>)면 영어 · 「」 는 “”
-  var EN_T = {"레진":"Resin","베타":"Beta","레진 슬라이스 불러오는 중…":"Loading resin slicer…","출력 검사기를 최신으로 올려 주세요.":"Please update the Print Checker plugin.","레진 슬라이스는 출력 검사기 플러그인이 켜져 있어야 해요.":"The resin slicer needs the Print Checker plugin.","슬라이서를 불러오지 못했어요.":"Could not load the slicer.","슬라이서를 받지 못했어요 — 연결을 확인해 주세요.":"Could not download the slicer — check your connection.","보내기 창을 불러오지 못했어요.":"Could not load the send window.","보내기 창을 받지 못했어요 — 연결을 확인해 주세요.":"Could not download the send window — check your connection.","슬라이서":"Slicer","」 은(는) 슬라이스할 수 있는 모델 파일(STL · 3MF · OBJ)이 아니에요.":"” is not a model file that can be sliced (STL · 3MF · OBJ).","파일을 넘기지 못했어요: ":"Could not hand over the file: ","이 파일":"this file","을(를) 내 프린터로 — 프린터 고르기 · 설정 · 슬라이스 · 보내기를 이 화면에서 (「↗ 자세히」: 판 배치 · 모든 설정)":" to my printer — pick a printer · settings · slice · send right here (“↗ More”: arrange · all settings)","🖨️ 프린터로 보내기":"🖨️ Send to printer","파일을 만드는 데 너무 오래 걸렸어요 — 다시 눌러 주세요.":"Making the file took too long — please press again.","<div class=\"slc-qbox\" role=\"dialog\" aria-modal=\"true\" aria-label=\"프린터로 보내기\"><div class=\"slc-qhd\"><span>🖨️ 프린터로 보내기</span><button type=\"button\" data-slc-x aria-label=\"닫기\">✕</button></div><div data-slc-mount><p class=\"slc-qwait\">📦 파일을 준비하는 중…</p></div></div>":"<div class=\"slc-qbox\" role=\"dialog\" aria-modal=\"true\" aria-label=\"Send to printer\"><div class=\"slc-qhd\"><span>🖨️ Send to printer</span><button type=\"button\" data-slc-x aria-label=\"Close\">✕</button></div><div data-slc-mount><p class=\"slc-qwait\">📦 Preparing the file…</p></div></div>","<div class=\"slc-pop-box\" role=\"dialog\" aria-modal=\"true\" aria-label=\"슬라이서\"><div data-slc-mount><p class=\"slc-qwait\">🔪 슬라이서를 불러오는 중… (처음 한 번은 몇 MB 를 받아요)</p></div></div>":"<div class=\"slc-pop-box\" role=\"dialog\" aria-modal=\"true\" aria-label=\"Slicer\"><div data-slc-mount><p class=\"slc-qwait\">🔪 Loading the slicer… (a few MB the first time)</p></div></div>"};
+  var EN_T = {"레진":"Resin","베타":"Beta","레진 슬라이스 불러오는 중…":"Loading resin slicer…","레진 슬라이스를 받지 못했어요.":"Could not load the resin slicer.","슬라이서를 불러오지 못했어요.":"Could not load the slicer.","슬라이서를 받지 못했어요 — 연결을 확인해 주세요.":"Could not download the slicer — check your connection.","보내기 창을 불러오지 못했어요.":"Could not load the send window.","보내기 창을 받지 못했어요 — 연결을 확인해 주세요.":"Could not download the send window — check your connection.","슬라이서":"Slicer","」 은(는) 슬라이스할 수 있는 모델 파일(STL · 3MF · OBJ)이 아니에요.":"” is not a model file that can be sliced (STL · 3MF · OBJ).","파일을 넘기지 못했어요: ":"Could not hand over the file: ","이 파일":"this file","을(를) 내 프린터로 — 프린터 고르기 · 설정 · 슬라이스 · 보내기를 이 화면에서 (「↗ 자세히」: 판 배치 · 모든 설정)":" to my printer — pick a printer · settings · slice · send right here (“↗ More”: arrange · all settings)","🖨️ 프린터로 보내기":"🖨️ Send to printer","파일을 만드는 데 너무 오래 걸렸어요 — 다시 눌러 주세요.":"Making the file took too long — please press again.","<div class=\"slc-qbox\" role=\"dialog\" aria-modal=\"true\" aria-label=\"프린터로 보내기\"><div class=\"slc-qhd\"><span>🖨️ 프린터로 보내기</span><button type=\"button\" data-slc-x aria-label=\"닫기\">✕</button></div><div data-slc-mount><p class=\"slc-qwait\">📦 파일을 준비하는 중…</p></div></div>":"<div class=\"slc-qbox\" role=\"dialog\" aria-modal=\"true\" aria-label=\"Send to printer\"><div class=\"slc-qhd\"><span>🖨️ Send to printer</span><button type=\"button\" data-slc-x aria-label=\"Close\">✕</button></div><div data-slc-mount><p class=\"slc-qwait\">📦 Preparing the file…</p></div></div>","<div class=\"slc-pop-box\" role=\"dialog\" aria-modal=\"true\" aria-label=\"슬라이서\"><div data-slc-mount><p class=\"slc-qwait\">🔪 슬라이서를 불러오는 중… (처음 한 번은 몇 MB 를 받아요)</p></div></div>":"<div class=\"slc-pop-box\" role=\"dialog\" aria-modal=\"true\" aria-label=\"Slicer\"><div data-slc-mount><p class=\"slc-qwait\">🔪 Loading the slicer… (a few MB the first time)</p></div></div>"};
   function __T(s) { var l = ''; try { l = localStorage.getItem('g7_locale') || ''; } catch (e) {} l = l || document.documentElement.getAttribute('lang') || navigator.language || 'ko'; if (/^ko/i.test(l)) return s; var t = EN_T.hasOwnProperty(s) ? EN_T[s] : s; return t.replace(/「/g, '“').replace(/」/g, '”'); }
   if (window.__slcLoader) return;
   window.__slcLoader = true;
-  var API = '/api/plugins/custom-slicer', V = '0.1.83', loading = null;
+  var API = '/api/plugins/custom-slicer', V = '0.1.84', loading = null;
   function css() {
     if (document.getElementById('slc-css')) return;
     var l = document.createElement('link'); l.id = 'slc-css'; l.rel = 'stylesheet'; l.href = API + '/assets/app.css?v=' + V; document.head.appendChild(l);
@@ -28,7 +28,7 @@
     });
     return loading;
   }
-  // 0.1.59 🧵 FDM / 🧪 레진 탭 — 레진 슬라이스 코드는 출력 검사기 플러그인 것을 주소로만 받음
+  // 0.1.59 🧵 FDM / 🧪 레진 탭 · 0.1.84 레진 슬라이스 코드도 이 플러그인 것 (resin.js) — 프린터 · 레진 자료와 화면 CSS 만 출력 검사기 것
   var PCK = '/api/plugins/custom-print_check', MODE_ID = 'slc-modes', RESIN_ID = 'slc-resin', resinOn = false;
   function modes() {
     var el = /\/print-slicer\/?$/.test(location.pathname) ? document.querySelector('[data-slc-app]') : null, bar = document.getElementById(MODE_ID), host = document.getElementById(RESIN_ID);
@@ -49,14 +49,23 @@
     var m0 = 'fdm'; try { m0 = new URLSearchParams(location.search).get('tab') || localStorage.getItem('slc_mode') || 'fdm'; } catch (e) {}
     show(m0 === 'resin' ? 'resin' : 'fdm');
   }
-  function resin(host) {
+  /** 0.1.84 🧪 레진 슬라이스 코드 받기 (한 번) — 화면 CSS 는 출력 검사기 것 */
+  var resinWait = null;
+  function resinCode() {
     if (!document.getElementById('pck-css')) { var l = document.createElement('link'); l.id = 'pck-css'; l.rel = 'stylesheet'; l.href = PCK + '/assets/print-check.css?v=' + V; document.head.appendChild(l); }
-    if (window.PCResinMount) { window.PCResinMount(host); return; }
+    if (window.PCResinMount) return Promise.resolve(window.PCResinMount);
+    return resinWait || (resinWait = new Promise(function (ok, no) {
+      var s = document.createElement('script'); s.src = API + '/assets/resin.js?v=' + V;
+      s.onload = function () { window.PCResinMount ? ok(window.PCResinMount) : no(new Error('resin')); };
+      s.onerror = function () { resinWait = null; no(new Error('resin')); };
+      document.head.appendChild(s);
+    }));
+  }
+  /** el 안에 레진 슬라이스 — opts.embed: 다른 화면의 탭 안 (출력 검사기) · 돌려주는 것: { seed(file, tris, scale) … } */
+  function resinMount(el, opts) { return resinCode().then(function (m) { return m(el, opts || {}); }); }
+  function resin(host) {
     host.innerHTML = '<p class="slc-perr" style="color:inherit;font-weight:400">' + __T('레진 슬라이스 불러오는 중…') + '</p>';
-    var s = document.createElement('script'); s.src = PCK + '/assets/print-check-resin.js?v=' + V;
-    s.onload = function () { if (window.PCResinMount) window.PCResinMount(host); else host.innerHTML = '<p class="slc-perr">⚠️ ' + __T('출력 검사기를 최신으로 올려 주세요.') + '</p>'; };
-    s.onerror = function () { resinOn = false; host.innerHTML = '<p class="slc-perr">⚠️ ' + __T('레진 슬라이스는 출력 검사기 플러그인이 켜져 있어야 해요.') + '</p>'; };
-    document.head.appendChild(s);
+    resinMount(host).catch(function () { resinOn = false; host.innerHTML = '<p class="slc-perr">⚠️ ' + __T('레진 슬라이스를 받지 못했어요.') + '</p>'; });
   }
   function app() { if (document.querySelector('[data-slc-app]')) ready().then(function (a) { a.tick(); }, function () {}); }
   app(); modes();
@@ -130,6 +139,8 @@
     /** 🔪 큰 슬라이서 창 (크기 단추) */
     big: big,
     /** 팝업의 「↗ 출력 검사기에서」가 남긴 파일 · 프린터 — 한 번만 꺼냄 (5분 지나면 버림) */
+    /** 0.1.84 🧪 레진 슬라이스 — 출력 검사기의 「레진 슬라이스」 탭도 이것으로 붙임 (레진 프린터 · 레진 자료는 출력 검사기 것) */
+    resin: resinMount,
     takeCarry: function () { var c = window.__slcCarry; window.__slcCarry = null; return c && Date.now() - (c.at || 0) < 300000 ? c : null; },
   };
   // 0.1.1 먼저 그려진 화면(출력 검사기의 「슬라이스」 탭 · 단추)이 알 수 있게
